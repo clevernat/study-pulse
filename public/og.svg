@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="none">
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#131316"/>
+
+  <!-- Purple glow top-left -->
+  <radialGradient id="glow1" cx="20%" cy="30%" r="50%">
+    <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.25"/>
+    <stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
+  </radialGradient>
+  <rect width="1200" height="630" fill="url(#glow1)"/>
+
+  <!-- Teal glow bottom-right -->
+  <radialGradient id="glow2" cx="80%" cy="75%" r="40%">
+    <stop offset="0%" stop-color="#40efb7" stop-opacity="0.12"/>
+    <stop offset="100%" stop-color="#40efb7" stop-opacity="0"/>
+  </radialGradient>
+  <rect width="1200" height="630" fill="url(#glow2)"/>
+
+  <!-- Subtle grid lines -->
+  <line x1="0" y1="315" x2="1200" y2="315" stroke="#252535" stroke-width="1"/>
+  <line x1="600" y1="0" x2="600" y2="630" stroke="#252535" stroke-width="1"/>
+
+  <!-- Logo icon: pulse line in a rounded box -->
+  <rect x="80" y="200" width="90" height="90" rx="20" fill="#1a1028" stroke="#4a3070" stroke-width="1.5"/>
+  <polyline
+    points="94,247 110,247 116,225 126,265 136,235 146,253 156,247 166,247"
+    stroke="#d2bbff"
+    stroke-width="4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+  />
+
+  <!-- WordMark -->
+  <text
+    x="192"
+    y="271"
+    font-family="'Space Grotesk', 'Arial Black', sans-serif"
+    font-weight="700"
+    font-size="72"
+    fill="#d2bbff"
+    letter-spacing="-2"
+  >StudyPulse</text>
+
+  <!-- Tagline -->
+  <text
+    x="80"
+    y="335"
+    font-family="'Inter', 'Arial', sans-serif"
+    font-weight="400"
+    font-size="28"
+    fill="#8a7fa8"
+  >Track every session. Build unstoppable momentum.</text>
+
+  <!-- Divider -->
+  <rect x="80" y="370" width="480" height="2" rx="1" fill="url(#divGrad)"/>
+  <linearGradient id="divGrad" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.8"/>
+    <stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
+  </linearGradient>
+
+  <!-- Stats row -->
+  <text x="80"  y="420" font-family="'Arial', monospace" font-weight="700" font-size="32" fill="#d2bbff">10,000+</text>
+  <text x="80"  y="448" font-family="'Arial', sans-serif" font-size="16" fill="#555570" letter-spacing="3">STUDENTS</text>
+
+  <text x="260" y="420" font-family="'Arial', monospace" font-weight="700" font-size="32" fill="#40efb7">4.9★</text>
+  <text x="260" y="448" font-family="'Arial', sans-serif" font-size="16" fill="#555570" letter-spacing="3">RATING</text>
+
+  <text x="400" y="420" font-family="'Arial', monospace" font-weight="700" font-size="32" fill="#ffb95f">100%</text>
+  <text x="400" y="448" font-family="'Arial', sans-serif" font-size="16" fill="#555570" letter-spacing="3">FREE</text>
+
+  <!-- Right side: decorative chart bars -->
+  <g opacity="0.7">
+    <rect x="760" y="380" width="36" height="120" rx="6" fill="#7c3aed" opacity="0.4"/>
+    <rect x="810" y="330" width="36" height="170" rx="6" fill="#7c3aed" opacity="0.5"/>
+    <rect x="860" y="300" width="36" height="200" rx="6" fill="#40efb7" opacity="0.7"/>
+    <rect x="910" y="350" width="36" height="150" rx="6" fill="#7c3aed" opacity="0.5"/>
+    <rect x="960" y="290" width="36" height="210" rx="6" fill="#7c3aed" opacity="0.4"/>
+    <rect x="1010" y="360" width="36" height="140" rx="6" fill="#d2bbff" opacity="0.4"/>
+    <rect x="1060" y="310" width="36" height="190" rx="6" fill="#40efb7" opacity="0.6"/>
+    <rect x="1110" y="340" width="36" height="160" rx="6" fill="#7c3aed" opacity="0.5"/>
+  </g>
+
+  <!-- URL badge -->
+  <rect x="80" y="500" width="340" height="44" rx="22" fill="#1a1028" stroke="#4a3070" stroke-width="1"/>
+  <text x="250" y="528" font-family="'Arial', sans-serif" font-size="18" fill="#8a7fa8" text-anchor="middle">studypulse-tracker-app.web.app</text>
+</svg>
