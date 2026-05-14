@@ -2,6 +2,9 @@
 import { create } from "zustand";
 import type { TimerState, TimerSession } from "@/types";
 
+// Module-level interval so React lifecycle can't interfere with it
+let _interval: ReturnType<typeof setInterval> | null = null;
+
 interface TimerStore {
   state: TimerState;
   mode: "focus" | "short-break" | "long-break";
@@ -14,9 +17,10 @@ interface TimerStore {
   pomodoroLength: number;
   shortBreak: number;
   longBreak: number;
-  intervalRef: ReturnType<typeof setInterval> | null;
+  // Clock-based timing — immune to tab throttling
+  startTimestamp: number | null;
+  remainingWhenStarted: number;
 
-  // Actions
   setSubject: (id: string, name: string) => void;
   setPreset: (minutes: number) => void;
   start: () => void;
@@ -27,10 +31,17 @@ interface TimerStore {
   getSession: () => TimerSession;
 }
 
-function modeSeconds(mode: string, focus: number, shortB: number, longB: number): number {
+function modeSecs(mode: string, focus: number, shortB: number, longB: number): number {
   if (mode === "short-break") return shortB * 60;
   if (mode === "long-break") return longB * 60;
   return focus * 60;
+}
+
+function clearTick() {
+  if (_interval !== null) {
+    clearInterval(_interval);
+    _interval = null;
+  }
 }
 
 export const useTimerStore = create<TimerStore>((set, get) => ({
@@ -45,13 +56,13 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
   pomodoroLength: 25,
   shortBreak: 5,
   longBreak: 15,
-  intervalRef: null,
+  startTimestamp: null,
+  remainingWhenStarted: 25 * 60,
 
   setSubject: (id, name) => set({ selectedSubjectId: id, selectedSubjectName: name }),
 
   setPreset: (minutes) => {
-    const { intervalRef } = get();
-    if (intervalRef) clearInterval(intervalRef);
+    clearTick();
     set({
       pomodoroLength: minutes,
       secondsRemaining: minutes * 60,
@@ -59,52 +70,81 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
       state: "idle",
       mode: "focus",
       pomodoroIndex: 0,
-      intervalRef: null,
+      startTimestamp: null,
+      remainingWhenStarted: minutes * 60,
     });
   },
 
   start: () => {
-    const { state, tick, intervalRef } = get();
+    const { state, secondsRemaining } = get();
     if (state === "running") return;
-    if (intervalRef) clearInterval(intervalRef);
-    const ref = setInterval(tick, 1000);
-    set({ state: "running", intervalRef: ref });
+    clearTick();
+    const now = Date.now();
+    set({ state: "running", startTimestamp: now, remainingWhenStarted: secondsRemaining });
+    _interval = setInterval(() => get().tick(), 250); // 250ms for smooth updates
   },
 
   pause: () => {
-    const { intervalRef } = get();
-    if (intervalRef) clearInterval(intervalRef);
-    set({ state: "paused", intervalRef: null });
+    const { startTimestamp, remainingWhenStarted } = get();
+    clearTick();
+    // Compute accurate remaining time from the wall clock
+    let remaining = remainingWhenStarted;
+    if (startTimestamp !== null) {
+      const elapsed = (Date.now() - startTimestamp) / 1000;
+      remaining = Math.max(remainingWhenStarted - elapsed, 0);
+    }
+    set({ state: "paused", secondsRemaining: Math.ceil(remaining), startTimestamp: null });
   },
 
   reset: () => {
-    const { intervalRef, mode, pomodoroLength, shortBreak, longBreak } = get();
-    if (intervalRef) clearInterval(intervalRef);
-    const secs = modeSeconds(mode, pomodoroLength, shortBreak, longBreak);
-    set({ state: "idle", secondsRemaining: secs, totalSeconds: secs, intervalRef: null });
+    clearTick();
+    const { mode, pomodoroLength, shortBreak, longBreak } = get();
+    const secs = modeSecs(mode, pomodoroLength, shortBreak, longBreak);
+    set({ state: "idle", secondsRemaining: secs, totalSeconds: secs, startTimestamp: null, remainingWhenStarted: secs });
   },
 
   skip: () => {
-    const { intervalRef, pomodoroIndex, totalPomodoros, pomodoroLength, shortBreak, longBreak } = get();
-    if (intervalRef) clearInterval(intervalRef);
+    clearTick();
+    const { pomodoroIndex, totalPomodoros, pomodoroLength, shortBreak, longBreak } = get();
     const nextIndex = pomodoroIndex + 1;
     const nextMode: "focus" | "short-break" | "long-break" =
       nextIndex % totalPomodoros === 0 ? "long-break" : "short-break";
-    const secs = modeSeconds(nextMode, pomodoroLength, shortBreak, longBreak);
-    set({ state: "break", mode: nextMode, pomodoroIndex: nextIndex, secondsRemaining: secs, totalSeconds: secs, intervalRef: null });
+    const secs = modeSecs(nextMode, pomodoroLength, shortBreak, longBreak);
+    set({
+      state: "break",
+      mode: nextMode,
+      pomodoroIndex: nextIndex,
+      secondsRemaining: secs,
+      totalSeconds: secs,
+      startTimestamp: null,
+      remainingWhenStarted: secs,
+    });
   },
 
   tick: () => {
-    const { secondsRemaining, pomodoroIndex, totalPomodoros, pomodoroLength, shortBreak, longBreak, intervalRef } = get();
-    if (secondsRemaining <= 1) {
-      if (intervalRef) clearInterval(intervalRef);
+    const { startTimestamp, remainingWhenStarted, pomodoroIndex, totalPomodoros, pomodoroLength, shortBreak, longBreak } = get();
+    if (startTimestamp === null) return;
+
+    const elapsed = (Date.now() - startTimestamp) / 1000;
+    const newRemaining = remainingWhenStarted - elapsed;
+
+    if (newRemaining <= 0) {
+      clearTick();
       const nextIndex = pomodoroIndex + 1;
       const nextMode: "focus" | "short-break" | "long-break" =
         nextIndex % totalPomodoros === 0 ? "long-break" : "short-break";
-      const secs = modeSeconds(nextMode, pomodoroLength, shortBreak, longBreak);
-      set({ secondsRemaining: secs, totalSeconds: secs, state: "break", mode: nextMode, pomodoroIndex: nextIndex, intervalRef: null });
+      const secs = modeSecs(nextMode, pomodoroLength, shortBreak, longBreak);
+      set({
+        secondsRemaining: 0,
+        totalSeconds: secs,
+        state: "break",
+        mode: nextMode,
+        pomodoroIndex: nextIndex,
+        startTimestamp: null,
+        remainingWhenStarted: secs,
+      });
     } else {
-      set((s) => ({ secondsRemaining: s.secondsRemaining - 1 }));
+      set({ secondsRemaining: Math.ceil(newRemaining) });
     }
   },
 
@@ -124,7 +164,8 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
 }));
 
 export function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60).toString().padStart(2, "0");
-  const s = (seconds % 60).toString().padStart(2, "0");
-  return `${m}:${s}`;
+  const s = Math.max(0, Math.round(seconds));
+  const m = Math.floor(s / 60).toString().padStart(2, "0");
+  const sec = (s % 60).toString().padStart(2, "0");
+  return `${m}:${sec}`;
 }

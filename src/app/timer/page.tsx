@@ -57,9 +57,11 @@ export default function TimerPage() {
     getUserSessions(user.uid).then(setSessions);
   }, [user]);
 
-  // Sync to default preset on mount
+  // Only set preset on first mount if the timer is completely idle (not running/paused)
   useEffect(() => {
-    setPreset(pomodoroLength);
+    if (state === "idle") {
+      setPreset(pomodoroLength);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

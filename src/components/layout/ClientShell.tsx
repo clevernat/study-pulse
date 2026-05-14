@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { usePathname, useRouter } from "next/navigation";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
+import FloatingTimer from "./FloatingTimer";
 
 export default function ClientShell({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -54,6 +55,7 @@ export default function ClientShell({ children }: { children: React.ReactNode })
         <TopBar />
         <main className="pt-20 p-[48px] min-h-screen">{children}</main>
       </div>
+      <FloatingTimer />
     </div>
   );
 }
