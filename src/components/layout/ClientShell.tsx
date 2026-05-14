@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { usePathname, useRouter } from "next/navigation";
+import { useTimerStore } from "@/store/timerStore";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
 import FloatingTimer from "./FloatingTimer";
@@ -11,6 +12,13 @@ export default function ClientShell({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const router = useRouter();
   const isPublicPage = pathname === "/login" || pathname === "/login/" || pathname === "/" || pathname === "";
+  const initTimer = useTimerStore((s) => s.init);
+
+  // Restart timer interval after page load / refresh if it was running
+  useEffect(() => {
+    initTimer();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!loading && !user && !isPublicPage) {

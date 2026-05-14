@@ -186,6 +186,7 @@ export default function TimerPage() {
 
   const completedPomodoros = pomodoroIndex % totalPomodoros;
   const currentSubject = subjects.find((s) => s.id === selectedSubjectId);
+  const hasSubject = !!selectedSubjectId;
 
   // Determine display list: real subjects if loaded, else empty (no mock fallback)
   const displaySubjects = subjects;
@@ -343,21 +344,33 @@ export default function TimerPage() {
         </button>
 
         {/* Play / Pause */}
-        <button
-          onClick={state === "running" ? pause : start}
-          className="w-20 h-20 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shadow-[0_0_32px_rgba(124,58,237,0.4)] hover:scale-105 active:scale-95 transition-all"
-          aria-label={state === "running" ? "Pause timer" : "Start timer"}
-        >
-          <span
-            className="material-symbols-outlined text-4xl"
-            style={{
-              fontFamily: "'Material Symbols Outlined'",
-              fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 48",
-            }}
+        <div className="flex flex-col items-center gap-2">
+          <button
+            onClick={state === "running" ? pause : start}
+            disabled={!hasSubject && state !== "running"}
+            className={`w-20 h-20 rounded-full flex items-center justify-center transition-all ${
+              hasSubject || state === "running"
+                ? "bg-primary-container text-on-primary-container shadow-[0_0_32px_rgba(124,58,237,0.4)] hover:scale-105 active:scale-95"
+                : "bg-surface-container border-2 border-dashed border-outline-variant text-on-surface-variant cursor-not-allowed opacity-50"
+            }`}
+            aria-label={state === "running" ? "Pause timer" : "Start timer"}
           >
-            {state === "running" ? "pause" : "play_arrow"}
-          </span>
-        </button>
+            <span
+              className="material-symbols-outlined text-4xl"
+              style={{
+                fontFamily: "'Material Symbols Outlined'",
+                fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 48",
+              }}
+            >
+              {state === "running" ? "pause" : "play_arrow"}
+            </span>
+          </button>
+          {!hasSubject && state !== "running" && (
+            <span className="text-xs text-on-surface-variant font-inter text-center">
+              Select a subject to start
+            </span>
+          )}
+        </div>
 
         {/* Skip */}
         <button
