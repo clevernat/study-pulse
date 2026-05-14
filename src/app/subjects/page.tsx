@@ -272,7 +272,7 @@ export default function SubjectsPage() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {subjects.map((subject) => {
             const meta = colorMap[subject.color];
             const hours = (subject.totalMinutes / 60).toFixed(1);

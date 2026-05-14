@@ -32,12 +32,8 @@ export default function ClientShell({ children }: { children: React.ReactNode })
     }
   }, [user, loading, pathname, router]);
 
-  // Public pages (login, landing): render with no shell
-  if (isPublicPage) {
-    return <>{children}</>;
-  }
+  if (isPublicPage) return <>{children}</>;
 
-  // Still resolving auth state
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -46,7 +42,6 @@ export default function ClientShell({ children }: { children: React.ReactNode })
     );
   }
 
-  // Not authenticated — show spinner while redirect fires
   if (!user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -55,13 +50,16 @@ export default function ClientShell({ children }: { children: React.ReactNode })
     );
   }
 
-  // Authenticated — full app shell
   return (
-    <div className="flex">
+    <div className="flex bg-background min-h-screen">
       <Sidebar />
-      <div className="flex-1 ml-64">
+      {/* Content: offset by sidebar on md+, full-width on mobile */}
+      <div className="flex-1 md:ml-64 min-w-0">
         <TopBar />
-        <main className="pt-20 p-[48px] min-h-screen">{children}</main>
+        {/* pt for topbar, pb-20 on mobile for bottom nav */}
+        <main className="pt-20 px-4 py-6 md:p-12 pb-24 md:pb-12 min-h-screen">
+          {children}
+        </main>
       </div>
       <FloatingTimer />
     </div>

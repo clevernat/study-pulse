@@ -45,7 +45,7 @@ export default function FloatingTimer() {
       : null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-[100]">
+    <div className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-[100]">
       <div className="flex items-center gap-3 bg-[#0e0e14] border border-[#2a2a40] rounded-2xl px-4 py-3 shadow-[0_8px_40px_rgba(0,0,0,0.6)] backdrop-blur-sm">
 
         {/* Progress ring */}

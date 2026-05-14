@@ -333,7 +333,7 @@ export default function GoalsPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
         <div className="glass-card p-6 flex flex-col gap-3">
           <div className="flex items-center gap-3">
             <span className="material-symbols-outlined text-primary text-[28px]">track_changes</span>

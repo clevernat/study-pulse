@@ -5,6 +5,7 @@ import { useTimerStore, formatTime } from "@/store/timerStore";
 import { useAuth } from "@/context/AuthContext";
 import { getUserSubjects, getUserSessions, addSession } from "@/lib/firebase/firestore";
 import { computeStreak } from "@/lib/streakLogic";
+import { playCompletionChime, playBreakEndChime, requestNotificationPermission, sendNotification } from "@/lib/sounds";
 import type { Subject, Session } from "@/types";
 
 const MODE_LABELS: Record<string, string> = {
@@ -48,8 +49,9 @@ export default function TimerPage() {
   // Track the totalSeconds at start of focus session (for duration calc)
   const sessionTotalSecondsRef = useRef<number>(totalSeconds);
 
-  // Load subjects and sessions from Firestore
+  // Load subjects and sessions; request notification permission
   useEffect(() => {
+    requestNotificationPermission();
     if (!user) return;
     getUserSubjects(user.uid).then((data) => {
       if (data.length > 0) setSubjects(data);
@@ -126,15 +128,24 @@ export default function TimerPage() {
     }
   }, [state, mode]);
 
-  // Use a dedicated ref to track mode at time of transition for session save
+  // Detect transitions to play sounds and send notifications
   const prevModeRef = useRef<string>("focus");
   useEffect(() => {
-    // When state becomes "break" and previous mode was "focus" => focus session just completed
     if (state === "break" && prevModeRef.current === "focus") {
+      // Focus session just completed
       saveSession();
+      playCompletionChime();
+      sendNotification(
+        "StudyPulse — Focus Complete! 🎉",
+        `Great work${selectedSubjectName && selectedSubjectName !== "Select a Subject" ? ` on ${selectedSubjectName}` : ""}! Time for a break.`
+      );
+    } else if (state === "idle" && prevModeRef.current !== "focus" && prevModeRef.current !== "idle") {
+      // Break ended — nudge back to focus
+      playBreakEndChime();
+      sendNotification("StudyPulse — Break Over", "Ready to focus again?");
     }
     prevModeRef.current = mode;
-  }, [state, mode, saveSession]);
+  }, [state, mode, saveSession, selectedSubjectName]);
 
   const handleCustomApply = () => {
     const mins = parseInt(customMinutes, 10);
@@ -192,7 +203,7 @@ export default function TimerPage() {
   const displaySubjects = subjects;
 
   return (
-    <section className="flex flex-col items-center gap-8 py-4">
+    <section className="flex flex-col items-center gap-6 py-2 md:py-4">
 
       {/* Subject Selector */}
       <div className="relative w-full max-w-md" ref={dropdownRef}>
@@ -259,7 +270,7 @@ export default function TimerPage() {
       </div>
 
       {/* SVG Ring Timer */}
-      <div className="relative w-[380px] h-[380px]">
+      <div className="relative w-[260px] h-[260px] sm:w-[320px] sm:h-[320px] md:w-[380px] md:h-[380px]">
         <svg
           className="w-full h-full timer-ring"
           viewBox="0 0 380 380"
@@ -297,7 +308,7 @@ export default function TimerPage() {
 
         {/* Center content */}
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-          <span className="font-jetbrains text-[72px] font-bold tracking-tighter text-on-surface leading-none tabular-nums">
+          <span className="font-jetbrains text-[48px] sm:text-[60px] md:text-[72px] font-bold tracking-tighter text-on-surface leading-none tabular-nums">
             {formatTime(secondsRemaining)}
           </span>
           <span className="text-[11px] uppercase tracking-[0.2em] text-on-surface-variant font-medium">
@@ -328,7 +339,7 @@ export default function TimerPage() {
       </div>
 
       {/* Controls */}
-      <div className="flex items-center gap-6 justify-center mt-8">
+      <div className="flex items-center gap-6 justify-center mt-4 md:mt-8">
         {/* Reset */}
         <button
           onClick={reset}
@@ -440,7 +451,7 @@ export default function TimerPage() {
       )}
 
       {/* Session Stats */}
-      <div className="grid grid-cols-3 gap-4 w-full max-w-2xl mt-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-2xl mt-4">
         {/* Today's Focus */}
         <div className="bg-surface-container-low border border-outline-variant p-4 rounded-xl h-32 flex flex-col justify-between">
           <div className="flex items-center justify-between">
