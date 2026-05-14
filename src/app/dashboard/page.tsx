@@ -2,11 +2,29 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { generateHeatmap } from "@/lib/mockData";
 import { useAuth } from "@/context/AuthContext";
 import { getUserSessions, getUserSubjects } from "@/lib/firebase/firestore";
 import { computeStreak } from "@/lib/streakLogic";
 import type { HeatmapCell, Session, Subject } from "@/types";
+
+function buildHeatmap(sessions: Session[]): HeatmapCell[] {
+  const minutesByDate: Record<string, number> = {};
+  for (const s of sessions) {
+    minutesByDate[s.date] = (minutesByDate[s.date] ?? 0) + s.durationMinutes;
+  }
+  const cells: HeatmapCell[] = [];
+  const today = new Date();
+  for (let i = 89; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const date = d.toISOString().slice(0, 10);
+    const minutes = minutesByDate[date] ?? 0;
+    const intensity: 0 | 1 | 2 | 3 | 4 =
+      minutes === 0 ? 0 : minutes < 60 ? 1 : minutes < 120 ? 2 : minutes < 180 ? 3 : 4;
+    cells.push({ date, minutes, intensity });
+  }
+  return cells;
+}
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -80,8 +98,8 @@ function WeeklyBarChart({ sessions }: { sessions: Session[] }) {
 
 // ── Heatmap ───────────────────────────────────────────────────────────────────
 
-function Heatmap() {
-  const cells = generateHeatmap();
+function Heatmap({ sessions }: { sessions: Session[] }) {
+  const cells = buildHeatmap(sessions);
   return (
     <div className="glass-card p-6 flex flex-col gap-4">
       <h2 className="font-grotesk font-bold text-lg text-on-surface">90-Day Velocity</h2>
@@ -331,7 +349,7 @@ export default function DashboardPage() {
           <WeeklyBarChart sessions={sessions} />
         </div>
         <div>
-          <Heatmap />
+          <Heatmap sessions={sessions} />
         </div>
       </div>
 

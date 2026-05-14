@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
@@ -86,10 +87,14 @@ export default function LoginPage() {
         <div className="bg-[#12121a] border border-[#252535] rounded-2xl p-8">
           {/* Logo */}
           <div className="text-center mb-8">
-            <h1 className="font-grotesk text-[32px] font-bold text-primary tracking-tighter leading-none">
-              StudyPulse
-            </h1>
-            <p className="text-on-surface-variant text-sm font-inter mt-1">Your Academic Edge</p>
+            <Link href="/" className="inline-flex flex-col items-center group">
+              <h1 className="font-grotesk text-[32px] font-bold text-primary tracking-tighter leading-none group-hover:opacity-80 transition-opacity">
+                StudyPulse
+              </h1>
+              <p className="text-on-surface-variant text-sm font-inter mt-1 group-hover:text-primary/70 transition-colors">
+                Your Academic Edge
+              </p>
+            </Link>
           </div>
 
           {/* Tab switcher */}
@@ -204,6 +209,14 @@ export default function LoginPage() {
             </div>
           ))}
         </div>
+
+        {/* Back to home */}
+        <p className="text-center text-on-surface-variant text-xs font-inter mt-4">
+          Not ready to sign up?{" "}
+          <Link href="/" className="text-primary hover:underline transition-all">
+            Back to home
+          </Link>
+        </p>
       </div>
     </div>
   );

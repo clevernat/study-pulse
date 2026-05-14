@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useTimerStore, formatTime } from "@/store/timerStore";
 import { useAuth } from "@/context/AuthContext";
-import { getUserSubjects, addSession } from "@/lib/firebase/firestore";
+import { getUserSubjects, getUserSessions, addSession } from "@/lib/firebase/firestore";
+import { computeStreak } from "@/lib/streakLogic";
 import type { Subject, Session } from "@/types";
 
 const MODE_LABELS: Record<string, string> = {
@@ -34,7 +35,10 @@ export default function TimerPage() {
   const { user } = useAuth();
 
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [showCustomInput, setShowCustomInput] = useState(false);
+  const [customMinutes, setCustomMinutes] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Track previous timer state to detect transitions
@@ -44,12 +48,13 @@ export default function TimerPage() {
   // Track the totalSeconds at start of focus session (for duration calc)
   const sessionTotalSecondsRef = useRef<number>(totalSeconds);
 
-  // Load subjects from Firestore
+  // Load subjects and sessions from Firestore
   useEffect(() => {
     if (!user) return;
     getUserSubjects(user.uid).then((data) => {
       if (data.length > 0) setSubjects(data);
     });
+    getUserSessions(user.uid).then(setSessions);
   }, [user]);
 
   // Sync to default preset on mount
@@ -128,6 +133,43 @@ export default function TimerPage() {
     }
     prevModeRef.current = mode;
   }, [state, mode, saveSession]);
+
+  const handleCustomApply = () => {
+    const mins = parseInt(customMinutes, 10);
+    if (!isNaN(mins) && mins >= 1 && mins <= 180) {
+      setPreset(mins);
+      setShowCustomInput(false);
+      setCustomMinutes("");
+    }
+  };
+
+  // Computed stats from real sessions
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayMinutes = sessions
+    .filter((s) => s.date === todayStr)
+    .reduce((sum, s) => sum + s.durationMinutes, 0);
+  const todayHours = todayMinutes / 60;
+
+  const todayGoalHours = 8;
+  const todayProgress = Math.min(todayHours / todayGoalHours, 1);
+
+  // Productivity: compare this week vs last week hours
+  const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
+  const twoWeeksAgo = new Date(); twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+  const thisWeekMins = sessions
+    .filter((s) => new Date(s.date) >= weekAgo)
+    .reduce((sum, s) => sum + s.durationMinutes, 0);
+  const lastWeekMins = sessions
+    .filter((s) => new Date(s.date) >= twoWeeksAgo && new Date(s.date) < weekAgo)
+    .reduce((sum, s) => sum + s.durationMinutes, 0);
+  const productivityChange = lastWeekMins === 0
+    ? (thisWeekMins > 0 ? 100 : 0)
+    : Math.round(((thisWeekMins - lastWeekMins) / lastWeekMins) * 100);
+
+  const streakDays = computeStreak(
+    sessions.map((s) => s.date),
+    todayStr
+  );
 
   const handleSubjectSelect = (subject: Subject) => {
     setSubject(subject.id, subject.name);
@@ -346,10 +388,41 @@ export default function TimerPage() {
           </button>
         ))}
         <div className="w-px h-4 bg-outline-variant mx-1" />
-        <button className="px-4 py-2 rounded-full text-on-surface-variant hover:text-on-surface text-sm">
+        <button
+          onClick={() => setShowCustomInput((v) => !v)}
+          className={`px-4 py-2 rounded-full text-sm transition-all ${
+            showCustomInput
+              ? "bg-primary-container/20 text-primary border border-primary/30"
+              : "text-on-surface-variant hover:text-on-surface"
+          }`}
+        >
           Custom
         </button>
       </div>
+
+      {/* Custom duration input */}
+      {showCustomInput && (
+        <div className="flex items-center gap-2 bg-surface-container-low border border-outline-variant rounded-xl px-4 py-3">
+          <span className="text-on-surface-variant text-sm">Minutes:</span>
+          <input
+            type="number"
+            min={1}
+            max={180}
+            value={customMinutes}
+            onChange={(e) => setCustomMinutes(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleCustomApply()}
+            placeholder="e.g. 90"
+            className="w-20 bg-transparent border-b border-outline-variant text-on-surface text-sm font-jetbrains focus:outline-none focus:border-primary text-center"
+            autoFocus
+          />
+          <button
+            onClick={handleCustomApply}
+            className="px-3 py-1 rounded-lg bg-primary-container text-on-primary-container text-sm font-medium hover:opacity-90 active:scale-95 transition-all"
+          >
+            Set
+          </button>
+        </div>
+      )}
 
       {/* Session Stats */}
       <div className="grid grid-cols-3 gap-4 w-full max-w-2xl mt-4">
@@ -367,13 +440,15 @@ export default function TimerPage() {
             </span>
           </div>
           <div>
-            <span className="text-[28px] font-bold text-secondary font-jetbrains leading-none">4.5</span>
+            <span className="text-[28px] font-bold text-secondary font-jetbrains leading-none">
+              {todayHours.toFixed(1)}
+            </span>
             <span className="text-on-surface-variant text-[13px] ml-1">hrs</span>
           </div>
           <div className="h-1.5 rounded-full bg-surface-container overflow-hidden">
             <div
-              className="h-full rounded-full"
-              style={{ width: "80%", background: "linear-gradient(to right, #40efb7, #00d29c)" }}
+              className="h-full rounded-full transition-all"
+              style={{ width: `${todayProgress * 100}%`, background: "linear-gradient(to right, #40efb7, #00d29c)" }}
             />
           </div>
         </div>
@@ -388,25 +463,16 @@ export default function TimerPage() {
               className="material-symbols-outlined text-secondary text-[16px]"
               style={{ fontFamily: "'Material Symbols Outlined'" }}
             >
-              trending_up
+              {productivityChange >= 0 ? "trending_up" : "trending_down"}
             </span>
           </div>
           <div className="flex items-end gap-1.5">
-            <span className="text-[28px] font-bold text-secondary font-jetbrains leading-none">+12</span>
+            <span className="text-[28px] font-bold text-secondary font-jetbrains leading-none">
+              {productivityChange >= 0 ? "+" : ""}{productivityChange}
+            </span>
             <span className="text-on-surface-variant text-[13px] mb-0.5">%</span>
           </div>
-          <div className="flex items-end gap-1 h-5">
-            {[40, 55, 45, 70, 60, 80, 75].map((h, i) => (
-              <div
-                key={i}
-                className="flex-1 rounded-sm"
-                style={{
-                  height: `${h}%`,
-                  background: i === 6 ? "#40efb7" : "rgba(64,239,183,0.3)",
-                }}
-              />
-            ))}
-          </div>
+          <p className="text-[10px] text-on-surface-variant">vs last week</p>
         </div>
 
         {/* Current Streak */}
@@ -423,17 +489,21 @@ export default function TimerPage() {
             </span>
           </div>
           <div className="flex items-end gap-1.5">
-            <span className="text-[28px] font-bold text-tertiary font-jetbrains leading-none">12</span>
+            <span className="text-[28px] font-bold text-tertiary font-jetbrains leading-none">{streakDays}</span>
             <span className="text-on-surface-variant text-[13px] mb-0.5">days</span>
           </div>
           <div className="flex items-center gap-1.5 flex-wrap">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div
-                key={i}
-                className="w-2 h-2 rounded-full"
-                style={{ background: "#ffb95f" }}
-              />
-            ))}
+            {streakDays === 0 ? (
+              <span className="text-[10px] text-on-surface-variant">Start studying to build a streak!</span>
+            ) : (
+              Array.from({ length: Math.min(streakDays, 14) }).map((_, i) => (
+                <div
+                  key={i}
+                  className="w-2 h-2 rounded-full"
+                  style={{ background: "#ffb95f" }}
+                />
+              ))
+            )}
           </div>
         </div>
       </div>
