@@ -16,16 +16,12 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 
 // Connect to local emulators in development only.
-// The flag prevents double-connection on Next.js hot reloads.
-// This block is completely skipped in production builds (NODE_ENV=production).
-let emulatorsConnected = false;
-
+// Check auth.emulatorConfig (set by the SDK itself) to avoid double-connecting on hot reload.
 if (
   typeof window !== "undefined" &&
   process.env.NODE_ENV === "development" &&
-  !emulatorsConnected
+  !(auth as unknown as { emulatorConfig: unknown }).emulatorConfig
 ) {
-  emulatorsConnected = true;
   connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
   connectFirestoreEmulator(db, "127.0.0.1", 8080);
 }

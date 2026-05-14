@@ -31,6 +31,9 @@ export default function TimerPage() {
     skip,
     setSubject,
     setPreset,
+    setDurations,
+    shortBreak,
+    longBreak,
   } = useTimerStore();
 
   const { user } = useAuth();
@@ -38,8 +41,10 @@ export default function TimerPage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [showCustomInput, setShowCustomInput] = useState(false);
-  const [customMinutes, setCustomMinutes] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
+  const [draftFocus, setDraftFocus] = useState(String(pomodoroLength));
+  const [draftShort, setDraftShort] = useState(String(shortBreak));
+  const [draftLong, setDraftLong] = useState(String(longBreak));
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Track previous timer state to detect transitions
@@ -148,12 +153,13 @@ export default function TimerPage() {
     prevModeRef.current = mode;
   }, [state, mode, saveSession, selectedSubjectName]);
 
-  const handleCustomApply = () => {
-    const mins = parseInt(customMinutes, 10);
-    if (!isNaN(mins) && mins >= 1 && mins <= 180) {
-      setPreset(mins);
-      setShowCustomInput(false);
-      setCustomMinutes("");
+  const handleSettingsApply = () => {
+    const f = parseInt(draftFocus, 10);
+    const s = parseInt(draftShort, 10);
+    const l = parseInt(draftLong, 10);
+    if (!isNaN(f) && !isNaN(s) && !isNaN(l) && f >= 1 && s >= 1 && l >= 1) {
+      setDurations(f, s, l);
+      setShowSettings(false);
     }
   };
 
@@ -399,55 +405,77 @@ export default function TimerPage() {
         </button>
       </div>
 
-      {/* Preset Pills */}
-      <div className="flex items-center gap-2 bg-surface-container-low border border-outline-variant rounded-full p-1 mt-8">
-        {[25, 45, 60].map((m) => (
-          <button
-            key={m}
-            onClick={() => setPreset(m)}
-            className={`px-5 py-2 rounded-full text-sm font-jetbrains transition-all ${
-              pomodoroLength === m
-                ? "bg-primary-container/20 text-primary border border-primary/30"
-                : "text-on-surface-variant hover:text-on-surface"
-            }`}
-          >
-            {m}m
-          </button>
-        ))}
-        <div className="w-px h-4 bg-outline-variant mx-1" />
+      {/* Quick presets + Settings toggle */}
+      <div className="flex items-center gap-2 mt-8">
+        <div className="flex items-center gap-1 bg-surface-container-low border border-outline-variant rounded-full p-1">
+          {[25, 45, 60].map((m) => (
+            <button
+              key={m}
+              onClick={() => { setPreset(m); setDraftFocus(String(m)); }}
+              className={`px-5 py-2 rounded-full text-sm font-jetbrains transition-all ${
+                pomodoroLength === m && !showSettings
+                  ? "bg-primary-container/20 text-primary border border-primary/30"
+                  : "text-on-surface-variant hover:text-on-surface"
+              }`}
+            >
+              {m}m
+            </button>
+          ))}
+        </div>
         <button
-          onClick={() => setShowCustomInput((v) => !v)}
-          className={`px-4 py-2 rounded-full text-sm transition-all ${
-            showCustomInput
-              ? "bg-primary-container/20 text-primary border border-primary/30"
-              : "text-on-surface-variant hover:text-on-surface"
+          onClick={() => { setShowSettings((v) => !v); setDraftFocus(String(pomodoroLength)); setDraftShort(String(shortBreak)); setDraftLong(String(longBreak)); }}
+          className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all ${
+            showSettings
+              ? "border-primary bg-primary/10 text-primary"
+              : "border-outline-variant text-on-surface-variant hover:text-on-surface hover:border-primary/40"
           }`}
+          title="Timer settings"
         >
-          Custom
+          <span className="material-symbols-outlined text-[18px]">settings</span>
         </button>
       </div>
 
-      {/* Custom duration input */}
-      {showCustomInput && (
-        <div className="flex items-center gap-2 bg-surface-container-low border border-outline-variant rounded-xl px-4 py-3">
-          <span className="text-on-surface-variant text-sm">Minutes:</span>
-          <input
-            type="number"
-            min={1}
-            max={180}
-            value={customMinutes}
-            onChange={(e) => setCustomMinutes(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleCustomApply()}
-            placeholder="e.g. 90"
-            className="w-20 bg-transparent border-b border-outline-variant text-on-surface text-sm font-jetbrains focus:outline-none focus:border-primary text-center"
-            autoFocus
-          />
-          <button
-            onClick={handleCustomApply}
-            className="px-3 py-1 rounded-lg bg-primary-container text-on-primary-container text-sm font-medium hover:opacity-90 active:scale-95 transition-all"
-          >
-            Set
-          </button>
+      {/* Duration Settings Panel */}
+      {showSettings && (
+        <div className="w-full max-w-sm bg-[#12121a] border border-[#252535] rounded-2xl p-5 flex flex-col gap-4">
+          <h3 className="font-grotesk font-bold text-sm text-on-surface uppercase tracking-widest">Timer Durations</h3>
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { label: "Focus", value: draftFocus, set: setDraftFocus, color: "text-primary" },
+              { label: "Short Break", value: draftShort, set: setDraftShort, color: "text-secondary" },
+              { label: "Long Break", value: draftLong, set: setDraftLong, color: "text-tertiary" },
+            ].map(({ label, value, set: setter, color }) => (
+              <div key={label} className="flex flex-col gap-1.5">
+                <label className={`text-[10px] uppercase tracking-widest font-bold ${color}`}>{label}</label>
+                <div className="flex items-center gap-1 bg-[#0e0e11] border border-outline-variant rounded-xl px-3 py-2">
+                  <input
+                    type="number"
+                    min={1}
+                    max={180}
+                    value={value}
+                    onChange={(e) => setter(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSettingsApply()}
+                    className="w-full bg-transparent text-on-surface text-sm font-jetbrains focus:outline-none text-center"
+                  />
+                  <span className="text-on-surface-variant text-[10px]">min</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2 pt-1">
+            <button
+              onClick={() => setShowSettings(false)}
+              className="flex-1 py-2 rounded-xl border border-outline-variant text-on-surface-variant text-sm hover:text-on-surface transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSettingsApply}
+              className="flex-1 py-2 rounded-xl bg-primary-container text-on-primary-container text-sm font-bold hover:opacity-90 active:scale-95 transition-all"
+            >
+              Apply
+            </button>
+          </div>
         </div>
       )}
 

@@ -37,6 +37,7 @@ interface TimerStore {
   init: () => void;
   setSubject: (id: string, name: string) => void;
   setPreset: (minutes: number) => void;
+  setDurations: (focus: number, shortB: number, longB: number) => void;
   start: () => void;
   pause: () => void;
   reset: () => void;
@@ -95,6 +96,23 @@ export const useTimerStore = create<TimerStore>()(
       },
 
       setSubject: (id, name) => set({ selectedSubjectId: id, selectedSubjectName: name }),
+
+      setDurations: (focus, shortB, longB) => {
+        clearTick();
+        const secs = focus * 60;
+        set({
+          pomodoroLength: focus,
+          shortBreak: shortB,
+          longBreak: longB,
+          secondsRemaining: secs,
+          totalSeconds: secs,
+          state: "idle",
+          mode: "focus",
+          pomodoroIndex: 0,
+          startTimestamp: null,
+          remainingWhenStarted: secs,
+        });
+      },
 
       setPreset: (minutes) => {
         clearTick();
