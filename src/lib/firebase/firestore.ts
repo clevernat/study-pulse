@@ -81,6 +81,14 @@ export async function updateGoalProgress(
   await updateDoc(doc(db, "users", uid, "goals", goalId), { currentHours });
 }
 
+export async function updateGoal(
+  uid: string,
+  goalId: string,
+  updates: Partial<Omit<Goal, "id" | "uid">>
+): Promise<void> {
+  await updateDoc(doc(db, "users", uid, "goals", goalId), updates);
+}
+
 export async function deleteGoal(uid: string, goalId: string): Promise<void> {
   await deleteDoc(doc(db, "users", uid, "goals", goalId));
 }

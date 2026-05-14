@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { getUserGoals, addGoal, deleteGoal, getUserSubjects } from "@/lib/firebase/firestore";
+import { getUserGoals, addGoal, updateGoal, deleteGoal, getUserSubjects } from "@/lib/firebase/firestore";
 import { Goal, Subject } from "@/types";
 
 const typeColor: Record<Goal["type"], string> = {
@@ -33,27 +33,52 @@ function ProgressRing({ current, target, color }: { current: number; target: num
   );
 }
 
-// ── Add Goal Modal ────────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-interface AddGoalModalProps {
-  uid: string;
-  subjects: Subject[];
-  onClose: () => void;
-  onSave: (goal: Goal) => void;
+function deadlineForType(type: Goal["type"]): string {
+  const d = new Date();
+  if (type === "daily") d.setDate(d.getDate());
+  else if (type === "weekly") d.setDate(d.getDate() + 7);
+  else d.setDate(d.getDate() + 30);
+  return d.toISOString().slice(0, 10);
 }
 
-function AddGoalModal({ uid, subjects, onClose, onSave }: AddGoalModalProps) {
-  const [title, setTitle] = useState("");
-  const [type, setType] = useState<Goal["type"]>("daily");
-  const [targetHours, setTargetHours] = useState("2");
-  const [deadline, setDeadline] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 7);
-    return d.toISOString().slice(0, 10);
-  });
-  const [subjectId, setSubjectId] = useState("");
+// ── Goal Modal (create + edit) ────────────────────────────────────────────────
+
+interface GoalModalProps {
+  uid: string;
+  subjects: Subject[];
+  editGoal?: Goal;
+  onClose: () => void;
+  onSave: (goal: Goal) => void;
+  onUpdate: (goal: Goal) => void;
+}
+
+function GoalModal({ uid, subjects, editGoal, onClose, onSave, onUpdate }: GoalModalProps) {
+  const isEdit = !!editGoal;
+
+  const [title, setTitle] = useState(editGoal?.title ?? "");
+  const [type, setType] = useState<Goal["type"]>(editGoal?.type ?? "weekly");
+  const [targetHours, setTargetHours] = useState(String(editGoal?.targetHours ?? "2"));
+  const [deadline, setDeadline] = useState(editGoal?.deadline ?? deadlineForType("weekly"));
+  const [subjectId, setSubjectId] = useState(editGoal?.subjectId ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const dateInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-update deadline when type changes (only in create mode, or if user hasn't customised)
+  const userEditedDeadline = useRef(false);
+  const handleTypeChange = (newType: Goal["type"]) => {
+    setType(newType);
+    if (!userEditedDeadline.current) {
+      setDeadline(deadlineForType(newType));
+    }
+  };
+
+  const handleDeadlineChange = (val: string) => {
+    userEditedDeadline.current = true;
+    setDeadline(val);
+  };
 
   const selectedSubject = subjects.find((s) => s.id === subjectId);
 
@@ -64,19 +89,27 @@ function AddGoalModal({ uid, subjects, onClose, onSave }: AddGoalModalProps) {
     if (isNaN(hrs) || hrs <= 0) { setError("Target hours must be a positive number."); return; }
     setSaving(true);
     try {
-      const newGoal: Omit<Goal, "id"> = {
+      const payload: Omit<Goal, "id"> = {
         uid,
         title: title.trim(),
         type,
         targetHours: hrs,
-        currentHours: 0,
+        currentHours: editGoal?.currentHours ?? 0,
         deadline,
-        completed: false,
-        createdAt: new Date().toISOString().slice(0, 10),
-        ...(selectedSubject && { subjectId: selectedSubject.id, subjectName: selectedSubject.name }),
+        completed: editGoal?.completed ?? false,
+        createdAt: editGoal?.createdAt ?? new Date().toISOString().slice(0, 10),
+        ...(selectedSubject
+          ? { subjectId: selectedSubject.id, subjectName: selectedSubject.name }
+          : { subjectId: undefined, subjectName: undefined }),
       };
-      const id = await addGoal(uid, newGoal);
-      onSave({ id, ...newGoal });
+
+      if (isEdit && editGoal) {
+        await updateGoal(uid, editGoal.id, payload);
+        onUpdate({ id: editGoal.id, ...payload });
+      } else {
+        const id = await addGoal(uid, payload);
+        onSave({ id, ...payload });
+      }
       onClose();
     } catch {
       setError("Failed to save. Please try again.");
@@ -99,7 +132,9 @@ function AddGoalModal({ uid, subjects, onClose, onSave }: AddGoalModalProps) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-6">
-          <h2 className="font-grotesk font-bold text-xl text-on-surface">New Goal</h2>
+          <h2 className="font-grotesk font-bold text-xl text-on-surface">
+            {isEdit ? "Edit Goal" : "New Goal"}
+          </h2>
           <button onClick={onClose} className="text-on-surface-variant hover:text-on-surface transition-colors">
             <span className="material-symbols-outlined">close</span>
           </button>
@@ -128,13 +163,13 @@ function AddGoalModal({ uid, subjects, onClose, onSave }: AddGoalModalProps) {
                 <button
                   key={t.value}
                   type="button"
-                  onClick={() => setType(t.value)}
-                  className={`flex-1 py-2 rounded-xl border text-sm font-bold transition-all ${
+                  onClick={() => handleTypeChange(t.value)}
+                  className={`flex-1 py-2 rounded-xl border text-sm font-bold transition-all`}
+                  style={
                     type === t.value
-                      ? "border-primary bg-primary/10 text-on-surface"
-                      : "border-outline-variant text-on-surface-variant hover:border-primary/40"
-                  }`}
-                  style={type === t.value ? { borderColor: t.color, color: t.color, background: `${t.color}10` } : {}}
+                      ? { borderColor: t.color, color: t.color, background: `${t.color}18` }
+                      : { borderColor: "#252535", color: "#8a7fa8" }
+                  }
                 >
                   {t.label}
                 </button>
@@ -159,12 +194,27 @@ function AddGoalModal({ uid, subjects, onClose, onSave }: AddGoalModalProps) {
           {/* Deadline */}
           <div>
             <label className="text-on-surface-variant text-sm font-inter mb-1.5 block">Deadline</label>
-            <input
-              type="date"
-              value={deadline}
-              onChange={(e) => setDeadline(e.target.value)}
-              className="bg-[#0e0e11] border border-outline-variant rounded-xl px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm"
-            />
+            <div className="relative">
+              <input
+                ref={dateInputRef}
+                type="date"
+                value={deadline}
+                onChange={(e) => handleDeadlineChange(e.target.value)}
+                className="bg-[#0e0e11] border border-outline-variant rounded-xl px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm pr-12"
+                style={{ colorScheme: "dark" }}
+              />
+              <button
+                type="button"
+                onClick={() => dateInputRef.current?.showPicker()}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors"
+                tabIndex={-1}
+              >
+                <span className="material-symbols-outlined text-[20px]">calendar_month</span>
+              </button>
+            </div>
+            <p className="text-xs text-on-surface-variant/60 mt-1 font-inter">
+              Auto-set for {type === "daily" ? "today" : type === "weekly" ? "7 days" : "30 days"} — or pick manually
+            </p>
           </div>
 
           {/* Optional Subject */}
@@ -175,6 +225,7 @@ function AddGoalModal({ uid, subjects, onClose, onSave }: AddGoalModalProps) {
                 value={subjectId}
                 onChange={(e) => setSubjectId(e.target.value)}
                 className="bg-[#0e0e11] border border-outline-variant rounded-xl px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm"
+                style={{ colorScheme: "dark" }}
               >
                 <option value="">— No specific subject —</option>
                 {subjects.map((s) => (
@@ -204,7 +255,7 @@ function AddGoalModal({ uid, subjects, onClose, onSave }: AddGoalModalProps) {
               className="flex-1 py-3 rounded-xl bg-primary-container text-on-primary-container font-bold font-inter text-sm hover:opacity-90 active:scale-95 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
             >
               {saving && <span className="w-4 h-4 rounded-full border-2 border-on-primary-container border-t-transparent animate-spin" />}
-              Create Goal
+              {isEdit ? "Save Changes" : "Create Goal"}
             </button>
           </div>
         </form>
@@ -223,6 +274,7 @@ export default function GoalsPage() {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<Goal | undefined>(undefined);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -231,7 +283,13 @@ export default function GoalsPage() {
     getUserSubjects(user.uid).then(setSubjects);
   }, [user]);
 
+  const openCreate = () => { setEditingGoal(undefined); setShowModal(true); };
+  const openEdit = (goal: Goal) => { setEditingGoal(goal); setShowModal(true); };
+  const closeModal = () => { setShowModal(false); setEditingGoal(undefined); };
+
   const handleSave = (goal: Goal) => setGoals((prev) => [...prev, goal]);
+  const handleUpdate = (updated: Goal) =>
+    setGoals((prev) => prev.map((g) => (g.id === updated.id ? updated : g)));
 
   const handleDelete = async (goalId: string) => {
     if (!user) return;
@@ -252,8 +310,8 @@ export default function GoalsPage() {
   const filters: FilterType[] = ["All", "daily", "weekly", "monthly"];
   const filterLabels: Record<FilterType, string> = { All: "All", daily: "Daily", weekly: "Weekly", monthly: "Monthly" };
 
-  const typeBadge = (type: Goal["type"]) =>
-    type === "daily" ? "chip" : type === "weekly" ? "chip-secondary" : "chip-tertiary";
+  const typeBadge = (t: Goal["type"]) =>
+    t === "daily" ? "chip" : t === "weekly" ? "chip-secondary" : "chip-tertiary";
 
   return (
     <div className="flex flex-col gap-8">
@@ -266,7 +324,7 @@ export default function GoalsPage() {
           </p>
         </div>
         <button
-          onClick={() => setShowModal(true)}
+          onClick={openCreate}
           className="bg-primary-container text-on-primary-container px-5 py-2.5 rounded-full font-bold font-grotesk hover:opacity-80 transition-all text-sm flex items-center gap-2"
         >
           <span className="material-symbols-outlined text-[18px]">add</span>
@@ -322,10 +380,12 @@ export default function GoalsPage() {
           <span className="material-symbols-outlined text-5xl text-on-surface-variant/40">track_changes</span>
           <div>
             <p className="text-on-surface font-grotesk font-bold text-lg">No goals yet</p>
-            <p className="text-on-surface-variant font-inter text-sm mt-1">Set a study goal to stay focused and track your progress.</p>
+            <p className="text-on-surface-variant font-inter text-sm mt-1">
+              Set a study goal to stay focused and track your progress.
+            </p>
           </div>
           <button
-            onClick={() => setShowModal(true)}
+            onClick={openCreate}
             className="mt-2 bg-primary-container text-on-primary-container px-5 py-2 rounded-full font-bold font-grotesk text-sm hover:opacity-80 transition-all"
           >
             + Create Your First Goal
@@ -340,23 +400,33 @@ export default function GoalsPage() {
 
             return (
               <div key={goal.id} className="glass-card p-6 flex flex-col gap-4">
+                {/* Top Row */}
                 <div className="flex items-center justify-between">
                   <span className={typeBadge(goal.type)}>
                     {goal.type.charAt(0).toUpperCase() + goal.type.slice(1)}
                   </span>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1">
                     {goal.completed ? (
-                      <span className="flex items-center gap-1 text-sm font-bold px-3 py-1 rounded-full bg-secondary/10 text-secondary">
+                      <span className="flex items-center gap-1 text-sm font-bold px-3 py-1 rounded-full bg-secondary/10 text-secondary mr-2">
                         <span className="material-symbols-outlined text-[16px]">check_circle</span>
                         Done
                       </span>
                     ) : (
-                      <span className="text-sm text-on-surface-variant">Due {goal.deadline}</span>
+                      <span className="text-sm text-on-surface-variant mr-2">Due {goal.deadline}</span>
                     )}
+                    {/* Edit */}
+                    <button
+                      onClick={() => openEdit(goal)}
+                      className="text-on-surface-variant hover:text-primary transition-colors p-1.5 rounded-lg hover:bg-primary/10"
+                      title="Edit goal"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">edit</span>
+                    </button>
+                    {/* Delete */}
                     <button
                       onClick={() => handleDelete(goal.id)}
                       disabled={deletingId === goal.id}
-                      className="text-on-surface-variant hover:text-error transition-colors p-1 rounded-lg hover:bg-error/10"
+                      className="text-on-surface-variant hover:text-error transition-colors p-1.5 rounded-lg hover:bg-error/10"
                       title="Delete goal"
                     >
                       <span className="material-symbols-outlined text-[18px]">
@@ -399,7 +469,14 @@ export default function GoalsPage() {
       )}
 
       {showModal && user && (
-        <AddGoalModal uid={user.uid} subjects={subjects} onClose={() => setShowModal(false)} onSave={handleSave} />
+        <GoalModal
+          uid={user.uid}
+          subjects={subjects}
+          editGoal={editingGoal}
+          onClose={closeModal}
+          onSave={handleSave}
+          onUpdate={handleUpdate}
+        />
       )}
     </div>
   );

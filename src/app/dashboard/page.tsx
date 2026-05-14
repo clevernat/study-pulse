@@ -2,6 +2,50 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+
+function LiveClock() {
+  const [now, setNow] = useState<Date | null>(null);
+
+  useEffect(() => {
+    setNow(new Date());
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  if (!now) return null;
+
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  const datePart = now.toLocaleDateString("en-US", {
+    timeZone: tz,
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  const timePart = now.toLocaleTimeString("en-US", {
+    timeZone: tz,
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
+
+  const tzAbbr = now.toLocaleTimeString("en-US", {
+    timeZone: tz,
+    timeZoneName: "short",
+  }).split(" ").pop();
+
+  return (
+    <p className="text-on-surface-variant mt-1 font-inter">
+      {datePart}
+      <span className="mx-2 text-outline-variant">·</span>
+      <span className="font-jetbrains text-sm text-primary">{timePart}</span>
+      <span className="ml-1.5 text-xs text-on-surface-variant/60">{tzAbbr}</span>
+    </p>
+  );
+}
 import { useAuth } from "@/context/AuthContext";
 import { getUserSessions, getUserSubjects } from "@/lib/firebase/firestore";
 import { computeStreak } from "@/lib/streakLogic";
@@ -249,12 +293,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   const greeting = user?.displayName ?? user?.email?.split("@")[0] ?? "Alex";
-  const today = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
 
   useEffect(() => {
     if (!user) return;
@@ -302,7 +340,7 @@ export default function DashboardPage() {
       {/* Greeting */}
       <div>
         <h1 className="font-grotesk font-bold text-3xl text-on-surface">Welcome back, {greeting}</h1>
-        <p className="text-on-surface-variant mt-1 font-inter">{today}</p>
+        <LiveClock />
       </div>
 
       {/* Stats Row */}
