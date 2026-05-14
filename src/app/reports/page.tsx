@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { getUserSessions } from "@/lib/firebase/firestore";
+import { subscribeSessions } from "@/lib/firebase/firestore";
 import type { Session } from "@/types";
 
 type Period = "This Week" | "This Month" | "Last 3 Months";
@@ -59,9 +59,11 @@ export default function ReportsPage() {
   useEffect(() => {
     if (!user) return;
     setLoading(true);
-    getUserSessions(user.uid)
-      .then((data) => setAllSessions(data))
-      .finally(() => setLoading(false));
+    const unsub = subscribeSessions(user.uid, (data) => {
+      setAllSessions(data);
+      setLoading(false);
+    });
+    return () => unsub();
   }, [user]);
 
   const sessions = useMemo(

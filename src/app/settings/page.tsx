@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { getUserSessions } from "@/lib/firebase/firestore";
+import { subscribeSessions } from "@/lib/firebase/firestore";
 import type { Session } from "@/types";
 
 interface ToggleProps {
@@ -82,9 +82,8 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (!user) return;
-    getUserSessions(user.uid).then((data) => {
-      setSessions(data);
-    });
+    const unsub = subscribeSessions(user.uid, setSessions);
+    return () => unsub();
   }, [user]);
 
   // Timer preferences

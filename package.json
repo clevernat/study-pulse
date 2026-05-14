@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "jest"
+    "test": "jest",
+    "emulators": "firebase emulators:start --import=./emulator-data --export-on-exit=./emulator-data",
+    "dev:local": "concurrently \"npm run emulators\" \"npm run dev\"",
+    "seed:local": "node scripts/seed-local.mjs"
   },
   "dependencies": {
     "date-fns": "^4.1.0",
@@ -18,6 +21,7 @@
     "zustand": "^5.0.13"
   },
   "devDependencies": {
+    "concurrently": "^9.0.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^20",
     "@types/react": "^18",

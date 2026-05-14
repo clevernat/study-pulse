@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { getUserSessions } from "@/lib/firebase/firestore";
+import { subscribeSessions } from "@/lib/firebase/firestore";
 import type { Session } from "@/types";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -69,9 +69,8 @@ export default function SessionsPage() {
 
   useEffect(() => {
     if (!user) return;
-    getUserSessions(user.uid).then((firestoreSessions) => {
-      setSessions(firestoreSessions);
-    });
+    const unsub = subscribeSessions(user.uid, setSessions);
+    return () => unsub();
   }, [user]);
 
   const todayStr = new Date().toISOString().slice(0, 10);

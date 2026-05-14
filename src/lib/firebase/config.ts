@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getAuth, connectAuthEmulator } from "firebase/auth";
+import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "demo-api-key",
@@ -14,4 +14,20 @@ const firebaseConfig = {
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// Connect to local emulators in development only.
+// The flag prevents double-connection on Next.js hot reloads.
+// This block is completely skipped in production builds (NODE_ENV=production).
+let emulatorsConnected = false;
+
+if (
+  typeof window !== "undefined" &&
+  process.env.NODE_ENV === "development" &&
+  !emulatorsConnected
+) {
+  emulatorsConnected = true;
+  connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+  connectFirestoreEmulator(db, "127.0.0.1", 8080);
+}
+
 export default app;

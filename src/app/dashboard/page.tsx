@@ -47,7 +47,7 @@ function LiveClock() {
   );
 }
 import { useAuth } from "@/context/AuthContext";
-import { getUserSessions, getUserSubjects } from "@/lib/firebase/firestore";
+import { subscribeSessions, subscribeSubjects } from "@/lib/firebase/firestore";
 import { computeStreak } from "@/lib/streakLogic";
 import type { HeatmapCell, Session, Subject } from "@/types";
 
@@ -296,14 +296,13 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([
-      getUserSessions(user.uid),
-      getUserSubjects(user.uid),
-    ]).then(([firestoreSessions, firestoreSubjects]) => {
-      setSessions(firestoreSessions);
-      setSubjects(firestoreSubjects);
+    setLoading(true);
+    const unsub1 = subscribeSessions(user.uid, (data) => {
+      setSessions(data);
       setLoading(false);
     });
+    const unsub2 = subscribeSubjects(user.uid, setSubjects);
+    return () => { unsub1(); unsub2(); };
   }, [user]);
 
   // Compute weekly hours from loaded sessions

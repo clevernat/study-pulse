@@ -9,6 +9,7 @@ import {
   query,
   orderBy,
   serverTimestamp,
+  onSnapshot,
 } from "firebase/firestore";
 import type { Subject, Session, Goal } from "@/types";
 
@@ -91,4 +92,19 @@ export async function updateGoal(
 
 export async function deleteGoal(uid: string, goalId: string): Promise<void> {
   await deleteDoc(doc(db, "users", uid, "goals", goalId));
+}
+
+export function subscribeSessions(uid: string, cb: (sessions: Session[]) => void): () => void {
+  const q = query(collection(db, "users", uid, "sessions"), orderBy("date", "desc"));
+  return onSnapshot(q, (snap) => cb(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Session))));
+}
+
+export function subscribeSubjects(uid: string, cb: (subjects: Subject[]) => void): () => void {
+  return onSnapshot(collection(db, "users", uid, "subjects"), (snap) =>
+    cb(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Subject))));
+}
+
+export function subscribeGoals(uid: string, cb: (goals: Goal[]) => void): () => void {
+  return onSnapshot(collection(db, "users", uid, "goals"), (snap) =>
+    cb(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Goal))));
 }

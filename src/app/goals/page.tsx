@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { getUserGoals, addGoal, updateGoal, deleteGoal, getUserSubjects } from "@/lib/firebase/firestore";
+import { subscribeGoals, addGoal, updateGoal, deleteGoal, subscribeSubjects } from "@/lib/firebase/firestore";
 import { Goal, Subject } from "@/types";
 
 const typeColor: Record<Goal["type"], string> = {
@@ -279,8 +279,9 @@ export default function GoalsPage() {
 
   useEffect(() => {
     if (!user) return;
-    getUserGoals(user.uid).then(setGoals);
-    getUserSubjects(user.uid).then(setSubjects);
+    const unsub1 = subscribeGoals(user.uid, setGoals);
+    const unsub2 = subscribeSubjects(user.uid, setSubjects);
+    return () => { unsub1(); unsub2(); };
   }, [user]);
 
   const openCreate = () => { setEditingGoal(undefined); setShowModal(true); };

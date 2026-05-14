@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { getUserSubjects, addSubject, deleteSubject } from "@/lib/firebase/firestore";
+import { subscribeSubjects, addSubject, deleteSubject } from "@/lib/firebase/firestore";
 import type { Subject } from "@/types";
 
 type ColorKey = Subject["color"];
@@ -217,7 +217,8 @@ export default function SubjectsPage() {
 
   useEffect(() => {
     if (!user) return;
-    getUserSubjects(user.uid).then(setSubjects);
+    const unsub = subscribeSubjects(user.uid, setSubjects);
+    return () => unsub();
   }, [user]);
 
   const handleSave = (subject: Subject) => {

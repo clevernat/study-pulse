@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useTimerStore, formatTime } from "@/store/timerStore";
 import { useAuth } from "@/context/AuthContext";
-import { getUserSubjects, getUserSessions, addSession } from "@/lib/firebase/firestore";
+import { subscribeSubjects, subscribeSessions, addSession } from "@/lib/firebase/firestore";
 import { computeStreak } from "@/lib/streakLogic";
 import { playCompletionChime, playBreakEndChime, requestNotificationPermission, sendNotification } from "@/lib/sounds";
 import type { Subject, Session } from "@/types";
@@ -53,10 +53,11 @@ export default function TimerPage() {
   useEffect(() => {
     requestNotificationPermission();
     if (!user) return;
-    getUserSubjects(user.uid).then((data) => {
+    const unsub1 = subscribeSubjects(user.uid, (data) => {
       if (data.length > 0) setSubjects(data);
     });
-    getUserSessions(user.uid).then(setSessions);
+    const unsub2 = subscribeSessions(user.uid, setSessions);
+    return () => { unsub1(); unsub2(); };
   }, [user]);
 
   // Only set preset on first mount if the timer is completely idle (not running/paused)
