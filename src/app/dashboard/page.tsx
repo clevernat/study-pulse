@@ -49,6 +49,7 @@ function LiveClock() {
 import { useAuth } from "@/context/AuthContext";
 import { subscribeSessions, subscribeSubjects } from "@/lib/firebase/firestore";
 import { computeStreak } from "@/lib/streakLogic";
+import { getColor } from "@/lib/colorPalette";
 import type { HeatmapCell, Session, Subject } from "@/types";
 
 function buildHeatmap(sessions: Session[]): HeatmapCell[] {
@@ -170,30 +171,6 @@ function Heatmap({ sessions }: { sessions: Session[] }) {
 
 // ── Active Subjects ───────────────────────────────────────────────────────────
 
-const subjectMeta: Record<
-  Subject["color"],
-  { iconBg: string; iconText: string; chipClass: string; barClass: string }
-> = {
-  primary: {
-    iconBg: "bg-primary-container/20",
-    iconText: "text-primary",
-    chipClass: "chip",
-    barClass: "bg-primary",
-  },
-  secondary: {
-    iconBg: "bg-secondary-container/20",
-    iconText: "text-secondary",
-    chipClass: "chip-secondary",
-    barClass: "bg-secondary",
-  },
-  tertiary: {
-    iconBg: "bg-tertiary-container/20",
-    iconText: "text-tertiary",
-    chipClass: "chip-tertiary",
-    barClass: "bg-tertiary",
-  },
-};
-
 function ActiveSubjects({ subjects }: { subjects: Subject[] }) {
   const displayed = subjects.slice(0, 3);
   return (
@@ -206,17 +183,17 @@ function ActiveSubjects({ subjects }: { subjects: Subject[] }) {
       </div>
       <div className="flex flex-col gap-3">
         {displayed.map((s) => {
-          const meta = subjectMeta[s.color];
+          const c = getColor(s.color);
           const hoursThisMonth = (s.totalMinutes / 60).toFixed(1);
           return (
             <div key={s.id} className="glass-card p-4 flex items-center gap-4">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${meta.iconBg}`}>
-                <span className={`material-symbols-outlined text-xl ${meta.iconText}`}>{s.icon}</span>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: c.bg }}>
+                <span className="material-symbols-outlined text-xl" style={{ color: c.text }}>{s.icon}</span>
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-grotesk font-bold text-sm text-on-surface truncate">{s.name}</span>
-                  <span className={meta.chipClass}>{s.category}</span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ background: c.chip, color: c.chipText }}>{s.category}</span>
                 </div>
                 <span className="text-xs text-on-surface-variant">{hoursThisMonth}h total</span>
               </div>

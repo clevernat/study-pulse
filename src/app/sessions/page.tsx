@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { subscribeSessions } from "@/lib/firebase/firestore";
+import { getColor } from "@/lib/colorPalette";
 import type { Session } from "@/types";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -19,12 +20,8 @@ function focusColorClass(score: number): string {
   return "text-error bg-error/10 border-error/30";
 }
 
-function dotColorClass(color: Session["subjectColor"]): string {
-  switch (color) {
-    case "primary":   return "bg-primary";
-    case "secondary": return "bg-secondary";
-    case "tertiary":  return "bg-tertiary";
-  }
+function dotHex(color: string): string {
+  return getColor(color).dot;
 }
 
 // ── Filter logic ──────────────────────────────────────────────────────────────
@@ -161,7 +158,7 @@ export default function SessionsPage() {
               {/* Session cards */}
               {daySessions.map((session) => {
                 const subject = subjectById.get(session.subjectId);
-                const dotClass = dotColorClass(session.subjectColor);
+                const dotHexColor = dotHex(session.subjectColor);
                 const scoreClasses = focusColorClass(session.focusScore);
 
                 return (
@@ -171,7 +168,7 @@ export default function SessionsPage() {
                   >
                     {/* Left */}
                     <div className="flex items-center gap-4 flex-1 min-w-0">
-                      <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${dotClass}`} />
+                      <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: dotHexColor }} />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-inter font-semibold text-sm text-on-surface">

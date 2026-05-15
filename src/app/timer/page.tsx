@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useTimerStore, formatTime } from "@/store/timerStore";
+import { getColor } from "@/lib/colorPalette";
 import { useAuth } from "@/context/AuthContext";
 import { subscribeSubjects, subscribeSessions, addSession } from "@/lib/firebase/firestore";
 import { computeStreak } from "@/lib/streakLogic";
@@ -103,7 +104,7 @@ export default function TimerPage() {
       uid: user.uid,
       subjectId: currentSubject?.id ?? "unknown",
       subjectName: currentSubject?.name ?? selectedSubjectName,
-      subjectColor: (currentSubject?.color ?? "primary") as Session["subjectColor"],
+      subjectColor: currentSubject?.color ?? "violet",
       durationMinutes,
       focusScore: 85,
       pomodoroCount: 1,
@@ -244,14 +245,8 @@ export default function TimerPage() {
                   onClick={() => handleSubjectSelect(subject)}
                 >
                   <span
-                    className={`material-symbols-outlined text-[18px] ${
-                      subject.color === "primary"
-                        ? "text-primary"
-                        : subject.color === "secondary"
-                        ? "text-secondary"
-                        : "text-tertiary"
-                    }`}
-                    style={{ fontFamily: "'Material Symbols Outlined'" }}
+                    className="material-symbols-outlined text-[18px]"
+                    style={{ fontFamily: "'Material Symbols Outlined'", color: getColor(subject.color).text }}
                   >
                     {subject.icon}
                   </span>

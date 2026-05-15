@@ -48,7 +48,7 @@ export default function LogSessionModal({ onClose, onSaved }: Props) {
         uid: user.uid,
         subjectId: selectedSubject?.id ?? subjectId ?? "manual",
         subjectName: selectedSubject?.name ?? selectedSubjectName ?? "General",
-        subjectColor: (selectedSubject?.color ?? "primary") as Session["subjectColor"],
+        subjectColor: selectedSubject?.color ?? "violet",
         durationMinutes: totalMinutes,
         focusScore: score,
         pomodoroCount: Math.floor(totalMinutes / 25),

@@ -5,41 +5,48 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { subscribeSubjects, addSubject, deleteSubject } from "@/lib/firebase/firestore";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import { COLOR_PALETTE, getColor } from "@/lib/colorPalette";
 import type { Subject } from "@/types";
 
-type ColorKey = Subject["color"];
-
-const colorMap: Record<ColorKey, { iconBg: string; iconText: string; chipClass: string; barFill: string }> = {
-  primary: { iconBg: "bg-primary-container/20", iconText: "text-primary", chipClass: "chip", barFill: "bg-primary" },
-  secondary: { iconBg: "bg-secondary-container/20", iconText: "text-secondary", chipClass: "chip-secondary", barFill: "bg-secondary" },
-  tertiary: { iconBg: "bg-tertiary-container/20", iconText: "text-tertiary", chipClass: "chip-tertiary", barFill: "bg-tertiary" },
-};
-
 const ICON_OPTIONS = [
-  { value: "school", label: "School" },
-  { value: "code", label: "Code" },
-  { value: "functions", label: "Math" },
-  { value: "language", label: "Language" },
-  { value: "history_edu", label: "History" },
-  { value: "science", label: "Science" },
-  { value: "biotech", label: "Biology" },
-  { value: "psychology", label: "Psychology" },
-  { value: "calculate", label: "Statistics" },
-  { value: "menu_book", label: "Literature" },
-  { value: "computer", label: "Computer" },
-  { value: "thermostat", label: "Physics" },
-  { value: "grid_on", label: "Algebra" },
-  { value: "bar_chart", label: "Economics" },
-  { value: "public", label: "Geography" },
+  { value: "school",           label: "School" },
+  { value: "code",             label: "Code" },
+  { value: "functions",        label: "Math" },
+  { value: "language",         label: "Language" },
+  { value: "history_edu",      label: "History" },
+  { value: "science",          label: "Science" },
+  { value: "biotech",          label: "Biology" },
+  { value: "psychology",       label: "Psychology" },
+  { value: "calculate",        label: "Statistics" },
+  { value: "menu_book",        label: "Literature" },
+  { value: "computer",         label: "Computer" },
+  { value: "thermostat",       label: "Physics" },
+  { value: "grid_on",          label: "Algebra" },
+  { value: "bar_chart",        label: "Economics" },
+  { value: "public",           label: "Geography" },
+  { value: "brush",            label: "Art" },
+  { value: "music_note",       label: "Music" },
+  { value: "sports_soccer",    label: "Sports" },
+  { value: "favorite",         label: "Health" },
+  { value: "eco",              label: "Environment" },
+  { value: "business_center",  label: "Business" },
+  { value: "gavel",            label: "Law" },
+  { value: "architecture",     label: "Design" },
+  { value: "engineering",      label: "Engineering" },
+  { value: "medical_services", label: "Medicine" },
+  { value: "palette",          label: "Creative" },
+  { value: "movie",            label: "Film" },
+  { value: "translate",        label: "Linguistics" },
+  { value: "analytics",        label: "Analytics" },
+  { value: "hub",              label: "Networking" },
+  { value: "robot",            label: "AI / ML" },
+  { value: "finance",          label: "Finance" },
+  { value: "flight",           label: "Aerospace" },
+  { value: "agriculture",      label: "Agriculture" },
+  { value: "sports_esports",   label: "Gaming" },
 ];
 
-const CATEGORY_OPTIONS = ["STEM", "CS", "MATH", "LANG", "HUMN", "SCI", "ART", "BIZ", "MED", "OTHER"];
-
-const COLOR_OPTIONS: { value: ColorKey; label: string; dot: string }[] = [
-  { value: "primary", label: "Violet", dot: "bg-primary" },
-  { value: "secondary", label: "Emerald", dot: "bg-secondary" },
-  { value: "tertiary", label: "Amber", dot: "bg-tertiary" },
-];
+const CATEGORY_OPTIONS = ["STEM", "CS", "MATH", "LANG", "HUMN", "SCI", "ART", "BIZ", "MED", "LAW", "ENG", "MUS", "SPORT", "OTHER"];
 
 // ── Add Subject Modal ─────────────────────────────────────────────────────────
 
@@ -52,14 +59,18 @@ interface AddSubjectModalProps {
 function AddSubjectModal({ onClose, onSave, uid }: AddSubjectModalProps) {
   const [name, setName] = useState("");
   const [category, setCategory] = useState("STEM");
-  const [color, setColor] = useState<ColorKey>("primary");
+  const [customCategory, setCustomCategory] = useState("");
+  const [color, setColor] = useState("violet");
   const [icon, setIcon] = useState("school");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  const effectiveCategory = category === "OTHER" ? (customCategory.trim().toUpperCase() || "OTHER") : category;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) { setError("Subject name is required."); return; }
+    if (category === "OTHER" && !customCategory.trim()) { setError("Please enter a custom category."); return; }
     setSaving(true);
     try {
       const newSubject: Omit<Subject, "id"> = {
@@ -67,7 +78,7 @@ function AddSubjectModal({ onClose, onSave, uid }: AddSubjectModalProps) {
         name: name.trim(),
         icon,
         color,
-        category,
+        category: effectiveCategory,
         totalMinutes: 0,
         sessionCount: 0,
         createdAt: new Date().toISOString().slice(0, 10),
@@ -82,21 +93,25 @@ function AddSubjectModal({ onClose, onSave, uid }: AddSubjectModalProps) {
     }
   };
 
+  const palette = getColor(color);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
       <div
-        className="relative bg-[#12121a] border border-[#252535] rounded-2xl p-8 w-full max-w-md shadow-2xl"
+        className="relative bg-[#12121a] border border-[#252535] rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-6">
+        {/* Header */}
+        <div className="flex items-center justify-between px-7 pt-7 pb-4 flex-shrink-0">
           <h2 className="font-grotesk font-bold text-xl text-on-surface">Add Subject</h2>
           <button onClick={onClose} className="text-on-surface-variant hover:text-on-surface transition-colors">
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        {/* Scrollable body */}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5 px-7 pb-7 overflow-y-auto">
           {/* Name */}
           <div>
             <label className="text-on-surface-variant text-sm font-inter mb-1.5 block">Subject Name *</label>
@@ -130,25 +145,36 @@ function AddSubjectModal({ onClose, onSave, uid }: AddSubjectModalProps) {
                 </button>
               ))}
             </div>
+            {/* Custom category input when OTHER is selected */}
+            {category === "OTHER" && (
+              <input
+                type="text"
+                value={customCategory}
+                onChange={(e) => setCustomCategory(e.target.value)}
+                placeholder="Type your category name…"
+                maxLength={20}
+                className="mt-3 bg-[#0e0e11] border border-primary/40 rounded-xl px-4 py-2.5 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm placeholder:text-on-surface-variant/40"
+                autoFocus
+              />
+            )}
           </div>
 
           {/* Color */}
           <div>
-            <label className="text-on-surface-variant text-sm font-inter mb-1.5 block">Color</label>
-            <div className="flex gap-3">
-              {COLOR_OPTIONS.map((c) => (
+            <label className="text-on-surface-variant text-sm font-inter mb-2 block">Color</label>
+            <div className="grid grid-cols-5 gap-2">
+              {Object.entries(COLOR_PALETTE).map(([key, c]) => (
                 <button
-                  key={c.value}
+                  key={key}
                   type="button"
-                  onClick={() => setColor(c.value)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all text-sm font-inter ${
-                    color === c.value
-                      ? "border-primary bg-primary/10 text-on-surface"
-                      : "border-outline-variant text-on-surface-variant hover:border-primary/40"
+                  onClick={() => setColor(key)}
+                  style={color === key ? { borderColor: c.dot, background: c.bg } : {}}
+                  className={`flex items-center gap-2 px-2 py-2 rounded-xl border text-xs font-inter transition-all justify-center ${
+                    color === key ? "" : "border-outline-variant text-on-surface-variant hover:border-outline"
                   }`}
                 >
-                  <div className={`w-3 h-3 rounded-full ${c.dot}`} />
-                  {c.label}
+                  <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: c.dot }} />
+                  <span style={color === key ? { color: c.text } : {}} className="truncate">{c.label}</span>
                 </button>
               ))}
             </div>
@@ -156,24 +182,23 @@ function AddSubjectModal({ onClose, onSave, uid }: AddSubjectModalProps) {
 
           {/* Icon */}
           <div>
-            <label className="text-on-surface-variant text-sm font-inter mb-1.5 block">Icon</label>
-            <div className="grid grid-cols-5 gap-2">
+            <label className="text-on-surface-variant text-sm font-inter mb-2 block">Icon</label>
+            <div className="grid grid-cols-6 gap-1.5">
               {ICON_OPTIONS.map((ic) => (
                 <button
                   key={ic.value}
                   type="button"
                   title={ic.label}
                   onClick={() => setIcon(ic.value)}
+                  style={icon === ic.value ? { borderColor: palette.dot, background: palette.bg } : {}}
                   className={`flex flex-col items-center gap-1 p-2 rounded-xl border transition-all ${
-                    icon === ic.value
-                      ? "border-primary bg-primary/10"
-                      : "border-outline-variant hover:border-primary/40"
+                    icon === ic.value ? "" : "border-outline-variant hover:border-outline"
                   }`}
                 >
-                  <span className={`material-symbols-outlined text-[20px] ${colorMap[color].iconText}`}>
+                  <span className="material-symbols-outlined text-[20px]" style={{ color: palette.text }}>
                     {ic.value}
                   </span>
-                  <span className="text-[9px] text-on-surface-variant truncate w-full text-center">{ic.label}</span>
+                  <span className="text-[8px] text-on-surface-variant truncate w-full text-center">{ic.label}</span>
                 </button>
               ))}
             </div>
@@ -279,15 +304,15 @@ export default function SubjectsPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {subjects.map((subject) => {
-            const meta = colorMap[subject.color];
+            const c = getColor(subject.color);
             const hours = (subject.totalMinutes / 60).toFixed(1);
             const pct = Math.round((subject.totalMinutes / maxMinutes) * 100);
 
             return (
               <div key={subject.id} className="glass-card-hover p-6 flex flex-col gap-4">
                 <div className="flex items-center justify-between">
-                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${meta.iconBg}`}>
-                    <span className={`material-symbols-outlined text-xl ${meta.iconText}`}>{subject.icon}</span>
+                  <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: c.bg }}>
+                    <span className="material-symbols-outlined text-xl" style={{ color: c.text }}>{subject.icon}</span>
                   </div>
                   <button
                     onClick={() => setConfirmDeleteId(subject.id)}
@@ -301,17 +326,18 @@ export default function SubjectsPage() {
                   </button>
                 </div>
 
-                <div>
-                  <h2 className="font-grotesk font-bold text-[18px] text-on-surface leading-tight">{subject.name}</h2>
-                </div>
+                <h2 className="font-grotesk font-bold text-[18px] text-on-surface leading-tight">{subject.name}</h2>
 
-                <div>
-                  <span className={meta.chipClass}>{subject.category}</span>
-                </div>
+                <span
+                  className="self-start px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider"
+                  style={{ background: c.chip, color: c.chipText }}
+                >
+                  {subject.category}
+                </span>
 
                 <div className="flex items-end justify-between">
                   <div>
-                    <div className={`font-jetbrains font-semibold text-[20px] ${meta.iconText}`}>{hours}h</div>
+                    <div className="font-jetbrains font-semibold text-[20px]" style={{ color: c.text }}>{hours}h</div>
                     <div className="text-xs text-on-surface-variant mt-0.5">Total Hours</div>
                   </div>
                   <div className="text-right">
@@ -321,10 +347,10 @@ export default function SubjectsPage() {
                 </div>
 
                 <div className="progress-track">
-                  <div className={`progress-fill ${meta.barFill}`} style={{ width: `${pct}%` }} />
+                  <div className="progress-fill" style={{ width: `${pct}%`, background: c.bar }} />
                 </div>
 
-                <Link href="/timer" className={`text-sm font-semibold font-inter ${meta.iconText} hover:opacity-80 transition-opacity mt-1`}>
+                <Link href="/timer" className="text-sm font-semibold font-inter hover:opacity-80 transition-opacity mt-1" style={{ color: c.text }}>
                   Study Now →
                 </Link>
               </div>

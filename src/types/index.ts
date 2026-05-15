@@ -25,7 +25,7 @@ export interface Subject {
   uid: string;
   name: string;
   icon: string;
-  color: "primary" | "secondary" | "tertiary";
+  color: string;
   category: string;
   totalMinutes: number;
   sessionCount: number;
@@ -37,7 +37,7 @@ export interface Session {
   uid: string;
   subjectId: string;
   subjectName: string;
-  subjectColor: "primary" | "secondary" | "tertiary";
+  subjectColor: string;
   durationMinutes: number;
   focusScore: number;
   pomodoroCount: number;
