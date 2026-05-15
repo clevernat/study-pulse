@@ -41,7 +41,6 @@ export default function TimerPage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
   const [draftFocus, setDraftFocus] = useState(String(pomodoroLength));
   const [draftShort, setDraftShort] = useState(String(shortBreak));
   const [draftLong, setDraftLong] = useState(String(longBreak));
@@ -153,15 +152,6 @@ export default function TimerPage() {
     prevModeRef.current = mode;
   }, [state, mode, saveSession, selectedSubjectName]);
 
-  const handleSettingsApply = () => {
-    const f = parseInt(draftFocus, 10);
-    const s = parseInt(draftShort, 10);
-    const l = parseInt(draftLong, 10);
-    if (!isNaN(f) && !isNaN(s) && !isNaN(l) && f >= 1 && s >= 1 && l >= 1) {
-      setDurations(f, s, l);
-      setShowSettings(false);
-    }
-  };
 
   // Computed stats from real sessions
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -405,79 +395,136 @@ export default function TimerPage() {
         </button>
       </div>
 
-      {/* Quick presets + Settings toggle */}
-      <div className="flex items-center gap-2 mt-8">
-        <div className="flex items-center gap-1 bg-surface-container-low border border-outline-variant rounded-full p-1">
-          {[25, 45, 60].map((m) => (
-            <button
-              key={m}
-              onClick={() => { setPreset(m); setDraftFocus(String(m)); }}
-              className={`px-5 py-2 rounded-full text-sm font-jetbrains transition-all ${
-                pomodoroLength === m && !showSettings
-                  ? "bg-primary-container/20 text-primary border border-primary/30"
-                  : "text-on-surface-variant hover:text-on-surface"
-              }`}
-            >
-              {m}m
-            </button>
-          ))}
-        </div>
-        <button
-          onClick={() => { setShowSettings((v) => !v); setDraftFocus(String(pomodoroLength)); setDraftShort(String(shortBreak)); setDraftLong(String(longBreak)); }}
-          className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all ${
-            showSettings
-              ? "border-primary bg-primary/10 text-primary"
-              : "border-outline-variant text-on-surface-variant hover:text-on-surface hover:border-primary/40"
-          }`}
-          title="Timer settings"
-        >
-          <span className="material-symbols-outlined text-[18px]">settings</span>
-        </button>
-      </div>
+      {/* Duration Controls — always visible */}
+      <div className="w-full max-w-2xl mt-6 bg-[#12121a] border border-[#252535] rounded-2xl overflow-hidden">
+        <div className="grid grid-cols-3 divide-x divide-[#252535]">
+          {/* Focus */}
+          <div className="p-4 flex flex-col gap-3">
+            <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-primary">Focus</span>
+            <div className="flex flex-wrap gap-1.5">
+              {[25, 45, 60].map((m) => (
+                <button
+                  key={m}
+                  onClick={() => { setDurations(m, shortBreak, longBreak); setDraftFocus(String(m)); }}
+                  className={`px-3 py-1 rounded-full text-xs font-jetbrains transition-all ${
+                    pomodoroLength === m
+                      ? "bg-primary/20 text-primary border border-primary/40"
+                      : "border border-outline-variant text-on-surface-variant hover:text-primary hover:border-primary/40"
+                  }`}
+                >
+                  {m}m
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2 bg-[#0e0e11] border border-outline-variant rounded-xl px-3 py-2">
+              <input
+                type="number"
+                min={1}
+                max={180}
+                value={draftFocus}
+                onChange={(e) => setDraftFocus(e.target.value)}
+                onBlur={() => {
+                  const v = parseInt(draftFocus, 10);
+                  if (!isNaN(v) && v >= 1) setDurations(v, shortBreak, longBreak);
+                  else setDraftFocus(String(pomodoroLength));
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    const v = parseInt(draftFocus, 10);
+                    if (!isNaN(v) && v >= 1) setDurations(v, shortBreak, longBreak);
+                  }
+                }}
+                className="w-full bg-transparent text-on-surface text-sm font-jetbrains focus:outline-none text-center"
+              />
+              <span className="text-on-surface-variant text-[10px] shrink-0">min</span>
+            </div>
+          </div>
 
-      {/* Duration Settings Panel */}
-      {showSettings && (
-        <div className="w-full max-w-sm bg-[#12121a] border border-[#252535] rounded-2xl p-5 flex flex-col gap-4">
-          <h3 className="font-grotesk font-bold text-sm text-on-surface uppercase tracking-widest">Timer Durations</h3>
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { label: "Focus", value: draftFocus, set: setDraftFocus, color: "text-primary" },
-              { label: "Short Break", value: draftShort, set: setDraftShort, color: "text-secondary" },
-              { label: "Long Break", value: draftLong, set: setDraftLong, color: "text-tertiary" },
-            ].map(({ label, value, set: setter, color }) => (
-              <div key={label} className="flex flex-col gap-1.5">
-                <label className={`text-[10px] uppercase tracking-widest font-bold ${color}`}>{label}</label>
-                <div className="flex items-center gap-1 bg-[#0e0e11] border border-outline-variant rounded-xl px-3 py-2">
-                  <input
-                    type="number"
-                    min={1}
-                    max={180}
-                    value={value}
-                    onChange={(e) => setter(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSettingsApply()}
-                    className="w-full bg-transparent text-on-surface text-sm font-jetbrains focus:outline-none text-center"
-                  />
-                  <span className="text-on-surface-variant text-[10px]">min</span>
-                </div>
-              </div>
-            ))}
+          {/* Short Break */}
+          <div className="p-4 flex flex-col gap-3">
+            <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-secondary">Short Break</span>
+            <div className="flex flex-wrap gap-1.5">
+              {[5, 10, 15].map((m) => (
+                <button
+                  key={m}
+                  onClick={() => { setDurations(pomodoroLength, m, longBreak); setDraftShort(String(m)); }}
+                  className={`px-3 py-1 rounded-full text-xs font-jetbrains transition-all ${
+                    shortBreak === m
+                      ? "bg-secondary/20 text-secondary border border-secondary/40"
+                      : "border border-outline-variant text-on-surface-variant hover:text-secondary hover:border-secondary/40"
+                  }`}
+                >
+                  {m}m
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2 bg-[#0e0e11] border border-outline-variant rounded-xl px-3 py-2">
+              <input
+                type="number"
+                min={1}
+                max={60}
+                value={draftShort}
+                onChange={(e) => setDraftShort(e.target.value)}
+                onBlur={() => {
+                  const v = parseInt(draftShort, 10);
+                  if (!isNaN(v) && v >= 1) setDurations(pomodoroLength, v, longBreak);
+                  else setDraftShort(String(shortBreak));
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    const v = parseInt(draftShort, 10);
+                    if (!isNaN(v) && v >= 1) setDurations(pomodoroLength, v, longBreak);
+                  }
+                }}
+                className="w-full bg-transparent text-on-surface text-sm font-jetbrains focus:outline-none text-center"
+              />
+              <span className="text-on-surface-variant text-[10px] shrink-0">min</span>
+            </div>
           </div>
-          <div className="flex gap-2 pt-1">
-            <button
-              onClick={() => setShowSettings(false)}
-              className="flex-1 py-2 rounded-xl border border-outline-variant text-on-surface-variant text-sm hover:text-on-surface transition-all"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSettingsApply}
-              className="flex-1 py-2 rounded-xl bg-primary-container text-on-primary-container text-sm font-bold hover:opacity-90 active:scale-95 transition-all"
-            >
-              Apply
-            </button>
+
+          {/* Long Break */}
+          <div className="p-4 flex flex-col gap-3">
+            <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-tertiary">Long Break</span>
+            <div className="flex flex-wrap gap-1.5">
+              {[15, 20, 30].map((m) => (
+                <button
+                  key={m}
+                  onClick={() => { setDurations(pomodoroLength, shortBreak, m); setDraftLong(String(m)); }}
+                  className={`px-3 py-1 rounded-full text-xs font-jetbrains transition-all ${
+                    longBreak === m
+                      ? "bg-tertiary/20 text-tertiary border border-tertiary/40"
+                      : "border border-outline-variant text-on-surface-variant hover:text-tertiary hover:border-tertiary/40"
+                  }`}
+                >
+                  {m}m
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2 bg-[#0e0e11] border border-outline-variant rounded-xl px-3 py-2">
+              <input
+                type="number"
+                min={1}
+                max={120}
+                value={draftLong}
+                onChange={(e) => setDraftLong(e.target.value)}
+                onBlur={() => {
+                  const v = parseInt(draftLong, 10);
+                  if (!isNaN(v) && v >= 1) setDurations(pomodoroLength, shortBreak, v);
+                  else setDraftLong(String(longBreak));
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    const v = parseInt(draftLong, 10);
+                    if (!isNaN(v) && v >= 1) setDurations(pomodoroLength, shortBreak, v);
+                  }
+                }}
+                className="w-full bg-transparent text-on-surface text-sm font-jetbrains focus:outline-none text-center"
+              />
+              <span className="text-on-surface-variant text-[10px] shrink-0">min</span>
+            </div>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Session Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-2xl mt-4">
