@@ -7,6 +7,7 @@ import { subscribeTimerState, subscribeUserPreferences } from "@/lib/firebase/fi
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
 import FloatingTimer from "./FloatingTimer";
+import TimerSync from "./TimerSync";
 
 export default function ClientShell({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -127,6 +128,7 @@ export default function ClientShell({ children }: { children: React.ReactNode })
         </main>
       </div>
       <FloatingTimer />
+      <TimerSync />
     </div>
   );
 }

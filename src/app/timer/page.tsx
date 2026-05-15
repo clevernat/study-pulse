@@ -1,33 +1,14 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback, Suspense } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTimerStore, formatTime } from "@/store/timerStore";
 import { getColor } from "@/lib/colorPalette";
 import { useAuth } from "@/context/AuthContext";
-import { subscribeSubjects, subscribeSessions, addSession, saveTimerState, subscribeTimerState } from "@/lib/firebase/firestore";
+import { subscribeSubjects, subscribeSessions } from "@/lib/firebase/firestore";
 import { computeStreak } from "@/lib/streakLogic";
-import { playCompletionChime, playBreakEndChime, requestNotificationPermission, sendNotification } from "@/lib/sounds";
 import { localDateStr } from "@/lib/dateUtils";
 import type { Subject, Session } from "@/types";
-
-// Unique ID for this browser tab — persisted in sessionStorage so that navigating
-// away and back to this page reuses the same ID. This prevents Firestore's
-// subscribeTimerState from calling init() on remount when it sees its OWN earlier
-// write with a now-different (freshly generated) DEVICE_ID.
-const DEVICE_ID = (() => {
-  if (typeof sessionStorage === "undefined") {
-    return Math.random().toString(36).slice(2);
-  }
-  const stored = sessionStorage.getItem("sp-device-id");
-  if (stored) return stored;
-  const id =
-    typeof crypto !== "undefined" && crypto.randomUUID
-      ? crypto.randomUUID()
-      : Math.random().toString(36).slice(2);
-  sessionStorage.setItem("sp-device-id", id);
-  return id;
-})();
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const MODE_LABELS: Record<string, string> = {
@@ -108,18 +89,12 @@ function TimerPageInner() {
     pause,
     reset,
     skip,
-    init,
     setSubject,
     setDurations,
     setTotalPomodoros,
     shortBreak,
     longBreak,
   } = useTimerStore();
-
-  // True once Zustand has finished reading from localStorage.
-  // Until then, store values are just the hardcoded defaults (state:"idle", mode:"focus")
-  // and we must not treat them as real timer state.
-  const hasHydrated = useTimerStore((s) => s._hasHydrated);
 
   const { user } = useAuth();
   const searchParams = useSearchParams();
@@ -132,35 +107,6 @@ function TimerPageInner() {
   const [draftLong, setDraftLong] = useState(String(longBreak));
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Track previous timer state to detect transitions.
-  // Initialize from current Zustand state so re-mounting the page (navigating away
-  // and back) while the timer is running does NOT trigger a false "fresh focus start".
-  const prevStateRef = useRef<string>(state);
-  // Track start time (HH:MM string) when focus session begins (for display)
-  const startTimeRef = useRef<string | null>(null);
-  // Track the planned totalSeconds at start of focus session
-  const sessionTotalSecondsRef = useRef<number>(totalSeconds);
-
-  // ── Pause-aware focus time tracking ──────────────────────────────────────
-  // Wall-clock ms when the current focus phase started
-  const focusStartMsRef = useRef<number | null>(null);
-  // Total ms spent paused during the current focus phase
-  const focusPausedMsRef = useRef<number>(0);
-  // Wall-clock ms when the current pause started (null if not paused)
-  const focusPauseStartMsRef = useRef<number | null>(null);
-
-  // Helper: reset all focus-time tracking refs for a brand-new focus phase
-  function resetFocusTracking() {
-    focusStartMsRef.current = Date.now();
-    focusPausedMsRef.current = 0;
-    focusPauseStartMsRef.current = null;
-  }
-
-  // Set to true when we apply a remote Firestore sync — prevents duplicate session saves
-  // and prevents mis-capturing focusStart from a remote-triggered state change.
-  // Reset at the end of prevModeRef effect (which always runs after prevStateRef effect).
-  const applyingRemoteRef = useRef<boolean>(false);
-
   // If arriving from "Study Now", auto-select the subject from URL params
   useEffect(() => {
     const id = searchParams.get("subjectId");
@@ -171,14 +117,12 @@ function TimerPageInner() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Load subjects and sessions; request notification permission
+  // Load subjects and sessions for the dropdown and stats.
+  // Session saving, cross-device sync, and notifications all live in TimerSync.
   useEffect(() => {
-    requestNotificationPermission();
     if (!user) return;
     const unsub1 = subscribeSubjects(user.uid, (data) => {
       setSubjects(data);
-      // If the persisted selected subject no longer exists (e.g. after data reset),
-      // clear it so the timer doesn't show a ghost subject
       if (data.length === 0) {
         setSubject("", "Select a Subject");
       } else {
@@ -192,35 +136,6 @@ function TimerPageInner() {
     return () => { unsub1(); unsub2(); };
   }, [user]);
 
-  // ── Hydration sync ────────────────────────────────────────────────────────
-  // After Zustand reads localStorage, sync prevStateRef/prevModeRef to the REAL
-  // current state so the tracking effects below don't misfire.
-  // This effect is defined BEFORE the tracking effects so React runs it first
-  // in the same commit — guaranteeing the refs are correct before they're read.
-  useEffect(() => {
-    if (!hasHydrated) return;
-    const s = useTimerStore.getState();
-    prevStateRef.current = s.state;
-    prevModeRef.current = s.mode;
-    // Restore focus-time tracking for a timer that was already running before
-    // the page loaded (navigation or refresh). Use startTimestamp as the best
-    // approximation of when the current focus phase began.
-    if (s.state === "running" && s.mode === "focus" && s.startTimestamp !== null) {
-      if (focusStartMsRef.current === null) {
-        focusStartMsRef.current = s.startTimestamp;
-        focusPausedMsRef.current = 0; // can't know pre-load pauses; exclude them
-        sessionTotalSecondsRef.current = s.totalSeconds;
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasHydrated]);
-
-  // NOTE: No "preset on mount" effect here.
-  // The Zustand store (persisted to localStorage) already holds secondsRemaining,
-  // pomodoroLength, and all other timer state correctly. Calling setPreset() on mount
-  // would reset the timer to full duration whenever the user navigates back to this page
-  // while the timer is running. The store + init() in ClientShell handle restoration.
-
   // Close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -231,181 +146,6 @@ function TimerPageInner() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  // Capture start time and manage pause-aware focus tracking.
-  // Skip when applying remote state — the other device owns that session.
-  useEffect(() => {
-    if (!applyingRemoteRef.current && mode === "focus") {
-      if (state === "running" && prevStateRef.current === "paused") {
-        // ── Resuming from pause: stop the pause timer, accumulate paused ms ──
-        if (focusPauseStartMsRef.current !== null) {
-          focusPausedMsRef.current += Date.now() - focusPauseStartMsRef.current;
-          focusPauseStartMsRef.current = null;
-        }
-      } else if (state === "running" && prevStateRef.current !== "running") {
-        // ── Fresh focus start (from idle) ─────────────────────────────────────
-        startTimeRef.current = new Date().toTimeString().slice(0, 5);
-        sessionTotalSecondsRef.current = totalSeconds;
-        resetFocusTracking();
-      } else if (state === "paused" && prevStateRef.current === "running") {
-        // ── Pausing: record when the pause started ────────────────────────────
-        focusPauseStartMsRef.current = Date.now();
-      }
-    }
-    prevStateRef.current = state;
-    // Note: do NOT reset applyingRemoteRef here — prevModeRef effect runs after this
-    // and also needs to check it. It will reset it.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, mode]);
-
-  // Save session when a focus pomodoro completes
-  const saveSession = useCallback(async () => {
-    if (!user) return;
-    const currentSubject = subjects.find((s) => s.id === selectedSubjectId);
-    const now = new Date();
-
-    // plannedSecs: the configured focus duration for this phase
-    const plannedSecs = sessionTotalSecondsRef.current;
-
-    // Compute actual focus-only time, excluding ALL pause time:
-    //   totalElapsedMs = wall-clock from focus start to now
-    //   pausedMs       = ms spent paused (accumulated across all pauses)
-    //   studiedMs      = elapsed − paused
-    // Cap at plannedSecs so break time / any rounding never inflates the duration.
-    const totalElapsedMs = focusStartMsRef.current ? Date.now() - focusStartMsRef.current : plannedSecs * 1000;
-    const pausedMs = focusPausedMsRef.current; // pauses fully inside focus only
-    const studiedSecs = Math.min(Math.max(0, (totalElapsedMs - pausedMs) / 1000), plannedSecs);
-    const durationMinutes = Math.max(1, Math.round(studiedSecs / 60));
-
-    // Focus score: % of planned session actually studied (capped at 100%)
-    const focusScore = plannedSecs > 0
-      ? Math.min(100, Math.round((studiedSecs / plannedSecs) * 100))
-      : 100;
-
-    const session: Omit<Session, "id"> = {
-      uid: user.uid,
-      subjectId: currentSubject?.id ?? "unknown",
-      subjectName: currentSubject?.name ?? selectedSubjectName,
-      subjectColor: currentSubject?.color ?? "violet",
-      durationMinutes,
-      focusScore,
-      pomodoroCount: 1,
-      date: localDateStr(now),          // local calendar date, not UTC
-      startTime: startTimeRef.current ?? now.toTimeString().slice(0, 5),
-      endTime: now.toTimeString().slice(0, 5),
-      notes: "",
-    };
-    try {
-      await addSession(user.uid, session);
-    } catch (err) {
-      console.error("Failed to save session:", err);
-    }
-  }, [user, subjects, selectedSubjectId, selectedSubjectName]);
-
-  // ── Cross-device timer sync ─────────────────────────────────────────────────
-
-  // Snapshot the current store and persist it to Firestore.
-  // Called after every user action (start/pause/reset/skip) and phase transitions.
-  const saveToFirestore = useCallback(async () => {
-    if (!user) return;
-    const s = useTimerStore.getState();
-    await saveTimerState(user.uid, {
-      timerState: s.state === "running" || s.state === "paused" ? s.state : "idle",
-      mode: s.mode,
-      startTimestamp: s.startTimestamp,
-      remainingWhenStarted: s.remainingWhenStarted,
-      totalSeconds: s.totalSeconds,
-      pomodoroIndex: s.pomodoroIndex,
-      totalPomodoros: s.totalPomodoros,
-      pomodoroLength: s.pomodoroLength,
-      shortBreak: s.shortBreak,
-      longBreak: s.longBreak,
-      selectedSubjectId: s.selectedSubjectId,
-      selectedSubjectName: s.selectedSubjectName,
-      updatedAt: Date.now(),
-      deviceId: DEVICE_ID,   // marks this write as ours
-    });
-  }, [user]);
-
-  // Subscribe to Firestore timer state for cross-device sync.
-  // When another device changes the state, apply it here and restart the countdown.
-  useEffect(() => {
-    if (!user) return;
-    const unsub = subscribeTimerState(user.uid, (remote) => {
-      if (!remote) {
-        // timerState/current was deleted (data cleared on another device)
-        // ClientShell resets the store; clear all local tracking refs here
-        applyingRemoteRef.current = true;
-        focusStartMsRef.current = null;
-        focusPausedMsRef.current = 0;
-        focusPauseStartMsRef.current = null;
-        startTimeRef.current = null;
-        return;
-      }
-      // Skip writes that originated from THIS tab — nothing to apply
-      if (remote.deviceId === DEVICE_ID) return;
-      // Flag: we're applying remote data, so transition effects must not save sessions
-      applyingRemoteRef.current = true;
-      // Apply the remote state into the local Zustand store
-      useTimerStore.setState({
-        state: remote.timerState,
-        mode: remote.mode,
-        startTimestamp: remote.startTimestamp,
-        remainingWhenStarted: remote.remainingWhenStarted,
-        totalSeconds: remote.totalSeconds,
-        pomodoroIndex: remote.pomodoroIndex,
-        totalPomodoros: remote.totalPomodoros,
-        pomodoroLength: remote.pomodoroLength,
-        shortBreak: remote.shortBreak,
-        longBreak: remote.longBreak,
-        selectedSubjectId: remote.selectedSubjectId,
-        selectedSubjectName: remote.selectedSubjectName,
-      });
-      // init() recomputes secondsRemaining from wall-clock time and
-      // restarts the interval when state is "running"
-      init();
-    });
-    return () => unsub();
-  }, [user, init]);
-
-  // Detect transitions: play sounds + save session on mode changes
-  // Focus → break: mode changes from "focus" to "short-break"/"long-break" while running
-  // Break → focus: mode changes back to "focus" and state goes idle
-  // Initialize from current mode so re-mounting doesn't fire a spurious transition.
-  const prevModeRef = useRef<string>(mode);
-  useEffect(() => {
-    const prevMode = prevModeRef.current;
-
-    if (prevMode === "focus" && (mode === "short-break" || mode === "long-break")) {
-      // Focus just completed → break auto-started
-      if (!applyingRemoteRef.current) {
-        // Only THIS device saves the session — the device that ran the timer.
-        // Other devices receive the sync and must skip session saving.
-        saveSession();
-        saveToFirestore();
-        playCompletionChime();
-        sendNotification(
-          "StudyPulse — Focus Complete! 🎉",
-          `Great work${selectedSubjectName && selectedSubjectName !== "Select a Subject" ? ` on ${selectedSubjectName}` : ""}! Break time started.`
-        );
-      }
-    } else if ((prevMode === "short-break" || prevMode === "long-break") && mode === "focus") {
-      // Break finished → auto-started next focus session; reset all focus tracking
-      if (!applyingRemoteRef.current) {
-        startTimeRef.current = new Date().toTimeString().slice(0, 5);
-        sessionTotalSecondsRef.current = totalSeconds;
-        resetFocusTracking();
-        saveToFirestore();
-        playBreakEndChime();
-        sendNotification("StudyPulse — Break Over ⏱", "Back to focus — let's go!");
-      }
-    }
-
-    prevModeRef.current = mode;
-    // Reset the remote-apply flag here — this effect always runs after prevStateRef effect,
-    // so both effects have had a chance to read it before we clear it.
-    applyingRemoteRef.current = false;
-  }, [state, mode, saveSession, saveToFirestore, selectedSubjectName]);
 
 
   // Computed stats from real sessions
@@ -592,12 +332,12 @@ function TimerPageInner() {
 
       {/* Controls */}
       <div className="flex items-center gap-5 justify-center">
-        <button onClick={() => { reset(); saveToFirestore(); }} className="w-11 h-11 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest transition-all active:scale-95" aria-label="Reset">
+        <button onClick={() => reset()} className="w-11 h-11 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest transition-all active:scale-95" aria-label="Reset">
           <span className="material-symbols-outlined text-[20px]">restart_alt</span>
         </button>
         <div className="flex flex-col items-center gap-1.5">
           <button
-            onClick={() => { if (state === "running") { pause(); } else { start(); } saveToFirestore(); }}
+            onClick={() => { if (state === "running") pause(); else start(); }}
             disabled={!hasSubject && state !== "running"}
             className="w-16 h-16 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95"
             style={hasSubject || state === "running" ? {
@@ -623,7 +363,7 @@ function TimerPageInner() {
             <span className="text-[11px] text-on-surface-variant font-inter text-center">Select a subject to start</span>
           )}
         </div>
-        <button onClick={() => { skip(); saveToFirestore(); }} className="w-11 h-11 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest transition-all active:scale-95" aria-label="Skip">
+        <button onClick={() => skip()} className="w-11 h-11 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest transition-all active:scale-95" aria-label="Skip">
           <span className="material-symbols-outlined text-[20px]">skip_next</span>
         </button>
       </div>
