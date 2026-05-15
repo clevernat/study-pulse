@@ -21,17 +21,25 @@ export default function ClientShell({ children }: { children: React.ReactNode })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Browsers throttle/kill setInterval in background tabs.
-  // Re-run init() whenever the tab becomes visible so the interval is revived
-  // and the remaining time is recalculated from the wall clock.
+  // Browsers throttle/kill setInterval when the screen turns off or the tab goes to
+  // the background. Re-run init() on every resume signal so the interval is revived
+  // and remaining time is recalculated from the wall clock.
   useEffect(() => {
-    const handleVisible = () => {
-      if (document.visibilityState === "visible") {
-        initTimer();
-      }
+    const resume = () => initTimer();
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") initTimer();
     };
-    document.addEventListener("visibilitychange", handleVisible);
-    return () => document.removeEventListener("visibilitychange", handleVisible);
+    // visibilitychange covers mobile screen-off and tab switching
+    document.addEventListener("visibilitychange", handleVisibility);
+    // window focus covers desktop OS screen-lock (doesn't always fire visibilitychange)
+    window.addEventListener("focus", resume);
+    // pageshow covers browser back/forward cache restores
+    window.addEventListener("pageshow", resume);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("focus", resume);
+      window.removeEventListener("pageshow", resume);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

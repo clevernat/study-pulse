@@ -98,10 +98,10 @@ export const useTimerStore = create<TimerStore>()(
             const timeIntoBreak = -actualRemaining; // seconds elapsed after focus ended
             const now = Date.now();
             if (timeIntoBreak >= breakSecs) {
-              // Break also expired while away — skip straight to next focus
-              const focusSecs = s.pomodoroLength * 60;
-              const resetIdx = nextIdx % s.totalPomodoros === 0 ? 0 : nextIdx;
-              set({ mode: "focus", pomodoroIndex: resetIdx, secondsRemaining: focusSecs, totalSeconds: focusSecs, startTimestamp: now, remainingWhenStarted: focusSecs });
+              // Break also expired while away — still transition through break so the
+              // React effect on the timer page detects focus→break and saves the session.
+              // Set 1 s remaining so it ticks to 0 and auto-advances to focus immediately.
+              set({ mode: nextMode, pomodoroIndex: nextIdx, secondsRemaining: 1, totalSeconds: breakSecs, startTimestamp: now, remainingWhenStarted: 1 });
             } else {
               const breakRemaining = breakSecs - timeIntoBreak;
               set({ mode: nextMode, pomodoroIndex: nextIdx, secondsRemaining: Math.ceil(breakRemaining), totalSeconds: breakSecs, startTimestamp: now, remainingWhenStarted: Math.ceil(breakRemaining) });
