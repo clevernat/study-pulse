@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { subscribeSessions } from "@/lib/firebase/firestore";
 import { getColor } from "@/lib/colorPalette";
+import { localDateStr } from "@/lib/dateUtils";
 import type { Session } from "@/types";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -71,11 +72,11 @@ export default function SessionsPage() {
     return () => unsub();
   }, [user]);
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = localDateStr();
   const weekAgoDate = new Date();
   weekAgoDate.setDate(weekAgoDate.getDate() - 7);
-  const weekAgoStr = weekAgoDate.toISOString().slice(0, 10);
-  const monthStr = new Date().toISOString().slice(0, 7);
+  const weekAgoStr = localDateStr(weekAgoDate);
+  const monthStr = localDateStr().slice(0, 7);
 
   const filtered = applyFilter(sessions, activeFilter, todayStr, weekAgoStr, monthStr);
 
@@ -147,7 +148,7 @@ export default function SessionsPage() {
           </div>
         )}
         {sortedDates.map((date) => {
-          const daySessions = grouped.get(date)!;
+          const daySessions = [...grouped.get(date)!].sort((a, b) => b.startTime.localeCompare(a.startTime));
           return (
             <div key={date} className="flex flex-col gap-3">
               {/* Date header */}
