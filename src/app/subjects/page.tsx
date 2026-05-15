@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { subscribeSubjects, addSubject, deleteSubject } from "@/lib/firebase/firestore";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import type { Subject } from "@/types";
 
 type ColorKey = Subject["color"];
@@ -214,6 +215,8 @@ export default function SubjectsPage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const subjectToDelete = subjects.find((s) => s.id === confirmDeleteId);
 
   useEffect(() => {
     if (!user) return;
@@ -225,12 +228,13 @@ export default function SubjectsPage() {
     setSubjects((prev) => [...prev, subject]);
   };
 
-  const handleDelete = async (subjectId: string) => {
-    if (!user) return;
-    setDeletingId(subjectId);
+  const handleDelete = async () => {
+    if (!user || !confirmDeleteId) return;
+    setDeletingId(confirmDeleteId);
+    setConfirmDeleteId(null);
     try {
-      await deleteSubject(user.uid, subjectId);
-      setSubjects((prev) => prev.filter((s) => s.id !== subjectId));
+      await deleteSubject(user.uid, confirmDeleteId);
+      setSubjects((prev) => prev.filter((s) => s.id !== confirmDeleteId));
     } finally {
       setDeletingId(null);
     }
@@ -286,7 +290,7 @@ export default function SubjectsPage() {
                     <span className={`material-symbols-outlined text-xl ${meta.iconText}`}>{subject.icon}</span>
                   </div>
                   <button
-                    onClick={() => handleDelete(subject.id)}
+                    onClick={() => setConfirmDeleteId(subject.id)}
                     disabled={deletingId === subject.id}
                     className="text-on-surface-variant hover:text-error transition-colors p-1 rounded-lg hover:bg-error/10"
                     title="Delete subject"
@@ -332,6 +336,18 @@ export default function SubjectsPage() {
       {showModal && user && (
         <AddSubjectModal uid={user.uid} onClose={() => setShowModal(false)} onSave={handleSave} />
       )}
+
+      <ConfirmModal
+        open={!!confirmDeleteId}
+        title="Delete Subject"
+        description={`Delete "${subjectToDelete?.name ?? "this subject"}"? All its study data will be removed.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        destructive
+        icon="delete_outline"
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { subscribeGoals, addGoal, updateGoal, deleteGoal, subscribeSubjects } from "@/lib/firebase/firestore";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import { Goal, Subject } from "@/types";
 
 const typeColor: Record<Goal["type"], string> = {
@@ -276,6 +277,8 @@ export default function GoalsPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | undefined>(undefined);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const goalToDelete = goals.find((g) => g.id === confirmDeleteId);
 
   useEffect(() => {
     if (!user) return;
@@ -292,12 +295,13 @@ export default function GoalsPage() {
   const handleUpdate = (updated: Goal) =>
     setGoals((prev) => prev.map((g) => (g.id === updated.id ? updated : g)));
 
-  const handleDelete = async (goalId: string) => {
-    if (!user) return;
-    setDeletingId(goalId);
+  const handleDelete = async () => {
+    if (!user || !confirmDeleteId) return;
+    setDeletingId(confirmDeleteId);
+    setConfirmDeleteId(null);
     try {
-      await deleteGoal(user.uid, goalId);
-      setGoals((prev) => prev.filter((g) => g.id !== goalId));
+      await deleteGoal(user.uid, confirmDeleteId);
+      setGoals((prev) => prev.filter((g) => g.id !== confirmDeleteId));
     } finally {
       setDeletingId(null);
     }
@@ -425,7 +429,7 @@ export default function GoalsPage() {
                     </button>
                     {/* Delete */}
                     <button
-                      onClick={() => handleDelete(goal.id)}
+                      onClick={() => setConfirmDeleteId(goal.id)}
                       disabled={deletingId === goal.id}
                       className="text-on-surface-variant hover:text-error transition-colors p-1.5 rounded-lg hover:bg-error/10"
                       title="Delete goal"
@@ -479,6 +483,18 @@ export default function GoalsPage() {
           onUpdate={handleUpdate}
         />
       )}
+
+      <ConfirmModal
+        open={!!confirmDeleteId}
+        title="Delete Goal"
+        description={`Delete "${goalToDelete?.title ?? "this goal"}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        destructive
+        icon="flag"
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </div>
   );
 }
