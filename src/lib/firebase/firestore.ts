@@ -108,3 +108,13 @@ export function subscribeGoals(uid: string, cb: (goals: Goal[]) => void): () => 
   return onSnapshot(collection(db, "users", uid, "goals"), (snap) =>
     cb(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Goal))));
 }
+
+export async function deleteAllUserData(uid: string): Promise<void> {
+  const subcollections = ["sessions", "subjects", "goals"];
+  await Promise.all(
+    subcollections.map(async (col) => {
+      const snap = await getDocs(collection(db, "users", uid, col));
+      await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
+    })
+  );
+}

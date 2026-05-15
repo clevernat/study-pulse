@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { subscribeSessions } from "@/lib/firebase/firestore";
+import { subscribeSessions, deleteAllUserData } from "@/lib/firebase/firestore";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import type { Session } from "@/types";
 
 interface ToggleProps {
@@ -99,6 +100,10 @@ export default function SettingsPage() {
   const [sessionComplete, setSessionComplete] = useState(true);
   const [dailyReminder, setDailyReminder] = useState(true);
 
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [resetDone, setResetDone] = useState(false);
+  const [resetting, setResetting] = useState(false);
+
   const displayName = user?.displayName ?? user?.email?.split("@")[0] ?? "User";
   const displayEmail = user?.email ?? "";
   const initials = displayName.slice(0, 2).toUpperCase();
@@ -115,19 +120,42 @@ export default function SettingsPage() {
     URL.revokeObjectURL(url);
   }
 
-  function handleResetData() {
-    if (
-      window.confirm(
-        "Are you sure you want to reset all data? This action cannot be undone."
-      )
-    ) {
-      // In production this would clear Firestore; for now just a no-op
-      alert("All data has been reset.");
+  async function handleResetConfirmed() {
+    if (!user) return;
+    setResetting(true);
+    try {
+      await deleteAllUserData(user.uid);
+      setResetDone(true);
+    } finally {
+      setResetting(false);
+      setConfirmReset(false);
     }
   }
 
   return (
     <div className="p-8 max-w-2xl mx-auto space-y-6">
+      <ConfirmModal
+        open={confirmReset}
+        title="Reset All Data"
+        description="This will permanently delete all your sessions, subjects, and goals. This action cannot be undone."
+        confirmLabel={resetting ? "Deleting…" : "Yes, Delete Everything"}
+        cancelLabel="Keep My Data"
+        destructive
+        icon="delete_forever"
+        onConfirm={handleResetConfirmed}
+        onCancel={() => setConfirmReset(false)}
+      />
+
+      <ConfirmModal
+        open={resetDone}
+        title="Data Cleared"
+        description="All your sessions, subjects, and goals have been deleted successfully."
+        confirmLabel="OK"
+        cancelLabel=""
+        icon="check_circle"
+        onConfirm={() => setResetDone(false)}
+        onCancel={() => setResetDone(false)}
+      />
       {/* Header */}
       <div>
         <h1 className="font-space text-2xl font-bold text-[#e8e8f0]">
@@ -265,7 +293,7 @@ export default function SettingsPage() {
               </p>
             </div>
             <button
-              onClick={handleResetData}
+              onClick={() => setConfirmReset(true)}
               className="px-4 py-2 rounded-lg border border-red-500/30 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
             >
               Reset Data
