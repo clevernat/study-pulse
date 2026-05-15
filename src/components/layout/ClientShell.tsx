@@ -57,7 +57,7 @@ export default function ClientShell({ children }: { children: React.ReactNode })
       <div className="flex-1 md:ml-64 min-w-0">
         <TopBar />
         {/* pt for topbar, pb-20 on mobile for bottom nav */}
-        <main className="pt-20 px-4 py-6 md:p-12 pb-24 md:pb-12 min-h-screen">
+        <main className="pt-20 pb-28 px-4 md:pt-28 md:pb-12 md:px-12 min-h-screen">
           {children}
         </main>
       </div>
