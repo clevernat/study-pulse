@@ -183,7 +183,7 @@ export default function TimerPage() {
     .filter((s) => new Date(s.date) >= twoWeeksAgo && new Date(s.date) < weekAgo)
     .reduce((sum, s) => sum + s.durationMinutes, 0);
   const productivityChange = lastWeekMins === 0
-    ? (thisWeekMins > 0 ? 100 : 0)
+    ? null
     : Math.round(((thisWeekMins - lastWeekMins) / lastWeekMins) * 100);
 
   const streakDays = computeStreak(
@@ -210,7 +210,7 @@ export default function TimerPage() {
   const displaySubjects = subjects;
 
   return (
-    <section className="flex flex-col items-center gap-6 py-2 md:py-4">
+    <section className="flex flex-col items-center gap-6 pt-6 pb-4 md:pt-10 md:pb-6">
 
       {/* Subject Selector */}
       <div className="relative w-full max-w-md" ref={dropdownRef}>
@@ -496,9 +496,9 @@ export default function TimerPage() {
           </div>
           <div>
             <span className="text-[28px] font-bold text-secondary font-jetbrains leading-none">
-              {todayHours.toFixed(1)}
+              {todayMinutes === 0 ? "--" : todayHours.toFixed(1)}
             </span>
-            <span className="text-on-surface-variant text-[13px] ml-1">hrs</span>
+            {todayMinutes > 0 && <span className="text-on-surface-variant text-[13px] ml-1">hrs</span>}
           </div>
           <div className="h-1.5 rounded-full bg-surface-container overflow-hidden">
             <div
@@ -518,16 +518,16 @@ export default function TimerPage() {
               className="material-symbols-outlined text-secondary text-[16px]"
               style={{ fontFamily: "'Material Symbols Outlined'" }}
             >
-              {productivityChange >= 0 ? "trending_up" : "trending_down"}
+              {(productivityChange ?? 0) >= 0 ? "trending_up" : "trending_down"}
             </span>
           </div>
           <div className="flex items-end gap-1.5">
             <span className="text-[28px] font-bold text-secondary font-jetbrains leading-none">
-              {productivityChange >= 0 ? "+" : ""}{productivityChange}
+              {productivityChange === null ? "--" : `${productivityChange >= 0 ? "+" : ""}${productivityChange}`}
             </span>
-            <span className="text-on-surface-variant text-[13px] mb-0.5">%</span>
+            {productivityChange !== null && <span className="text-on-surface-variant text-[13px] mb-0.5">%</span>}
           </div>
-          <p className="text-[10px] text-on-surface-variant">vs last week</p>
+          <p className="text-[10px] text-on-surface-variant">{productivityChange === null ? "No data yet" : "vs last week"}</p>
         </div>
 
         {/* Current Streak */}
@@ -544,19 +544,17 @@ export default function TimerPage() {
             </span>
           </div>
           <div className="flex items-end gap-1.5">
-            <span className="text-[28px] font-bold text-tertiary font-jetbrains leading-none">{streakDays}</span>
-            <span className="text-on-surface-variant text-[13px] mb-0.5">days</span>
+            <span className="text-[28px] font-bold text-tertiary font-jetbrains leading-none">
+              {streakDays === 0 ? "--" : streakDays}
+            </span>
+            {streakDays > 0 && <span className="text-on-surface-variant text-[13px] mb-0.5">days</span>}
           </div>
           <div className="flex items-center gap-1.5 flex-wrap">
             {streakDays === 0 ? (
               <span className="text-[10px] text-on-surface-variant">Start studying to build a streak!</span>
             ) : (
               Array.from({ length: Math.min(streakDays, 14) }).map((_, i) => (
-                <div
-                  key={i}
-                  className="w-2 h-2 rounded-full"
-                  style={{ background: "#ffb95f" }}
-                />
+                <div key={i} className="w-2 h-2 rounded-full" style={{ background: "#ffb95f" }} />
               ))
             )}
           </div>
