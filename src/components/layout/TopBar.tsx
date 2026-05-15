@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import LogSessionModal from "./LogSessionModal";
 
@@ -46,6 +47,15 @@ export default function TopBar() {
               <p className="text-[12px] text-on-surface-variant font-inter">Member since {memberSince}</p>
             </div>
           </div>
+
+          {/* Settings (mobile only — desktop uses sidebar) */}
+          <Link
+            href="/settings"
+            title="Settings"
+            className="md:hidden w-8 h-8 flex items-center justify-center rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-all"
+          >
+            <span className="material-symbols-outlined text-[18px]">settings</span>
+          </Link>
 
           {/* Sign out */}
           <button

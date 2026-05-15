@@ -9,9 +9,10 @@ import type { Session } from "@/types";
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 function formatDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`;
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`;
+  return m === 0 ? `${h} hr` : `${h}h ${m}m`;
 }
 
 function focusColorClass(score: number): string {
@@ -81,7 +82,6 @@ export default function SessionsPage() {
   // Summary stats
   const totalSessions = filtered.length;
   const totalMinutes = filtered.reduce((acc, s) => acc + s.durationMinutes, 0);
-  const totalHours = (totalMinutes / 60).toFixed(1);
   const avgFocus =
     filtered.length > 0
       ? Math.round(filtered.reduce((acc, s) => acc + s.focusScore, 0) / filtered.length)
@@ -99,7 +99,7 @@ export default function SessionsPage() {
       {/* Header + Filters */}
       <div className="flex flex-col gap-4">
         <h1 className="font-grotesk font-bold text-3xl text-on-surface">Study Sessions</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {FILTERS.map((f) => (
             <button
               key={f}
@@ -117,14 +117,14 @@ export default function SessionsPage() {
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6">
         <div className="glass-card p-6 flex flex-col gap-1">
           <div className="font-jetbrains font-semibold text-2xl text-on-surface">{totalSessions}</div>
           <div className="text-xs uppercase tracking-widest text-on-surface-variant">Total Sessions</div>
         </div>
         <div className="glass-card p-6 flex flex-col gap-1">
-          <div className="font-jetbrains font-semibold text-2xl text-on-surface">{totalHours}h</div>
-          <div className="text-xs uppercase tracking-widest text-on-surface-variant">Total Hours</div>
+          <div className="font-jetbrains font-semibold text-2xl text-on-surface">{formatDuration(totalMinutes)}</div>
+          <div className="text-xs uppercase tracking-widest text-on-surface-variant">Total Time</div>
         </div>
         <div className="glass-card p-6 flex flex-col gap-1">
           <div className={`font-jetbrains font-semibold text-2xl ${focusColorClass(avgFocus).split(" ")[0]}`}>
@@ -164,7 +164,7 @@ export default function SessionsPage() {
                 return (
                   <div
                     key={session.id}
-                    className="glass-card p-4 flex items-center justify-between gap-4"
+                    className="glass-card p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4"
                   >
                     {/* Left */}
                     <div className="flex items-center gap-4 flex-1 min-w-0">

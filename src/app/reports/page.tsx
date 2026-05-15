@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { subscribeSessions } from "@/lib/firebase/firestore";
+import { localDateStr, formatSmartDuration } from "@/lib/dateUtils";
 import type { Session } from "@/types";
 
 type Period = "This Week" | "This Month" | "Last 3 Months";
@@ -35,19 +36,23 @@ function getWeekKey(date: Date): string {
 
 function filterSessionsByPeriod(sessions: Session[], period: Period): Session[] {
   const now = new Date();
-  let cutoff: Date;
+  let cutoffStr: string;
   if (period === "This Week") {
-    const day = now.getDay() || 7;
-    cutoff = new Date(now);
-    cutoff.setDate(now.getDate() - day + 1);
-    cutoff.setHours(0, 0, 0, 0);
+    // Monday of the current week (local)
+    const day = now.getDay() || 7; // 1=Mon ... 7=Sun
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - day + 1);
+    cutoffStr = localDateStr(monday);
   } else if (period === "This Month") {
-    cutoff = new Date(now.getFullYear(), now.getMonth(), 1);
+    const first = new Date(now.getFullYear(), now.getMonth(), 1);
+    cutoffStr = localDateStr(first);
   } else {
-    cutoff = new Date(now);
-    cutoff.setMonth(now.getMonth() - 3);
+    const threeMonthsAgo = new Date(now);
+    threeMonthsAgo.setMonth(now.getMonth() - 3);
+    cutoffStr = localDateStr(threeMonthsAgo);
   }
-  return sessions.filter((s) => new Date(s.date) >= cutoff);
+  // Compare YYYY-MM-DD strings directly — no UTC/local mismatch
+  return sessions.filter((s) => s.date >= cutoffStr);
 }
 
 export default function ReportsPage() {
@@ -73,7 +78,6 @@ export default function ReportsPage() {
 
   // ── Top Stats ────────────────────────────────────────────────────────────────
   const totalMinutes = sessions.reduce((sum, s) => sum + s.durationMinutes, 0);
-  const totalHours = (totalMinutes / 60).toFixed(1);
   const sessionCount = sessions.length;
   const avgFocusScore =
     sessions.length > 0
@@ -90,7 +94,7 @@ export default function ReportsPage() {
   }
   const bestSubjectEntry = Object.values(subjectMinutes).sort((a, b) => b.minutes - a.minutes)[0];
   const bestSubject = bestSubjectEntry
-    ? { name: bestSubjectEntry.name, hours: (bestSubjectEntry.minutes / 60).toFixed(1) }
+    ? { name: bestSubjectEntry.name, label: formatSmartDuration(bestSubjectEntry.minutes) }
     : null;
 
   // ── Weekly trend (last 8 weeks) ───────────────────────────────────────────
@@ -103,7 +107,7 @@ export default function ReportsPage() {
       weeks.push({ key: getWeekKey(d), label: `W${8 - i}`, hours: 0 });
     }
     for (const s of allSessions) {
-      const key = getWeekKey(new Date(s.date));
+      const key = getWeekKey(new Date(s.date + "T12:00:00")); // noon avoids UTC day shift
       const w = weeks.find((x) => x.key === key);
       if (w) w.hours += s.durationMinutes / 60;
     }
@@ -169,7 +173,7 @@ export default function ReportsPage() {
         const daysBack = (HEATMAP_COLS - 1 - col) * 7 + (6 - row);
         const d = new Date(lastSunday);
         d.setDate(lastSunday.getDate() - daysBack);
-        const key = d.toISOString().slice(0, 10);
+        const key = localDateStr(d);   // local date, not UTC
         grid[row][col] = dateMap[key] ?? 0;
       }
     }
@@ -198,7 +202,8 @@ export default function ReportsPage() {
     const sums = Array(7).fill(0);
     const counts = Array(7).fill(0);
     for (const s of sessions) {
-      const dow = new Date(s.date).getDay(); // 0=Sun, 1=Mon...6=Sat
+      // Use noon to prevent UTC midnight parsing from shifting the day
+      const dow = new Date(s.date + "T12:00:00").getDay(); // 0=Sun, 1=Mon...6=Sat
       const idx = dow === 0 ? 6 : dow - 1; // shift to Mon=0...Sun=6
       sums[idx] += s.focusScore;
       counts[idx]++;
@@ -248,7 +253,7 @@ export default function ReportsPage() {
         <div className="glass-card p-5 space-y-2">
           <p className="text-xs uppercase tracking-widest text-[#958da1]">Total Study Time</p>
           <p className="font-jetbrains text-3xl font-bold text-[#e8e8f0]">
-            {loading ? "—" : `${totalHours}h`}
+            {loading ? "—" : formatSmartDuration(totalMinutes)}
           </p>
           <p className="text-sm text-secondary">All logged sessions</p>
         </div>
@@ -277,7 +282,7 @@ export default function ReportsPage() {
             {loading ? "—" : bestSubject ? bestSubject.name : "—"}
           </p>
           <p className="text-sm text-primary">
-            {bestSubject ? `${bestSubject.hours}h logged` : "No sessions yet"}
+            {bestSubject ? `${bestSubject.label} logged` : "No sessions yet"}
           </p>
         </div>
       </div>

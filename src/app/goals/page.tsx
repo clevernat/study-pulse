@@ -88,6 +88,10 @@ function GoalModal({ uid, subjects, editGoal, onClose, onSave, onUpdate }: GoalM
     if (!title.trim()) { setError("Goal title is required."); return; }
     const hrs = parseFloat(targetHours);
     if (isNaN(hrs) || hrs <= 0) { setError("Target hours must be a positive number."); return; }
+    if (hrs > 200) { setError("Target hours cannot exceed 200."); return; }
+    if (!deadline) { setError("Please set a deadline."); return; }
+    const today = new Date().toISOString().slice(0, 10);
+    if (!isEdit && deadline < today) { setError("Deadline cannot be in the past."); return; }
     setSaving(true);
     try {
       const payload: Omit<Goal, "id"> = {
@@ -129,10 +133,10 @@ function GoalModal({ uid, subjects, editGoal, onClose, onSave, onUpdate }: GoalM
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
-        className="relative bg-[#12121a] border border-[#252535] rounded-2xl p-8 w-full max-w-md shadow-2xl"
+        className="relative bg-[#12121a] border border-[#252535] rounded-2xl w-full max-w-md shadow-2xl max-h-[90vh] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between px-8 pt-8 pb-4 flex-shrink-0">
           <h2 className="font-grotesk font-bold text-xl text-on-surface">
             {isEdit ? "Edit Goal" : "New Goal"}
           </h2>
@@ -141,7 +145,7 @@ function GoalModal({ uid, subjects, editGoal, onClose, onSave, onUpdate }: GoalM
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5 px-8 pb-8 overflow-y-auto">
           {/* Title */}
           <div>
             <label className="text-on-surface-variant text-sm font-inter mb-1.5 block">Goal Title *</label>

@@ -35,8 +35,14 @@ export default function LogSessionModal({ onClose, onSaved }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!subjectId && subjects.length > 0) { setError("Please select a subject."); return; }
+    if (subjects.length === 0) { setError("Add a subject first before logging a session."); return; }
+    if (!subjectId) { setError("Please select a subject."); return; }
+    const h = parseInt(hours || "0");
+    const m = parseInt(minutes || "0");
+    if (isNaN(h) || h < 0 || h > 12) { setError("Hours must be between 0 and 12."); return; }
+    if (isNaN(m) || m < 0 || m > 59) { setError("Minutes must be between 0 and 59."); return; }
     if (totalMinutes < 1) { setError("Duration must be at least 1 minute."); return; }
+    if (!date) { setError("Please select a date."); return; }
     const score = parseInt(focusScore);
     if (isNaN(score) || score < 1 || score > 100) { setError("Focus score must be between 1 and 100."); return; }
     if (!user) return;
@@ -80,6 +86,16 @@ export default function LogSessionModal({ onClose, onSaved }: Props) {
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
+
+        {subjects.length === 0 && (
+          <div className="mb-4 flex items-center gap-3 bg-error/10 border border-error/20 rounded-xl px-4 py-3">
+            <span className="material-symbols-outlined text-error text-[20px]">warning</span>
+            <p className="text-error text-sm font-inter font-medium">
+              You need to add a subject first before logging a session.{" "}
+              <a href="/subjects" className="underline hover:opacity-80">Go to Subjects →</a>
+            </p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           {/* Subject */}
@@ -214,8 +230,8 @@ export default function LogSessionModal({ onClose, onSaved }: Props) {
             </button>
             <button
               type="submit"
-              disabled={saving}
-              className="flex-1 py-3 rounded-xl bg-primary-container text-on-primary-container font-bold font-inter text-sm hover:opacity-90 active:scale-95 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+              disabled={saving || subjects.length === 0}
+              className="flex-1 py-3 rounded-xl bg-primary-container text-on-primary-container font-bold font-inter text-sm hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {saving && <span className="w-4 h-4 rounded-full border-2 border-on-primary-container border-t-transparent animate-spin" />}
               Log Session

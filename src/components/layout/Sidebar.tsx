@@ -13,13 +13,13 @@ const navItems = [
   { href: "/settings",  label: "Settings",  icon: "settings" },
 ];
 
-// Bottom nav shows 5 primary items on mobile
+// Bottom nav — 5 primary items. Settings reachable via desktop sidebar.
 const bottomNavItems = [
   { href: "/dashboard", label: "Home",     icon: "dashboard" },
-  { href: "/sessions",  label: "Sessions", icon: "history" },
+  { href: "/subjects",  label: "Subjects", icon: "subject" },
   { href: "/timer",     label: "Timer",    icon: "timer" },
+  { href: "/sessions",  label: "Sessions", icon: "history" },
   { href: "/goals",     label: "Goals",    icon: "track_changes" },
-  { href: "/settings",  label: "Settings", icon: "settings" },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -82,7 +82,7 @@ export default function Sidebar() {
       </aside>
 
       {/* ── Mobile bottom nav ───────────────────────────────────── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-outline-variant flex items-center justify-around px-2 h-16">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-outline-variant flex items-center justify-around px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] h-auto min-h-[64px]">
         {bottomNavItems.map((item) => {
           const active = isActive(pathname, item.href);
           const isTimer = item.href === "/timer";

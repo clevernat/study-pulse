@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { subscribeSubjects, addSubject, deleteSubject } from "@/lib/firebase/firestore";
+import { subscribeSubjects, addSubject, updateSubject, deleteSubject } from "@/lib/firebase/firestore";
+import { useTimerStore } from "@/store/timerStore";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { COLOR_PALETTE, getColor } from "@/lib/colorPalette";
 import type { Subject } from "@/types";
@@ -48,43 +49,72 @@ const ICON_OPTIONS = [
 
 const CATEGORY_OPTIONS = ["STEM", "CS", "MATH", "LANG", "HUMN", "SCI", "ART", "BIZ", "MED", "LAW", "ENG", "MUS", "SPORT", "OTHER"];
 
-// ── Add Subject Modal ─────────────────────────────────────────────────────────
+// ── Subject Modal (Add + Edit) ────────────────────────────────────────────────
 
-interface AddSubjectModalProps {
+interface SubjectModalProps {
   onClose: () => void;
   onSave: (subject: Subject) => void;
   uid: string;
+  /** Pass an existing subject to open in edit mode */
+  editing?: Subject;
 }
 
-function AddSubjectModal({ onClose, onSave, uid }: AddSubjectModalProps) {
-  const [name, setName] = useState("");
-  const [category, setCategory] = useState("STEM");
-  const [customCategory, setCustomCategory] = useState("");
-  const [color, setColor] = useState("violet");
-  const [icon, setIcon] = useState("school");
+function SubjectModal({ onClose, onSave, uid, editing }: SubjectModalProps) {
+  const isEdit = !!editing;
+
+  // Initialise from existing subject when editing, otherwise blank defaults
+  const [name, setName] = useState(editing?.name ?? "");
+  const [color, setColor] = useState(editing?.color ?? "violet");
+  const [icon, setIcon] = useState(editing?.icon ?? "school");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [nameError, setNameError] = useState(false);
 
-  const effectiveCategory = category === "OTHER" ? (customCategory.trim().toUpperCase() || "OTHER") : category;
+  // Category: if the saved category matches a known option use it, else "OTHER"
+  const knownCats = CATEGORY_OPTIONS.filter((c) => c !== "OTHER");
+  const initialCat = editing
+    ? (knownCats.includes(editing.category) ? editing.category : "OTHER")
+    : "STEM";
+  const [category, setCategory] = useState(initialCat);
+  const [customCategory, setCustomCategory] = useState(
+    editing && !knownCats.includes(editing.category) ? editing.category : ""
+  );
+
+  const effectiveCategory = category === "OTHER"
+    ? (customCategory.trim().toUpperCase() || "OTHER")
+    : category;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) { setError("Subject name is required."); return; }
+    if (!name.trim()) { setError("Subject name is required."); setNameError(true); return; }
+    setNameError(false);
     if (category === "OTHER" && !customCategory.trim()) { setError("Please enter a custom category."); return; }
     setSaving(true);
     try {
-      const newSubject: Omit<Subject, "id"> = {
-        uid,
-        name: name.trim(),
-        icon,
-        color,
-        category: effectiveCategory,
-        totalMinutes: 0,
-        sessionCount: 0,
-        createdAt: new Date().toISOString().slice(0, 10),
-      };
-      const id = await addSubject(uid, newSubject);
-      onSave({ id, ...newSubject });
+      if (isEdit && editing) {
+        // ── Edit mode: update changed fields only ──
+        await updateSubject(uid, editing.id, {
+          name: name.trim(),
+          icon,
+          color,
+          category: effectiveCategory,
+        });
+        onSave({ ...editing, name: name.trim(), icon, color, category: effectiveCategory });
+      } else {
+        // ── Add mode: create new subject ──
+        const newSubject: Omit<Subject, "id"> = {
+          uid,
+          name: name.trim(),
+          icon,
+          color,
+          category: effectiveCategory,
+          totalMinutes: 0,
+          sessionCount: 0,
+          createdAt: new Date().toISOString().slice(0, 10),
+        };
+        const id = await addSubject(uid, newSubject);
+        onSave({ id, ...newSubject });
+      }
       onClose();
     } catch {
       setError("Failed to save. Please try again.");
@@ -104,7 +134,16 @@ function AddSubjectModal({ onClose, onSave, uid }: AddSubjectModalProps) {
       >
         {/* Header */}
         <div className="flex items-center justify-between px-7 pt-7 pb-4 flex-shrink-0">
-          <h2 className="font-grotesk font-bold text-xl text-on-surface">Add Subject</h2>
+          <div className="flex items-center gap-3">
+            {isEdit && (
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: palette.bg }}>
+                <span className="material-symbols-outlined text-[18px]" style={{ color: palette.text }}>{icon}</span>
+              </div>
+            )}
+            <h2 className="font-grotesk font-bold text-xl text-on-surface">
+              {isEdit ? `Edit "${editing!.name}"` : "Add Subject"}
+            </h2>
+          </div>
           <button onClick={onClose} className="text-on-surface-variant hover:text-on-surface transition-colors">
             <span className="material-symbols-outlined">close</span>
           </button>
@@ -114,16 +153,21 @@ function AddSubjectModal({ onClose, onSave, uid }: AddSubjectModalProps) {
         <form onSubmit={handleSubmit} className="flex flex-col gap-5 px-7 pb-7 overflow-y-auto">
           {/* Name */}
           <div>
-            <label className="text-on-surface-variant text-sm font-inter mb-1.5 block">Subject Name *</label>
+            <label className={`text-sm font-inter mb-1.5 block ${nameError ? "text-error" : "text-on-surface-variant"}`}>
+              Subject Name <span className="text-error">*</span>
+            </label>
             <input
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => { setName(e.target.value); if (e.target.value.trim()) setNameError(false); }}
               placeholder="e.g. Calculus II"
               maxLength={40}
-              className="bg-[#0e0e11] border border-outline-variant rounded-xl px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm placeholder:text-on-surface-variant/40"
+              className={`bg-[#0e0e11] border rounded-xl px-4 py-3 text-on-surface w-full focus:outline-none transition-colors font-inter text-sm placeholder:text-on-surface-variant/40 ${
+                nameError ? "border-error focus:border-error" : "border-outline-variant focus:border-primary"
+              }`}
               autoFocus
             />
+            {nameError && <p className="text-error text-xs font-inter mt-1">Subject name is required.</p>}
           </div>
 
           {/* Category */}
@@ -145,7 +189,6 @@ function AddSubjectModal({ onClose, onSave, uid }: AddSubjectModalProps) {
                 </button>
               ))}
             </div>
-            {/* Custom category input when OTHER is selected */}
             {category === "OTHER" && (
               <input
                 type="text"
@@ -154,7 +197,6 @@ function AddSubjectModal({ onClose, onSave, uid }: AddSubjectModalProps) {
                 placeholder="Type your category name…"
                 maxLength={20}
                 className="mt-3 bg-[#0e0e11] border border-primary/40 rounded-xl px-4 py-2.5 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm placeholder:text-on-surface-variant/40"
-                autoFocus
               />
             )}
           </div>
@@ -221,10 +263,11 @@ function AddSubjectModal({ onClose, onSave, uid }: AddSubjectModalProps) {
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 py-3 rounded-xl bg-primary-container text-on-primary-container font-bold font-inter text-sm hover:opacity-90 active:scale-95 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+              className="flex-1 py-3 rounded-xl font-bold font-inter text-sm hover:opacity-90 active:scale-95 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+              style={{ background: palette.bar, color: "#fff" }}
             >
-              {saving && <span className="w-4 h-4 rounded-full border-2 border-on-primary-container border-t-transparent animate-spin" />}
-              Add Subject
+              {saving && <span className="w-4 h-4 rounded-full border-2 border-white/60 border-t-transparent animate-spin" />}
+              {isEdit ? "Save Changes" : "Add Subject"}
             </button>
           </div>
         </form>
@@ -237,11 +280,19 @@ function AddSubjectModal({ onClose, onSave, uid }: AddSubjectModalProps) {
 
 export default function SubjectsPage() {
   const { user } = useAuth();
+  const router = useRouter();
+  const setSubject = useTimerStore((s) => s.setSubject);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const subjectToDelete = subjects.find((s) => s.id === confirmDeleteId);
+
+  function studyNow(subject: Subject) {
+    setSubject(subject.id, subject.name);
+    router.push(`/timer?subjectId=${encodeURIComponent(subject.id)}&subjectName=${encodeURIComponent(subject.name)}`);
+  }
 
   useEffect(() => {
     if (!user) return;
@@ -249,17 +300,21 @@ export default function SubjectsPage() {
     return () => unsub();
   }, [user]);
 
-  const handleSave = (subject: Subject) => {
-    setSubjects((prev) => [...prev, subject]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleSave = (_subject: Subject) => {
+    // No manual update needed — subscribeSubjects real-time listener
+    // will fire automatically and update subjects state from Firestore.
+    // Doing it manually here too causes the duplicate card bug.
   };
 
   const handleDelete = async () => {
     if (!user || !confirmDeleteId) return;
-    setDeletingId(confirmDeleteId);
+    const idToDelete = confirmDeleteId;
+    setDeletingId(idToDelete);
     setConfirmDeleteId(null);
     try {
-      await deleteSubject(user.uid, confirmDeleteId);
-      setSubjects((prev) => prev.filter((s) => s.id !== confirmDeleteId));
+      await deleteSubject(user.uid, idToDelete);
+      // Subscription will remove it automatically; no manual state update needed
     } finally {
       setDeletingId(null);
     }
@@ -314,16 +369,25 @@ export default function SubjectsPage() {
                   <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: c.bg }}>
                     <span className="material-symbols-outlined text-xl" style={{ color: c.text }}>{subject.icon}</span>
                   </div>
-                  <button
-                    onClick={() => setConfirmDeleteId(subject.id)}
-                    disabled={deletingId === subject.id}
-                    className="text-on-surface-variant hover:text-error transition-colors p-1 rounded-lg hover:bg-error/10"
-                    title="Delete subject"
-                  >
-                    <span className="material-symbols-outlined text-xl">
-                      {deletingId === subject.id ? "hourglass_empty" : "delete_outline"}
-                    </span>
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setEditingSubject(subject)}
+                      className="text-on-surface-variant hover:text-primary transition-colors p-1 rounded-lg hover:bg-primary/10"
+                      title="Edit subject"
+                    >
+                      <span className="material-symbols-outlined text-xl">edit</span>
+                    </button>
+                    <button
+                      onClick={() => setConfirmDeleteId(subject.id)}
+                      disabled={deletingId === subject.id}
+                      className="text-on-surface-variant hover:text-error transition-colors p-1 rounded-lg hover:bg-error/10"
+                      title="Delete subject"
+                    >
+                      <span className="material-symbols-outlined text-xl">
+                        {deletingId === subject.id ? "hourglass_empty" : "delete_outline"}
+                      </span>
+                    </button>
+                  </div>
                 </div>
 
                 <h2 className="font-grotesk font-bold text-[18px] text-on-surface leading-tight">{subject.name}</h2>
@@ -350,9 +414,13 @@ export default function SubjectsPage() {
                   <div className="progress-fill" style={{ width: `${pct}%`, background: c.bar }} />
                 </div>
 
-                <Link href="/timer" className="text-sm font-semibold font-inter hover:opacity-80 transition-opacity mt-1" style={{ color: c.text }}>
+                <button
+                  onClick={() => studyNow(subject)}
+                  className="text-sm font-semibold font-inter hover:opacity-80 transition-opacity mt-1 text-left"
+                  style={{ color: c.text }}
+                >
                   Study Now →
-                </Link>
+                </button>
               </div>
             );
           })}
@@ -360,7 +428,15 @@ export default function SubjectsPage() {
       )}
 
       {showModal && user && (
-        <AddSubjectModal uid={user.uid} onClose={() => setShowModal(false)} onSave={handleSave} />
+        <SubjectModal uid={user.uid} onClose={() => setShowModal(false)} onSave={handleSave} />
+      )}
+      {editingSubject && user && (
+        <SubjectModal
+          uid={user.uid}
+          editing={editingSubject}
+          onClose={() => setEditingSubject(null)}
+          onSave={handleSave}
+        />
       )}
 
       <ConfirmModal

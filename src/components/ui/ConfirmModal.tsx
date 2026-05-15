@@ -72,12 +72,14 @@ export default function ConfirmModal({
 
           {/* Actions */}
           <div className="flex gap-3 pt-1">
-            <button
-              onClick={onCancel}
-              className="flex-1 py-2.5 rounded-xl border border-outline-variant text-on-surface-variant text-sm font-semibold font-inter hover:text-on-surface hover:border-outline transition-all"
-            >
-              {cancelLabel}
-            </button>
+            {cancelLabel && (
+              <button
+                onClick={onCancel}
+                className="flex-1 py-2.5 rounded-xl border border-outline-variant text-on-surface-variant text-sm font-semibold font-inter hover:text-on-surface hover:border-outline transition-all"
+              >
+                {cancelLabel}
+              </button>
+            )}
             <button
               onClick={onConfirm}
               className={`flex-1 py-2.5 rounded-xl text-sm font-bold font-inter transition-all active:scale-95 ${

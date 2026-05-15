@@ -63,6 +63,25 @@ export interface Goal {
 
 export type TimerState = "idle" | "running" | "paused" | "break";
 
+/** Firestore-synced timer state (stored at users/{uid}/timerState/current) */
+export interface TimerSyncDoc {
+  timerState: "idle" | "running" | "paused";
+  mode: "focus" | "short-break" | "long-break";
+  startTimestamp: number | null;
+  remainingWhenStarted: number;
+  totalSeconds: number;
+  pomodoroIndex: number;
+  totalPomodoros: number;
+  pomodoroLength: number;
+  shortBreak: number;
+  longBreak: number;
+  selectedSubjectId: string;
+  selectedSubjectName: string;
+  updatedAt: number;
+  /** Which browser tab/device last wrote — used to skip echoed-back writes */
+  deviceId: string;
+}
+
 export interface TimerSession {
   subjectId: string;
   subjectName: string;

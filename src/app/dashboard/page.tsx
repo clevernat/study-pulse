@@ -50,6 +50,7 @@ import { useAuth } from "@/context/AuthContext";
 import { subscribeSessions, subscribeSubjects } from "@/lib/firebase/firestore";
 import { computeStreak } from "@/lib/streakLogic";
 import { getColor } from "@/lib/colorPalette";
+import { localDateStr, formatSmartDuration } from "@/lib/dateUtils";
 import type { HeatmapCell, Session, Subject } from "@/types";
 
 function buildHeatmap(sessions: Session[]): HeatmapCell[] {
@@ -62,7 +63,7 @@ function buildHeatmap(sessions: Session[]): HeatmapCell[] {
   for (let i = 89; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
-    const date = d.toISOString().slice(0, 10);
+    const date = localDateStr(d);   // local date, not UTC
     const minutes = minutesByDate[date] ?? 0;
     const intensity: 0 | 1 | 2 | 3 | 4 =
       minutes === 0 ? 0 : minutes < 60 ? 1 : minutes < 120 ? 2 : minutes < 180 ? 3 : 4;
@@ -74,10 +75,10 @@ function buildHeatmap(sessions: Session[]): HeatmapCell[] {
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 function formatDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`;
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
-  const s = 0;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  return m === 0 ? `${h} hr` : `${h}h ${m}m`;
 }
 
 function focusColor(score: number): string {
@@ -102,14 +103,15 @@ function WeeklyBarChart({ sessions }: { sessions: Session[] }) {
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));
-    return d.toISOString().slice(0, 10);
+    return localDateStr(d);   // local date, not UTC
   });
 
   const dayTotals = days.map((dateStr) => {
     const total = sessions
       .filter((s) => s.date === dateStr)
       .reduce((sum, s) => sum + s.durationMinutes, 0);
-    const dayLabel = new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' });
+    // append noon to prevent any timezone shift when parsing for display
+    const dayLabel = new Date(dateStr + "T12:00:00").toLocaleDateString("en-US", { weekday: "short" });
     return { day: dayLabel, minutes: total, dateStr };
   });
 
@@ -146,9 +148,10 @@ function WeeklyBarChart({ sessions }: { sessions: Session[] }) {
 function Heatmap({ sessions }: { sessions: Session[] }) {
   const cells = buildHeatmap(sessions);
   return (
-    <div className="glass-card p-6 flex flex-col gap-4">
+    <div className="glass-card p-6 flex flex-col gap-4 overflow-hidden">
       <h2 className="font-grotesk font-bold text-lg text-on-surface">90-Day Velocity</h2>
-      <div className="grid gap-1" style={{ gridTemplateColumns: "repeat(13, 1fr)" }}>
+      <div className="overflow-x-auto">
+      <div className="grid gap-1 min-w-[260px]" style={{ gridTemplateColumns: "repeat(13, 1fr)" }}>
         {cells.map((cell) => (
           <div
             key={cell.date}
@@ -156,6 +159,7 @@ function Heatmap({ sessions }: { sessions: Session[] }) {
             className={`w-full aspect-square rounded-sm ${heatIntensityClass(cell.intensity)}`}
           />
         ))}
+      </div>
       </div>
       {/* Legend */}
       <div className="flex items-center gap-2 text-xs text-on-surface-variant">
@@ -184,7 +188,7 @@ function ActiveSubjects({ subjects }: { subjects: Subject[] }) {
       <div className="flex flex-col gap-3">
         {displayed.map((s) => {
           const c = getColor(s.color);
-          const hoursThisMonth = (s.totalMinutes / 60).toFixed(1);
+          const hoursThisMonth = formatSmartDuration(s.totalMinutes);
           return (
             <div key={s.id} className="glass-card p-4 flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: c.bg }}>
@@ -195,7 +199,7 @@ function ActiveSubjects({ subjects }: { subjects: Subject[] }) {
                   <span className="font-grotesk font-bold text-sm text-on-surface truncate">{s.name}</span>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ background: c.chip, color: c.chipText }}>{s.category}</span>
                 </div>
-                <span className="text-xs text-on-surface-variant">{hoursThisMonth}h total</span>
+                <span className="text-xs text-on-surface-variant">{hoursThisMonth} total</span>
               </div>
             </div>
           );
@@ -233,8 +237,8 @@ function RecentSessions({ sessions }: { sessions: Session[] }) {
           Export Logs
         </button>
       </div>
-      <div className="glass-card overflow-hidden">
-        <table className="w-full">
+      <div className="glass-card overflow-hidden overflow-x-auto">
+        <table className="w-full min-w-[400px]">
           <thead>
             <tr className="border-b border-outline-variant">
               <th className="text-left text-xs uppercase tracking-widest text-on-surface-variant px-4 py-3">Subject</th>
@@ -282,18 +286,19 @@ export default function DashboardPage() {
     return () => { unsub1(); unsub2(); };
   }, [user]);
 
-  // Compute weekly hours from loaded sessions
+  // Compute weekly hours from loaded sessions (compare date strings directly — no UTC shift)
   const weeklyHours = (() => {
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
+    const weekAgoStr = localDateStr(weekAgo);
     return sessions
-      .filter((s) => new Date(s.date) >= weekAgo)
+      .filter((s) => s.date >= weekAgoStr)
       .reduce((sum, s) => sum + s.durationMinutes / 60, 0);
   })();
 
   const streakDays = computeStreak(
     sessions.map((s) => s.date),
-    new Date().toISOString().slice(0, 10)
+    localDateStr()
   );
 
   const dailyAvg = (() => {
@@ -329,7 +334,7 @@ export default function DashboardPage() {
             </span>
           </div>
           <div>
-            <div className="font-jetbrains font-semibold text-2xl text-on-surface">{streakDays} Day Streak</div>
+            <div className="font-jetbrains font-semibold text-2xl text-on-surface">{streakDays} {streakDays === 1 ? "Day" : "Day"} Streak</div>
             <div className="text-xs uppercase tracking-widest text-on-surface-variant mt-1">Consistency King</div>
           </div>
         </div>
@@ -340,7 +345,9 @@ export default function DashboardPage() {
             <span className="material-symbols-outlined text-primary">schedule</span>
           </div>
           <div>
-            <div className="font-jetbrains font-semibold text-2xl text-on-surface">{weeklyHours.toFixed(1)}h</div>
+            <div className="font-jetbrains font-semibold text-2xl text-on-surface">
+              {formatSmartDuration(Math.round(weeklyHours * 60))}
+            </div>
             <div className="text-xs uppercase tracking-widest text-on-surface-variant mt-1">Weekly Effort</div>
           </div>
         </div>
@@ -351,7 +358,9 @@ export default function DashboardPage() {
             <span className="material-symbols-outlined text-tertiary">insights</span>
           </div>
           <div>
-            <div className="font-jetbrains font-semibold text-2xl text-on-surface">{dailyAvg.toFixed(1)}h</div>
+            <div className="font-jetbrains font-semibold text-2xl text-on-surface">
+              {formatSmartDuration(Math.round(dailyAvg * 60))}
+            </div>
             <div className="text-xs uppercase tracking-widest text-secondary mt-1">Daily Average</div>
           </div>
         </div>

@@ -3,15 +3,17 @@ import {
   collection,
   doc,
   addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   getDocs,
   query,
+  where,
   orderBy,
   serverTimestamp,
   onSnapshot,
 } from "firebase/firestore";
-import type { Subject, Session, Goal } from "@/types";
+import type { Subject, Session, Goal, TimerSyncDoc } from "@/types";
 
 export async function getUserSessions(uid: string): Promise<Session[]> {
   const q = query(
@@ -58,7 +60,20 @@ export async function deleteSubject(
   uid: string,
   subjectId: string
 ): Promise<void> {
-  await deleteDoc(doc(db, "users", uid, "subjects", subjectId));
+  // Delete all sessions belonging to this subject
+  const sessionsSnap = await getDocs(
+    query(collection(db, "users", uid, "sessions"), where("subjectId", "==", subjectId))
+  );
+  // Delete all goals belonging to this subject
+  const goalsSnap = await getDocs(
+    query(collection(db, "users", uid, "goals"), where("subjectId", "==", subjectId))
+  );
+
+  await Promise.all([
+    ...sessionsSnap.docs.map((d) => deleteDoc(d.ref)),
+    ...goalsSnap.docs.map((d) => deleteDoc(d.ref)),
+    deleteDoc(doc(db, "users", uid, "subjects", subjectId)),
+  ]);
 }
 
 export async function getUserGoals(uid: string): Promise<Goal[]> {
@@ -116,5 +131,60 @@ export async function deleteAllUserData(uid: string): Promise<void> {
       const snap = await getDocs(collection(db, "users", uid, col));
       await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
     })
+  );
+  // Also clear synced timer state
+  try {
+    await deleteDoc(doc(db, "users", uid, "timerState", "current"));
+  } catch {
+    // ignore if not present
+  }
+}
+
+// ── Cross-device timer sync ───────────────────────────────────────────────────
+
+export async function saveTimerState(
+  uid: string,
+  state: TimerSyncDoc
+): Promise<void> {
+  try {
+    await setDoc(doc(db, "users", uid, "timerState", "current"), state);
+  } catch (err) {
+    console.error("saveTimerState failed:", err);
+  }
+}
+
+export function subscribeTimerState(
+  uid: string,
+  cb: (state: TimerSyncDoc | null) => void
+): () => void {
+  return onSnapshot(
+    doc(db, "users", uid, "timerState", "current"),
+    (snap) => cb(snap.exists() ? (snap.data() as TimerSyncDoc) : null)
+  );
+}
+
+// ── Cross-device preferences sync ────────────────────────────────────────────
+
+export interface UserPrefs {
+  pomodoroLength: number;
+  shortBreak: number;
+  longBreak: number;
+}
+
+export async function saveUserPreferences(uid: string, prefs: UserPrefs): Promise<void> {
+  try {
+    await setDoc(doc(db, "users", uid, "preferences", "current"), prefs, { merge: true });
+  } catch (err) {
+    console.error("saveUserPreferences failed:", err);
+  }
+}
+
+export function subscribeUserPreferences(
+  uid: string,
+  cb: (prefs: UserPrefs | null) => void
+): () => void {
+  return onSnapshot(
+    doc(db, "users", uid, "preferences", "current"),
+    (snap) => cb(snap.exists() ? (snap.data() as UserPrefs) : null)
   );
 }

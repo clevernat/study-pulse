@@ -1,21 +1,99 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTimerStore, formatTime } from "@/store/timerStore";
 import { getColor } from "@/lib/colorPalette";
 import { useAuth } from "@/context/AuthContext";
-import { subscribeSubjects, subscribeSessions, addSession } from "@/lib/firebase/firestore";
+import { subscribeSubjects, subscribeSessions, addSession, saveTimerState, subscribeTimerState } from "@/lib/firebase/firestore";
 import { computeStreak } from "@/lib/streakLogic";
 import { playCompletionChime, playBreakEndChime, requestNotificationPermission, sendNotification } from "@/lib/sounds";
+import { localDateStr } from "@/lib/dateUtils";
 import type { Subject, Session } from "@/types";
 
+// Unique ID for this browser tab — persisted in sessionStorage so that navigating
+// away and back to this page reuses the same ID. This prevents Firestore's
+// subscribeTimerState from calling init() on remount when it sees its OWN earlier
+// write with a now-different (freshly generated) DEVICE_ID.
+const DEVICE_ID = (() => {
+  if (typeof sessionStorage === "undefined") {
+    return Math.random().toString(36).slice(2);
+  }
+  const stored = sessionStorage.getItem("sp-device-id");
+  if (stored) return stored;
+  const id =
+    typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2);
+  sessionStorage.setItem("sp-device-id", id);
+  return id;
+})();
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const MODE_LABELS: Record<string, string> = {
   focus: "FOCUS",
   "short-break": "SHORT BREAK",
   "long-break": "LONG BREAK",
 };
 
-export default function TimerPage() {
+// ── DurationCol: module-level so React never remounts it between renders ──────
+interface DurationColProps {
+  label: string;
+  color: string;
+  presets: number[];
+  value: number;
+  draft: string;
+  setDraft: (v: string) => void;
+  onApply: (v: number) => void;
+}
+
+function DurationCol({ label, color, presets, value, draft, setDraft, onApply }: DurationColProps) {
+  return (
+    <div className="p-4 flex flex-col gap-2.5">
+      <span className={`text-[11px] uppercase tracking-[0.18em] font-bold ${color}`}>{label}</span>
+      <div className="flex flex-wrap gap-1.5">
+        {presets.map((m) => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => { setDraft(String(m)); onApply(m); }}
+            className={`px-3 py-1 rounded-full text-[13px] font-jetbrains transition-all ${
+              value === m
+                ? `${color.replace("text-", "bg-")}/20 ${color} border border-current/40`
+                : "border border-outline-variant text-on-surface-variant hover:border-outline"
+            }`}
+          >
+            {m}m
+          </button>
+        ))}
+      </div>
+      <div className="flex items-center gap-1 bg-[#0e0e11] border border-outline-variant rounded-lg px-3 py-2">
+        <input
+          type="number"
+          min={1}
+          max={180}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => {
+            const v = parseInt(draft, 10);
+            if (!isNaN(v) && v >= 1) onApply(v);
+            else setDraft(String(value));
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              const v = parseInt(draft, 10);
+              if (!isNaN(v) && v >= 1) onApply(v);
+            }
+          }}
+          className="w-full bg-transparent text-on-surface text-sm font-jetbrains focus:outline-none text-center"
+        />
+        <span className="text-on-surface-variant text-[11px] shrink-0">min</span>
+      </div>
+    </div>
+  );
+}
+
+function TimerPageInner() {
   const {
     state,
     mode,
@@ -30,14 +108,21 @@ export default function TimerPage() {
     pause,
     reset,
     skip,
+    init,
     setSubject,
-    setPreset,
     setDurations,
+    setTotalPomodoros,
     shortBreak,
     longBreak,
   } = useTimerStore();
 
+  // True once Zustand has finished reading from localStorage.
+  // Until then, store values are just the hardcoded defaults (state:"idle", mode:"focus")
+  // and we must not treat them as real timer state.
+  const hasHydrated = useTimerStore((s) => s._hasHydrated);
+
   const { user } = useAuth();
+  const searchParams = useSearchParams();
 
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -47,31 +132,94 @@ export default function TimerPage() {
   const [draftLong, setDraftLong] = useState(String(longBreak));
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Track previous timer state to detect transitions
-  const prevStateRef = useRef<string>("idle");
-  // Track start time when timer begins
+  // Track previous timer state to detect transitions.
+  // Initialize from current Zustand state so re-mounting the page (navigating away
+  // and back) while the timer is running does NOT trigger a false "fresh focus start".
+  const prevStateRef = useRef<string>(state);
+  // Track start time (HH:MM string) when focus session begins (for display)
   const startTimeRef = useRef<string | null>(null);
-  // Track the totalSeconds at start of focus session (for duration calc)
+  // Track the planned totalSeconds at start of focus session
   const sessionTotalSecondsRef = useRef<number>(totalSeconds);
+
+  // ── Pause-aware focus time tracking ──────────────────────────────────────
+  // Wall-clock ms when the current focus phase started
+  const focusStartMsRef = useRef<number | null>(null);
+  // Total ms spent paused during the current focus phase
+  const focusPausedMsRef = useRef<number>(0);
+  // Wall-clock ms when the current pause started (null if not paused)
+  const focusPauseStartMsRef = useRef<number | null>(null);
+
+  // Helper: reset all focus-time tracking refs for a brand-new focus phase
+  function resetFocusTracking() {
+    focusStartMsRef.current = Date.now();
+    focusPausedMsRef.current = 0;
+    focusPauseStartMsRef.current = null;
+  }
+
+  // Set to true when we apply a remote Firestore sync — prevents duplicate session saves
+  // and prevents mis-capturing focusStart from a remote-triggered state change.
+  // Reset at the end of prevModeRef effect (which always runs after prevStateRef effect).
+  const applyingRemoteRef = useRef<boolean>(false);
+
+  // If arriving from "Study Now", auto-select the subject from URL params
+  useEffect(() => {
+    const id = searchParams.get("subjectId");
+    const name = searchParams.get("subjectName");
+    if (id && name) {
+      setSubject(id, name);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Load subjects and sessions; request notification permission
   useEffect(() => {
     requestNotificationPermission();
     if (!user) return;
     const unsub1 = subscribeSubjects(user.uid, (data) => {
-      if (data.length > 0) setSubjects(data);
+      setSubjects(data);
+      // If the persisted selected subject no longer exists (e.g. after data reset),
+      // clear it so the timer doesn't show a ghost subject
+      if (data.length === 0) {
+        setSubject("", "Select a Subject");
+      } else {
+        const store = useTimerStore.getState();
+        if (store.selectedSubjectId && !data.find((s) => s.id === store.selectedSubjectId)) {
+          setSubject("", "Select a Subject");
+        }
+      }
     });
     const unsub2 = subscribeSessions(user.uid, setSessions);
     return () => { unsub1(); unsub2(); };
   }, [user]);
 
-  // Only set preset on first mount if the timer is completely idle (not running/paused)
+  // ── Hydration sync ────────────────────────────────────────────────────────
+  // After Zustand reads localStorage, sync prevStateRef/prevModeRef to the REAL
+  // current state so the tracking effects below don't misfire.
+  // This effect is defined BEFORE the tracking effects so React runs it first
+  // in the same commit — guaranteeing the refs are correct before they're read.
   useEffect(() => {
-    if (state === "idle") {
-      setPreset(pomodoroLength);
+    if (!hasHydrated) return;
+    const s = useTimerStore.getState();
+    prevStateRef.current = s.state;
+    prevModeRef.current = s.mode;
+    // Restore focus-time tracking for a timer that was already running before
+    // the page loaded (navigation or refresh). Use startTimestamp as the best
+    // approximation of when the current focus phase began.
+    if (s.state === "running" && s.mode === "focus" && s.startTimestamp !== null) {
+      if (focusStartMsRef.current === null) {
+        focusStartMsRef.current = s.startTimestamp;
+        focusPausedMsRef.current = 0; // can't know pre-load pauses; exclude them
+        sessionTotalSecondsRef.current = s.totalSeconds;
+      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasHydrated]);
+
+  // NOTE: No "preset on mount" effect here.
+  // The Zustand store (persisted to localStorage) already holds secondsRemaining,
+  // pomodoroLength, and all other timer state correctly. Calling setPreset() on mount
+  // would reset the timer to full duration whenever the user navigates back to this page
+  // while the timer is running. The store + init() in ClientShell handle restoration.
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -84,31 +232,65 @@ export default function TimerPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Capture start time when timer transitions to running
+  // Capture start time and manage pause-aware focus tracking.
+  // Skip when applying remote state — the other device owns that session.
   useEffect(() => {
-    if (state === "running" && prevStateRef.current !== "running") {
-      startTimeRef.current = new Date().toTimeString().slice(0, 5);
-      sessionTotalSecondsRef.current = totalSeconds;
+    if (!applyingRemoteRef.current && mode === "focus") {
+      if (state === "running" && prevStateRef.current === "paused") {
+        // ── Resuming from pause: stop the pause timer, accumulate paused ms ──
+        if (focusPauseStartMsRef.current !== null) {
+          focusPausedMsRef.current += Date.now() - focusPauseStartMsRef.current;
+          focusPauseStartMsRef.current = null;
+        }
+      } else if (state === "running" && prevStateRef.current !== "running") {
+        // ── Fresh focus start (from idle) ─────────────────────────────────────
+        startTimeRef.current = new Date().toTimeString().slice(0, 5);
+        sessionTotalSecondsRef.current = totalSeconds;
+        resetFocusTracking();
+      } else if (state === "paused" && prevStateRef.current === "running") {
+        // ── Pausing: record when the pause started ────────────────────────────
+        focusPauseStartMsRef.current = Date.now();
+      }
     }
     prevStateRef.current = state;
-  }, [state, totalSeconds]);
+    // Note: do NOT reset applyingRemoteRef here — prevModeRef effect runs after this
+    // and also needs to check it. It will reset it.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, mode]);
 
-  // Save session when a focus pomodoro completes (state goes from running to break)
+  // Save session when a focus pomodoro completes
   const saveSession = useCallback(async () => {
     if (!user) return;
     const currentSubject = subjects.find((s) => s.id === selectedSubjectId);
-    const today = new Date().toISOString().slice(0, 10);
     const now = new Date();
-    const durationMinutes = Math.round(sessionTotalSecondsRef.current / 60);
+
+    // plannedSecs: the configured focus duration for this phase
+    const plannedSecs = sessionTotalSecondsRef.current;
+
+    // Compute actual focus-only time, excluding ALL pause time:
+    //   totalElapsedMs = wall-clock from focus start to now
+    //   pausedMs       = ms spent paused (accumulated across all pauses)
+    //   studiedMs      = elapsed − paused
+    // Cap at plannedSecs so break time / any rounding never inflates the duration.
+    const totalElapsedMs = focusStartMsRef.current ? Date.now() - focusStartMsRef.current : plannedSecs * 1000;
+    const pausedMs = focusPausedMsRef.current; // pauses fully inside focus only
+    const studiedSecs = Math.min(Math.max(0, (totalElapsedMs - pausedMs) / 1000), plannedSecs);
+    const durationMinutes = Math.max(1, Math.round(studiedSecs / 60));
+
+    // Focus score: % of planned session actually studied (capped at 100%)
+    const focusScore = plannedSecs > 0
+      ? Math.min(100, Math.round((studiedSecs / plannedSecs) * 100))
+      : 100;
+
     const session: Omit<Session, "id"> = {
       uid: user.uid,
       subjectId: currentSubject?.id ?? "unknown",
       subjectName: currentSubject?.name ?? selectedSubjectName,
       subjectColor: currentSubject?.color ?? "violet",
       durationMinutes,
-      focusScore: 85,
+      focusScore,
       pomodoroCount: 1,
-      date: today,
+      date: localDateStr(now),          // local calendar date, not UTC
       startTime: startTimeRef.current ?? now.toTimeString().slice(0, 5),
       endTime: now.toTimeString().slice(0, 5),
       notes: "",
@@ -120,42 +302,114 @@ export default function TimerPage() {
     }
   }, [user, subjects, selectedSubjectId, selectedSubjectName]);
 
-  // Detect focus session completion: was running in focus mode, now in break state
-  useEffect(() => {
-    if (
-      state === "break" &&
-      prevStateRef.current === "running" &&
-      mode !== "focus" // mode has already transitioned to a break mode
-    ) {
-      // Only save if we were in a focus session (not a break session completing)
-      // The timer transitions: focus running -> break state with break mode
-      // prevStateRef is updated inside the running effect, so at this point
-      // prevStateRef.current may already be "break". We use a separate ref below.
-    }
-  }, [state, mode]);
+  // ── Cross-device timer sync ─────────────────────────────────────────────────
 
-  // Detect transitions to play sounds and send notifications
-  const prevModeRef = useRef<string>("focus");
+  // Snapshot the current store and persist it to Firestore.
+  // Called after every user action (start/pause/reset/skip) and phase transitions.
+  const saveToFirestore = useCallback(async () => {
+    if (!user) return;
+    const s = useTimerStore.getState();
+    await saveTimerState(user.uid, {
+      timerState: s.state === "running" || s.state === "paused" ? s.state : "idle",
+      mode: s.mode,
+      startTimestamp: s.startTimestamp,
+      remainingWhenStarted: s.remainingWhenStarted,
+      totalSeconds: s.totalSeconds,
+      pomodoroIndex: s.pomodoroIndex,
+      totalPomodoros: s.totalPomodoros,
+      pomodoroLength: s.pomodoroLength,
+      shortBreak: s.shortBreak,
+      longBreak: s.longBreak,
+      selectedSubjectId: s.selectedSubjectId,
+      selectedSubjectName: s.selectedSubjectName,
+      updatedAt: Date.now(),
+      deviceId: DEVICE_ID,   // marks this write as ours
+    });
+  }, [user]);
+
+  // Subscribe to Firestore timer state for cross-device sync.
+  // When another device changes the state, apply it here and restart the countdown.
   useEffect(() => {
-    if (state === "break" && prevModeRef.current === "focus") {
-      // Focus session just completed
-      saveSession();
-      playCompletionChime();
-      sendNotification(
-        "StudyPulse — Focus Complete! 🎉",
-        `Great work${selectedSubjectName && selectedSubjectName !== "Select a Subject" ? ` on ${selectedSubjectName}` : ""}! Time for a break.`
-      );
-    } else if (state === "idle" && prevModeRef.current !== "focus" && prevModeRef.current !== "idle") {
-      // Break ended — nudge back to focus
-      playBreakEndChime();
-      sendNotification("StudyPulse — Break Over", "Ready to focus again?");
+    if (!user) return;
+    const unsub = subscribeTimerState(user.uid, (remote) => {
+      if (!remote) {
+        // timerState/current was deleted (data cleared on another device)
+        // ClientShell resets the store; clear all local tracking refs here
+        applyingRemoteRef.current = true;
+        focusStartMsRef.current = null;
+        focusPausedMsRef.current = 0;
+        focusPauseStartMsRef.current = null;
+        startTimeRef.current = null;
+        return;
+      }
+      // Skip writes that originated from THIS tab — nothing to apply
+      if (remote.deviceId === DEVICE_ID) return;
+      // Flag: we're applying remote data, so transition effects must not save sessions
+      applyingRemoteRef.current = true;
+      // Apply the remote state into the local Zustand store
+      useTimerStore.setState({
+        state: remote.timerState,
+        mode: remote.mode,
+        startTimestamp: remote.startTimestamp,
+        remainingWhenStarted: remote.remainingWhenStarted,
+        totalSeconds: remote.totalSeconds,
+        pomodoroIndex: remote.pomodoroIndex,
+        totalPomodoros: remote.totalPomodoros,
+        pomodoroLength: remote.pomodoroLength,
+        shortBreak: remote.shortBreak,
+        longBreak: remote.longBreak,
+        selectedSubjectId: remote.selectedSubjectId,
+        selectedSubjectName: remote.selectedSubjectName,
+      });
+      // init() recomputes secondsRemaining from wall-clock time and
+      // restarts the interval when state is "running"
+      init();
+    });
+    return () => unsub();
+  }, [user, init]);
+
+  // Detect transitions: play sounds + save session on mode changes
+  // Focus → break: mode changes from "focus" to "short-break"/"long-break" while running
+  // Break → focus: mode changes back to "focus" and state goes idle
+  // Initialize from current mode so re-mounting doesn't fire a spurious transition.
+  const prevModeRef = useRef<string>(mode);
+  useEffect(() => {
+    const prevMode = prevModeRef.current;
+
+    if (prevMode === "focus" && (mode === "short-break" || mode === "long-break")) {
+      // Focus just completed → break auto-started
+      if (!applyingRemoteRef.current) {
+        // Only THIS device saves the session — the device that ran the timer.
+        // Other devices receive the sync and must skip session saving.
+        saveSession();
+        saveToFirestore();
+        playCompletionChime();
+        sendNotification(
+          "StudyPulse — Focus Complete! 🎉",
+          `Great work${selectedSubjectName && selectedSubjectName !== "Select a Subject" ? ` on ${selectedSubjectName}` : ""}! Break time started.`
+        );
+      }
+    } else if ((prevMode === "short-break" || prevMode === "long-break") && mode === "focus") {
+      // Break finished → auto-started next focus session; reset all focus tracking
+      if (!applyingRemoteRef.current) {
+        startTimeRef.current = new Date().toTimeString().slice(0, 5);
+        sessionTotalSecondsRef.current = totalSeconds;
+        resetFocusTracking();
+        saveToFirestore();
+        playBreakEndChime();
+        sendNotification("StudyPulse — Break Over ⏱", "Back to focus — let's go!");
+      }
     }
+
     prevModeRef.current = mode;
-  }, [state, mode, saveSession, selectedSubjectName]);
+    // Reset the remote-apply flag here — this effect always runs after prevStateRef effect,
+    // so both effects have had a chance to read it before we clear it.
+    applyingRemoteRef.current = false;
+  }, [state, mode, saveSession, saveToFirestore, selectedSubjectName]);
 
 
   // Computed stats from real sessions
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = localDateStr();
   const todayMinutes = sessions
     .filter((s) => s.date === todayStr)
     .reduce((sum, s) => sum + s.durationMinutes, 0);
@@ -179,7 +433,7 @@ export default function TimerPage() {
 
   const streakDays = computeStreak(
     sessions.map((s) => s.date),
-    todayStr
+    localDateStr()
   );
 
   const handleSubjectSelect = (subject: Subject) => {
@@ -200,408 +454,288 @@ export default function TimerPage() {
   // Determine display list: real subjects if loaded, else empty (no mock fallback)
   const displaySubjects = subjects;
 
+  // ── Mode-specific visual theme ────────────────────────────────────────────
+  const modeTheme = {
+    focus: {
+      gradStart:   "#7c3aed",
+      gradEnd:     "#d2bbff",
+      glow:        "rgba(124,58,237,0.22)",
+      labelColor:  "#d2bbff",
+      dotColor:    "#7c3aed",
+      btnBg:       "rgba(124,58,237,0.25)",
+      btnBorder:   "rgba(124,58,237,0.6)",
+      btnShadow:   "0 0 28px rgba(124,58,237,0.45)",
+      btnText:     "#d2bbff",
+      trackColor:  "#2a2a3d",
+      badge:       "FOCUS",
+      badgeBg:     "rgba(124,58,237,0.15)",
+      badgeBorder: "rgba(124,58,237,0.35)",
+    },
+    "short-break": {
+      gradStart:   "#00d29c",
+      gradEnd:     "#40efb7",
+      glow:        "rgba(64,239,183,0.2)",
+      labelColor:  "#40efb7",
+      dotColor:    "#40efb7",
+      btnBg:       "rgba(64,239,183,0.18)",
+      btnBorder:   "rgba(64,239,183,0.55)",
+      btnShadow:   "0 0 28px rgba(64,239,183,0.35)",
+      btnText:     "#40efb7",
+      trackColor:  "#1a2e28",
+      badge:       "SHORT BREAK",
+      badgeBg:     "rgba(64,239,183,0.12)",
+      badgeBorder: "rgba(64,239,183,0.3)",
+    },
+    "long-break": {
+      gradStart:   "#f97316",
+      gradEnd:     "#ffb95f",
+      glow:        "rgba(255,185,95,0.2)",
+      labelColor:  "#ffb95f",
+      dotColor:    "#ffb95f",
+      btnBg:       "rgba(255,185,95,0.18)",
+      btnBorder:   "rgba(255,185,95,0.55)",
+      btnShadow:   "0 0 28px rgba(255,185,95,0.35)",
+      btnText:     "#ffb95f",
+      trackColor:  "#2e2510",
+      badge:       "LONG BREAK",
+      badgeBg:     "rgba(255,185,95,0.12)",
+      badgeBorder: "rgba(255,185,95,0.3)",
+    },
+  } as const;
+  const theme = modeTheme[mode] ?? modeTheme.focus;
+
   return (
-    <section className="flex flex-col items-center gap-6 pt-6 pb-4 md:pt-10 md:pb-6">
+    <div className="flex flex-col items-center gap-3 max-w-xl mx-auto w-full">
 
       {/* Subject Selector */}
-      <div className="relative w-full max-w-md" ref={dropdownRef}>
+      <div className="relative w-full" ref={dropdownRef}>
         <div
-          className="glass-card flex items-center justify-between px-5 py-3.5 cursor-pointer hover:border-primary/40 transition-colors duration-200"
+          className="glass-card flex items-center justify-between px-5 py-4 cursor-pointer hover:border-primary/40 transition-colors duration-200"
           onClick={() => setIsDropdownOpen((v) => !v)}
         >
           <div className="flex items-center gap-3">
-            <span
-              className="material-symbols-outlined text-primary text-[20px]"
-              style={{ fontFamily: "'Material Symbols Outlined'" }}
-            >
+            <span className="material-symbols-outlined text-primary text-[22px]">
               {currentSubject?.icon ?? "school"}
             </span>
-            <span className="text-on-surface font-medium text-[15px]">
-              {selectedSubjectName}
-            </span>
+            <span className="text-on-surface font-medium text-base">{selectedSubjectName}</span>
           </div>
           <span
-            className="material-symbols-outlined text-on-surface-variant text-[20px] transition-transform duration-200"
-            style={{
-              fontFamily: "'Material Symbols Outlined'",
-              transform: isDropdownOpen ? "rotate(180deg)" : "rotate(0deg)",
-            }}
+            className="material-symbols-outlined text-on-surface-variant text-[22px] transition-transform duration-200"
+            style={{ transform: isDropdownOpen ? "rotate(180deg)" : "rotate(0deg)" }}
           >
             expand_more
           </span>
         </div>
-
         {isDropdownOpen && (
-          <div className="absolute top-[calc(100%+6px)] left-0 right-0 z-50 glass-card overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+          <div className="absolute top-[calc(100%+4px)] left-0 right-0 z-50 glass-card overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)] max-h-48 overflow-y-auto">
             {displaySubjects.length === 0 ? (
-              <div className="px-5 py-4 text-on-surface-variant text-sm text-center">
-                No subjects yet — add one in Subjects
+              <div className="px-5 py-4 text-on-surface-variant text-sm text-center">No subjects yet — add one in Subjects</div>
+            ) : displaySubjects.map((subject) => (
+              <div key={subject.id} className="flex items-center gap-3 px-5 py-3 cursor-pointer hover:bg-surface-container transition-colors" onClick={() => handleSubjectSelect(subject)}>
+                <span className="material-symbols-outlined text-[20px]" style={{ color: getColor(subject.color).text }}>{subject.icon}</span>
+                <span className="text-on-surface text-[15px] font-medium">{subject.name}</span>
+                <span className="ml-auto text-on-surface-variant text-[11px] uppercase tracking-widest">{subject.category}</span>
               </div>
-            ) : (
-              displaySubjects.map((subject) => (
-                <div
-                  key={subject.id}
-                  className="flex items-center gap-3 px-5 py-3 cursor-pointer hover:bg-surface-container transition-colors duration-150"
-                  onClick={() => handleSubjectSelect(subject)}
-                >
-                  <span
-                    className="material-symbols-outlined text-[18px]"
-                    style={{ fontFamily: "'Material Symbols Outlined'", color: getColor(subject.color).text }}
-                  >
-                    {subject.icon}
-                  </span>
-                  <span className="text-on-surface text-[14px] font-medium">{subject.name}</span>
-                  <span className="ml-auto text-on-surface-variant text-[11px] uppercase tracking-widest">
-                    {subject.category}
-                  </span>
-                </div>
-              ))
-            )}
+            ))}
           </div>
         )}
       </div>
 
-      {/* SVG Ring Timer */}
-      <div className="relative w-[260px] h-[260px] sm:w-[320px] sm:h-[320px] md:w-[380px] md:h-[380px]">
-        <svg
-          className="w-full h-full timer-ring"
-          viewBox="0 0 380 380"
-          style={{ transform: "rotate(-90deg)" }}
-        >
+      {/* SVG Ring */}
+      <div className="relative w-full max-w-[320px] sm:max-w-[400px]" style={{ aspectRatio: "1" }}>
+        <svg className="w-full h-full" viewBox="0 0 380 380" style={{ transform: "rotate(-90deg)" }}>
           <defs>
             <linearGradient id="timerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#7c3aed" />
-              <stop offset="100%" stopColor="#d2bbff" />
+              <stop offset="0%" stopColor={theme.gradStart} style={{ transition: "stop-color 0.6s ease" }} />
+              <stop offset="100%" stopColor={theme.gradEnd} style={{ transition: "stop-color 0.6s ease" }} />
             </linearGradient>
           </defs>
-          {/* Track — visible dark ring */}
-          <circle
-            cx="190"
-            cy="190"
-            r={R}
-            fill="none"
-            stroke="#2a2a3d"
-            strokeWidth="10"
-          />
-          {/* Progress */}
-          <circle
-            cx="190"
-            cy="190"
-            r={R}
-            fill="none"
-            stroke="url(#timerGrad)"
-            strokeWidth="10"
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={dashOffset}
-            style={{ transition: "stroke-dashoffset 0.8s ease" }}
-          />
+          <circle cx="190" cy="190" r={R} fill="none" stroke={theme.trackColor} strokeWidth="12"
+            style={{ transition: "stroke 0.6s ease" }} />
+          <circle cx="190" cy="190" r={R} fill="none" stroke="url(#timerGrad)" strokeWidth="12"
+            strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={dashOffset}
+            style={{ transition: "stroke-dashoffset 0.8s ease" }} />
         </svg>
-
-        {/* Center content */}
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-          <span className="font-jetbrains text-[48px] sm:text-[60px] md:text-[72px] font-bold tracking-tighter text-on-surface leading-none tabular-nums">
+          <span className="font-jetbrains text-[68px] sm:text-[86px] font-bold tracking-tighter text-on-surface leading-none tabular-nums">
             {formatTime(secondsRemaining)}
           </span>
-          <span className="text-[11px] uppercase tracking-[0.2em] text-on-surface-variant font-medium">
-            {MODE_LABELS[mode] ?? "FOCUS"}
+          {/* Mode badge — color changes per mode */}
+          <span
+            className="text-[11px] sm:text-[13px] uppercase tracking-[0.22em] font-bold px-3 py-1 rounded-full border"
+            style={{ color: theme.labelColor, background: theme.badgeBg, borderColor: theme.badgeBorder, transition: "all 0.5s ease" }}
+          >
+            {theme.badge}
           </span>
-          {/* Pomodoro dots */}
+          {/* Pomodoro progress dots */}
           <div className="flex gap-2 mt-1">
             {Array.from({ length: totalPomodoros }).map((_, i) => (
               <div
                 key={i}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  i < completedPomodoros
-                    ? "bg-primary shadow-[0_0_6px_rgba(210,187,255,0.8)]"
-                    : "border border-outline-variant bg-transparent"
-                }`}
+                className="w-2 h-2 rounded-full transition-all duration-500"
+                style={i < completedPomodoros
+                  ? { background: theme.dotColor }
+                  : { background: "transparent", border: `1px solid rgba(255,255,255,0.15)` }
+                }
               />
             ))}
           </div>
         </div>
-
-        {/* Glow when running */}
+        {/* Ambient glow — color matches mode */}
         {state === "running" && (
           <div
             className="absolute inset-0 rounded-full pointer-events-none"
-            style={{ boxShadow: "0 0 60px rgba(124,58,237,0.12)" }}
+            style={{ boxShadow: `0 0 90px ${theme.glow}`, transition: "box-shadow 0.6s ease" }}
           />
         )}
       </div>
 
       {/* Controls */}
-      <div className="flex items-center gap-6 justify-center mt-4 md:mt-8">
-        {/* Reset */}
-        <button
-          onClick={reset}
-          className="w-14 h-14 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest transition-all active:scale-95"
-          aria-label="Reset timer"
-        >
-          <span
-            className="material-symbols-outlined"
-            style={{ fontFamily: "'Material Symbols Outlined'" }}
-          >
-            restart_alt
-          </span>
+      <div className="flex items-center gap-5 justify-center">
+        <button onClick={() => { reset(); saveToFirestore(); }} className="w-11 h-11 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest transition-all active:scale-95" aria-label="Reset">
+          <span className="material-symbols-outlined text-[20px]">restart_alt</span>
         </button>
-
-        {/* Play / Pause */}
-        <div className="flex flex-col items-center gap-2">
+        <div className="flex flex-col items-center gap-1.5">
           <button
-            onClick={state === "running" ? pause : start}
+            onClick={() => { if (state === "running") { pause(); } else { start(); } saveToFirestore(); }}
             disabled={!hasSubject && state !== "running"}
-            className={`w-20 h-20 rounded-full flex items-center justify-center transition-all ${
-              hasSubject || state === "running"
-                ? "bg-primary-container text-on-primary-container shadow-[0_0_32px_rgba(124,58,237,0.4)] hover:scale-105 active:scale-95"
-                : "bg-surface-container border-2 border-dashed border-outline-variant text-on-surface-variant cursor-not-allowed opacity-50"
-            }`}
-            aria-label={state === "running" ? "Pause timer" : "Start timer"}
+            className="w-16 h-16 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95"
+            style={hasSubject || state === "running" ? {
+              background: theme.btnBg,
+              border: `2px solid ${theme.btnBorder}`,
+              boxShadow: theme.btnShadow,
+              color: theme.btnText,
+              transition: "all 0.5s ease",
+            } : {
+              background: "transparent",
+              border: "2px dashed rgba(255,255,255,0.15)",
+              color: "rgba(255,255,255,0.3)",
+              cursor: "not-allowed",
+              opacity: 0.5,
+            }}
+            aria-label={state === "running" ? "Pause" : "Start"}
           >
-            <span
-              className="material-symbols-outlined text-4xl"
-              style={{
-                fontFamily: "'Material Symbols Outlined'",
-                fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 48",
-              }}
-            >
+            <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>
               {state === "running" ? "pause" : "play_arrow"}
             </span>
           </button>
           {!hasSubject && state !== "running" && (
-            <span className="text-xs text-on-surface-variant font-inter text-center">
-              Select a subject to start
-            </span>
+            <span className="text-[11px] text-on-surface-variant font-inter text-center">Select a subject to start</span>
           )}
         </div>
-
-        {/* Skip */}
-        <button
-          onClick={skip}
-          className="w-14 h-14 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest transition-all active:scale-95"
-          aria-label="Skip to next session"
-        >
-          <span
-            className="material-symbols-outlined"
-            style={{ fontFamily: "'Material Symbols Outlined'" }}
-          >
-            skip_next
-          </span>
+        <button onClick={() => { skip(); saveToFirestore(); }} className="w-11 h-11 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest transition-all active:scale-95" aria-label="Skip">
+          <span className="material-symbols-outlined text-[20px]">skip_next</span>
         </button>
       </div>
 
-      {/* Duration Controls — always visible */}
-      <div className="w-full max-w-2xl mt-6 bg-[#12121a] border border-[#252535] rounded-2xl overflow-hidden">
+      {/* Duration Controls */}
+      <div className="w-full bg-[#12121a] border border-[#252535] rounded-2xl overflow-hidden">
         <div className="grid grid-cols-3 divide-x divide-[#252535]">
-          {/* Focus */}
-          <div className="p-4 flex flex-col gap-3">
-            <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-primary">Focus</span>
-            <div className="flex flex-wrap gap-1.5">
-              {[25, 45, 60].map((m) => (
-                <button
-                  key={m}
-                  onClick={() => { setDurations(m, shortBreak, longBreak); setDraftFocus(String(m)); }}
-                  className={`px-3 py-1 rounded-full text-xs font-jetbrains transition-all ${
-                    pomodoroLength === m
-                      ? "bg-primary/20 text-primary border border-primary/40"
-                      : "border border-outline-variant text-on-surface-variant hover:text-primary hover:border-primary/40"
-                  }`}
-                >
-                  {m}m
-                </button>
-              ))}
-            </div>
-            <div className="flex items-center gap-2 bg-[#0e0e11] border border-outline-variant rounded-xl px-3 py-2">
-              <input
-                type="number"
-                min={1}
-                max={180}
-                value={draftFocus}
-                onChange={(e) => setDraftFocus(e.target.value)}
-                onBlur={() => {
-                  const v = parseInt(draftFocus, 10);
-                  if (!isNaN(v) && v >= 1) setDurations(v, shortBreak, longBreak);
-                  else setDraftFocus(String(pomodoroLength));
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    const v = parseInt(draftFocus, 10);
-                    if (!isNaN(v) && v >= 1) setDurations(v, shortBreak, longBreak);
-                  }
-                }}
-                className="w-full bg-transparent text-on-surface text-sm font-jetbrains focus:outline-none text-center"
-              />
-              <span className="text-on-surface-variant text-[10px] shrink-0">min</span>
-            </div>
-          </div>
-
-          {/* Short Break */}
-          <div className="p-4 flex flex-col gap-3">
-            <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-secondary">Short Break</span>
-            <div className="flex flex-wrap gap-1.5">
-              {[5, 10, 15].map((m) => (
-                <button
-                  key={m}
-                  onClick={() => { setDurations(pomodoroLength, m, longBreak); setDraftShort(String(m)); }}
-                  className={`px-3 py-1 rounded-full text-xs font-jetbrains transition-all ${
-                    shortBreak === m
-                      ? "bg-secondary/20 text-secondary border border-secondary/40"
-                      : "border border-outline-variant text-on-surface-variant hover:text-secondary hover:border-secondary/40"
-                  }`}
-                >
-                  {m}m
-                </button>
-              ))}
-            </div>
-            <div className="flex items-center gap-2 bg-[#0e0e11] border border-outline-variant rounded-xl px-3 py-2">
-              <input
-                type="number"
-                min={1}
-                max={60}
-                value={draftShort}
-                onChange={(e) => setDraftShort(e.target.value)}
-                onBlur={() => {
-                  const v = parseInt(draftShort, 10);
-                  if (!isNaN(v) && v >= 1) setDurations(pomodoroLength, v, longBreak);
-                  else setDraftShort(String(shortBreak));
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    const v = parseInt(draftShort, 10);
-                    if (!isNaN(v) && v >= 1) setDurations(pomodoroLength, v, longBreak);
-                  }
-                }}
-                className="w-full bg-transparent text-on-surface text-sm font-jetbrains focus:outline-none text-center"
-              />
-              <span className="text-on-surface-variant text-[10px] shrink-0">min</span>
-            </div>
-          </div>
-
-          {/* Long Break */}
-          <div className="p-4 flex flex-col gap-3">
-            <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-tertiary">Long Break</span>
-            <div className="flex flex-wrap gap-1.5">
-              {[15, 20, 30].map((m) => (
-                <button
-                  key={m}
-                  onClick={() => { setDurations(pomodoroLength, shortBreak, m); setDraftLong(String(m)); }}
-                  className={`px-3 py-1 rounded-full text-xs font-jetbrains transition-all ${
-                    longBreak === m
-                      ? "bg-tertiary/20 text-tertiary border border-tertiary/40"
-                      : "border border-outline-variant text-on-surface-variant hover:text-tertiary hover:border-tertiary/40"
-                  }`}
-                >
-                  {m}m
-                </button>
-              ))}
-            </div>
-            <div className="flex items-center gap-2 bg-[#0e0e11] border border-outline-variant rounded-xl px-3 py-2">
-              <input
-                type="number"
-                min={1}
-                max={120}
-                value={draftLong}
-                onChange={(e) => setDraftLong(e.target.value)}
-                onBlur={() => {
-                  const v = parseInt(draftLong, 10);
-                  if (!isNaN(v) && v >= 1) setDurations(pomodoroLength, shortBreak, v);
-                  else setDraftLong(String(longBreak));
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    const v = parseInt(draftLong, 10);
-                    if (!isNaN(v) && v >= 1) setDurations(pomodoroLength, shortBreak, v);
-                  }
-                }}
-                className="w-full bg-transparent text-on-surface text-sm font-jetbrains focus:outline-none text-center"
-              />
-              <span className="text-on-surface-variant text-[10px] shrink-0">min</span>
-            </div>
+          <DurationCol label="Focus"       color="text-primary"   presets={[25,45,60]}  value={pomodoroLength} draft={draftFocus} setDraft={setDraftFocus} onApply={(v)=>setDurations(v,shortBreak,longBreak)} />
+          <DurationCol label="Short Break" color="text-secondary" presets={[5,10,15]}   value={shortBreak}     draft={draftShort} setDraft={setDraftShort} onApply={(v)=>setDurations(pomodoroLength,v,longBreak)} />
+          <DurationCol label="Long Break"  color="text-tertiary"  presets={[15,20,30]}  value={longBreak}      draft={draftLong}  setDraft={setDraftLong}  onApply={(v)=>setDurations(pomodoroLength,shortBreak,v)} />
+        </div>
+        {/* Rounds before long break */}
+        <div className="border-t border-[#252535] px-4 py-3 flex items-center gap-3">
+          <span className="text-[11px] uppercase tracking-[0.15em] font-bold text-on-surface-variant flex-1">
+            Rounds before long break
+          </span>
+          <div className="flex gap-1.5">
+            {[2, 3, 4, 5, 6].map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setTotalPomodoros(n)}
+                className={`w-8 h-8 rounded-full text-[13px] font-jetbrains font-bold transition-all ${
+                  totalPomodoros === n
+                    ? "bg-primary/20 text-primary border border-primary/40"
+                    : "border border-outline-variant text-on-surface-variant hover:border-outline hover:text-on-surface"
+                }`}
+              >
+                {n}
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
       {/* Session Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-2xl mt-4">
+      <div className="grid grid-cols-3 gap-2 w-full sm:gap-3">
+
         {/* Today's Focus */}
-        <div className="bg-surface-container-low border border-outline-variant p-4 rounded-xl h-32 flex flex-col justify-between">
+        <div className="bg-surface-container-low border border-outline-variant p-2.5 sm:p-4 rounded-xl flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] uppercase tracking-widest text-on-surface-variant font-medium">
-              Today&apos;s Focus
-            </span>
-            <span
-              className="material-symbols-outlined text-secondary text-[16px]"
-              style={{ fontFamily: "'Material Symbols Outlined'" }}
-            >
-              timer
-            </span>
+            <span className="text-[11px] uppercase tracking-widest text-on-surface-variant font-semibold leading-tight">Today&apos;s Focus</span>
+            <span className="material-symbols-outlined text-secondary text-[18px]">timer</span>
           </div>
           <div>
-            <span className="text-[28px] font-bold text-secondary font-jetbrains leading-none">
-              {todayMinutes === 0 ? "--" : todayHours.toFixed(1)}
-            </span>
-            {todayMinutes > 0 && <span className="text-on-surface-variant text-[13px] ml-1">hrs</span>}
+            {todayMinutes === 0 ? (
+              <span className="text-xl sm:text-3xl font-bold text-secondary font-jetbrains leading-none">--</span>
+            ) : todayMinutes < 60 ? (
+              <>
+                <span className="text-xl sm:text-3xl font-bold text-secondary font-jetbrains leading-none">{todayMinutes}</span>
+                <span className="text-on-surface-variant text-xs sm:text-sm ml-1">min</span>
+              </>
+            ) : (
+              <>
+                <span className="text-xl sm:text-3xl font-bold text-secondary font-jetbrains leading-none">{todayHours.toFixed(1)}</span>
+                <span className="text-on-surface-variant text-xs sm:text-sm ml-1">hrs</span>
+              </>
+            )}
           </div>
           <div className="h-1.5 rounded-full bg-surface-container overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all"
-              style={{ width: `${todayProgress * 100}%`, background: "linear-gradient(to right, #40efb7, #00d29c)" }}
-            />
+            <div className="h-full rounded-full transition-all" style={{ width: `${todayProgress * 100}%`, background: "linear-gradient(to right,#40efb7,#00d29c)" }} />
           </div>
         </div>
 
         {/* Productivity */}
-        <div className="bg-surface-container-low border border-outline-variant p-4 rounded-xl h-32 flex flex-col justify-between">
+        <div className="bg-surface-container-low border border-outline-variant p-2.5 sm:p-4 rounded-xl flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] uppercase tracking-widest text-on-surface-variant font-medium">
-              Productivity
-            </span>
-            <span
-              className="material-symbols-outlined text-secondary text-[16px]"
-              style={{ fontFamily: "'Material Symbols Outlined'" }}
-            >
+            <span className="text-[11px] uppercase tracking-widest text-on-surface-variant font-semibold leading-tight">Productivity</span>
+            <span className="material-symbols-outlined text-secondary text-[18px]">
               {(productivityChange ?? 0) >= 0 ? "trending_up" : "trending_down"}
             </span>
           </div>
-          <div className="flex items-end gap-1.5">
-            <span className="text-[28px] font-bold text-secondary font-jetbrains leading-none">
+          <div className="flex items-end gap-1">
+            <span className="text-xl sm:text-3xl font-bold text-secondary font-jetbrains leading-none">
               {productivityChange === null ? "--" : `${productivityChange >= 0 ? "+" : ""}${productivityChange}`}
             </span>
-            {productivityChange !== null && <span className="text-on-surface-variant text-[13px] mb-0.5">%</span>}
+            {productivityChange !== null && <span className="text-on-surface-variant text-xs sm:text-sm mb-0.5">%</span>}
           </div>
-          <p className="text-[10px] text-on-surface-variant">{productivityChange === null ? "No data yet" : "vs last week"}</p>
+          <p className="text-xs text-on-surface-variant">{productivityChange === null ? "No data yet" : "vs last week"}</p>
         </div>
 
         {/* Current Streak */}
-        <div className="bg-surface-container-low border border-outline-variant p-4 rounded-xl h-32 flex flex-col justify-between">
+        <div className="bg-surface-container-low border border-outline-variant p-2.5 sm:p-4 rounded-xl flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] uppercase tracking-widest text-on-surface-variant font-medium">
-              Current Streak
-            </span>
-            <span
-              className="material-symbols-outlined text-tertiary text-[16px]"
-              style={{ fontFamily: "'Material Symbols Outlined'" }}
-            >
-              local_fire_department
-            </span>
+            <span className="text-[11px] uppercase tracking-widest text-on-surface-variant font-semibold leading-tight">Streak</span>
+            <span className="material-symbols-outlined text-tertiary text-[18px]">local_fire_department</span>
           </div>
-          <div className="flex items-end gap-1.5">
-            <span className="text-[28px] font-bold text-tertiary font-jetbrains leading-none">
+          <div className="flex items-end gap-1">
+            <span className="text-xl sm:text-3xl font-bold text-tertiary font-jetbrains leading-none">
               {streakDays === 0 ? "--" : streakDays}
             </span>
-            {streakDays > 0 && <span className="text-on-surface-variant text-[13px] mb-0.5">days</span>}
+            {streakDays > 0 && <span className="text-on-surface-variant text-xs sm:text-sm mb-0.5">{streakDays === 1 ? "day" : "days"}</span>}
           </div>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {streakDays === 0 ? (
-              <span className="text-[10px] text-on-surface-variant">Start studying to build a streak!</span>
-            ) : (
-              Array.from({ length: Math.min(streakDays, 14) }).map((_, i) => (
-                <div key={i} className="w-2 h-2 rounded-full" style={{ background: "#ffb95f" }} />
-              ))
-            )}
+          <div className="flex items-center gap-1 flex-wrap">
+            {streakDays === 0
+              ? <span className="text-xs text-on-surface-variant">No streak yet</span>
+              : Array.from({ length: Math.min(streakDays, 7) }).map((_, i) => (
+                  <div key={i} className="w-2 h-2 rounded-full" style={{ background: "#ffb95f" }} />
+                ))
+            }
           </div>
         </div>
+
       </div>
-    </section>
+    </div>
+  );
+}
+
+export default function TimerPage() {
+  return (
+    <Suspense>
+      <TimerPageInner />
+    </Suspense>
   );
 }

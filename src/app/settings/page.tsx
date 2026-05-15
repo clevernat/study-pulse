@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { subscribeSessions, deleteAllUserData } from "@/lib/firebase/firestore";
+import { subscribeSessions, deleteAllUserData, saveUserPreferences, subscribeUserPreferences } from "@/lib/firebase/firestore";
+import { useTimerStore } from "@/store/timerStore";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import type { Session } from "@/types";
 
@@ -87,10 +88,23 @@ export default function SettingsPage() {
     return () => unsub();
   }, [user]);
 
-  // Timer preferences
-  const [pomodoroLen, setPomodoroLen] = useState(25);
-  const [shortBreak, setShortBreak] = useState(5);
-  const [longBreak, setLongBreak] = useState(15);
+  // Timer preferences — read initial values from Zustand store (localStorage-persisted)
+  const timerStore = useTimerStore();
+  const [pomodoroLen, setPomodoroLen] = useState(timerStore.pomodoroLength);
+  const [shortBreak, setShortBreak] = useState(timerStore.shortBreak);
+  const [longBreak, setLongBreak] = useState(timerStore.longBreak);
+
+  // Subscribe to Firestore preferences so other-device changes show here immediately
+  useEffect(() => {
+    if (!user) return;
+    const unsub = subscribeUserPreferences(user.uid, (prefs) => {
+      if (!prefs) return;
+      setPomodoroLen(prefs.pomodoroLength);
+      setShortBreak(prefs.shortBreak);
+      setLongBreak(prefs.longBreak);
+    });
+    return () => unsub();
+  }, [user]);
 
   // Appearance toggles
   const [darkMode, setDarkMode] = useState(true);
@@ -103,6 +117,16 @@ export default function SettingsPage() {
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetDone, setResetDone] = useState(false);
   const [resetting, setResetting] = useState(false);
+
+  async function applyPreference(focus: number, sb: number, lb: number) {
+    setPomodoroLen(focus);
+    setShortBreak(sb);
+    setLongBreak(lb);
+    useTimerStore.getState().setDurations(focus, sb, lb);
+    if (user) {
+      await saveUserPreferences(user.uid, { pomodoroLength: focus, shortBreak: sb, longBreak: lb });
+    }
+  }
 
   const displayName = user?.displayName ?? user?.email?.split("@")[0] ?? "User";
   const displayEmail = user?.email ?? "";
@@ -125,6 +149,10 @@ export default function SettingsPage() {
     setResetting(true);
     try {
       await deleteAllUserData(user.uid);
+      // Stop the timer, clear subject selection, and reset to idle/focus
+      const ts = useTimerStore.getState();
+      ts.setPreset(ts.pomodoroLength); // calls clearTick() + resets to idle
+      ts.setSubject("", "Select a Subject");
       setResetDone(true);
     } finally {
       setResetting(false);
@@ -203,21 +231,21 @@ export default function SettingsPage() {
             value={pomodoroLen}
             min={5}
             max={60}
-            onChange={setPomodoroLen}
+            onChange={(v) => applyPreference(v, shortBreak, longBreak)}
           />
           <Stepper
             label="Short Break"
             value={shortBreak}
             min={1}
             max={30}
-            onChange={setShortBreak}
+            onChange={(v) => applyPreference(pomodoroLen, v, longBreak)}
           />
           <Stepper
             label="Long Break"
             value={longBreak}
             min={5}
             max={60}
-            onChange={setLongBreak}
+            onChange={(v) => applyPreference(pomodoroLen, shortBreak, v)}
           />
         </div>
       </div>
