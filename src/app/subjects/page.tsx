@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { subscribeSubjects, addSubject, updateSubject, deleteSubject } from "@/lib/firebase/firestore";
+import { subscribeSubjects, subscribeSessions, addSubject, updateSubject, deleteSubject } from "@/lib/firebase/firestore";
 import { useTimerStore } from "@/store/timerStore";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { COLOR_PALETTE, getColor } from "@/lib/colorPalette";
-import type { Subject } from "@/types";
+import type { Subject, Session } from "@/types";
 
 const ICON_OPTIONS = [
   { value: "school",           label: "School" },
@@ -283,6 +283,7 @@ export default function SubjectsPage() {
   const router = useRouter();
   const setSubject = useTimerStore((s) => s.setSubject);
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -296,9 +297,21 @@ export default function SubjectsPage() {
 
   useEffect(() => {
     if (!user) return;
-    const unsub = subscribeSubjects(user.uid, setSubjects);
-    return () => unsub();
+    const unsub1 = subscribeSubjects(user.uid, setSubjects);
+    const unsub2 = subscribeSessions(user.uid, setSessions);
+    return () => { unsub1(); unsub2(); };
   }, [user]);
+
+  // Aggregate sessions per subject — the Subject doc's denormalized
+  // totalMinutes/sessionCount are never updated when sessions are added,
+  // so we compute live totals from the sessions collection.
+  const statsBySubject = sessions.reduce<Record<string, { minutes: number; count: number }>>((acc, s) => {
+    const entry = acc[s.subjectId] ?? { minutes: 0, count: 0 };
+    entry.minutes += s.durationMinutes;
+    entry.count += 1;
+    acc[s.subjectId] = entry;
+    return acc;
+  }, {});
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleSave = (_subject: Subject) => {
@@ -320,7 +333,7 @@ export default function SubjectsPage() {
     }
   };
 
-  const maxMinutes = Math.max(...subjects.map((s) => s.totalMinutes), 1);
+  const maxMinutes = Math.max(...subjects.map((s) => statsBySubject[s.id]?.minutes ?? 0), 1);
 
   return (
     <div className="flex flex-col gap-8">
@@ -360,8 +373,9 @@ export default function SubjectsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {subjects.map((subject) => {
             const c = getColor(subject.color);
-            const hours = (subject.totalMinutes / 60).toFixed(1);
-            const pct = Math.round((subject.totalMinutes / maxMinutes) * 100);
+            const stats = statsBySubject[subject.id] ?? { minutes: 0, count: 0 };
+            const hours = (stats.minutes / 60).toFixed(1);
+            const pct = Math.round((stats.minutes / maxMinutes) * 100);
 
             return (
               <div key={subject.id} className="glass-card-hover p-6 flex flex-col gap-4">
@@ -405,7 +419,7 @@ export default function SubjectsPage() {
                     <div className="text-xs text-on-surface-variant mt-0.5">Total Hours</div>
                   </div>
                   <div className="text-right">
-                    <div className="font-jetbrains font-semibold text-[20px] text-on-surface">{subject.sessionCount}</div>
+                    <div className="font-jetbrains font-semibold text-[20px] text-on-surface">{stats.count}</div>
                     <div className="text-xs text-on-surface-variant mt-0.5">Sessions</div>
                   </div>
                 </div>
