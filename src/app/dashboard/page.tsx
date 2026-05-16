@@ -51,6 +51,7 @@ import { subscribeSessions, subscribeSubjects } from "@/lib/firebase/firestore";
 import { computeStreak } from "@/lib/streakLogic";
 import { getColor } from "@/lib/colorPalette";
 import { localDateStr, formatSmartDuration } from "@/lib/dateUtils";
+import TasksWidget from "@/components/dashboard/TasksWidget";
 import type { HeatmapCell, Session, Subject } from "@/types";
 
 function buildHeatmap(sessions: Session[]): HeatmapCell[] {
@@ -375,6 +376,9 @@ export default function DashboardPage() {
           <Heatmap sessions={sessions} />
         </div>
       </div>
+
+      {/* Tasks Widget */}
+      <TasksWidget />
 
       {/* Bottom Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">

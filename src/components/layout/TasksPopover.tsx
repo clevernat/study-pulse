@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useTimerStore } from "@/store/timerStore";
 import {
   subscribeTasks,
   subscribeSubjects,
@@ -21,12 +23,24 @@ const FILTERS: { id: FilterKind; label: string }[] = [
 
 export default function TasksPopover({ onClose }: { onClose: () => void }) {
   const { user } = useAuth();
+  const router = useRouter();
+  const setSubject = useTimerStore((s) => s.setSubject);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [draft, setDraft] = useState("");
   const [draftSubjectId, setDraftSubjectId] = useState<string>("");
   const [filter, setFilter] = useState<FilterKind>("open");
   const [saving, setSaving] = useState(false);
+
+  function startTimerForTask(task: Task) {
+    if (task.subjectId && task.subjectName) {
+      setSubject(task.subjectId, task.subjectName);
+      router.push(`/timer?subjectId=${encodeURIComponent(task.subjectId)}&subjectName=${encodeURIComponent(task.subjectName)}`);
+    } else {
+      router.push("/timer");
+    }
+    onClose();
+  }
 
   useEffect(() => {
     if (!user) return;
@@ -179,6 +193,17 @@ export default function TasksPopover({ onClose }: { onClose: () => void }) {
                   </div>
                 )}
               </div>
+              {!task.completed && (
+                <button
+                  type="button"
+                  onClick={() => startTimerForTask(task)}
+                  className="text-on-surface-variant hover:text-primary transition-colors opacity-0 group-hover:opacity-100"
+                  aria-label="Start timer for this task"
+                  title={task.subjectName ? `Study ${task.subjectName}` : "Open timer"}
+                >
+                  <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => user && deleteTask(user.uid, task.id)}
