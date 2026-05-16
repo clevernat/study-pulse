@@ -81,7 +81,7 @@ export default function TasksPopover({ onClose }: { onClose: () => void }) {
   const openCount = tasks.filter((t) => !t.completed).length;
 
   return (
-    <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-[360px] max-w-[calc(100vw-2rem)] glass-card p-4 shadow-[0_8px_40px_rgba(0,0,0,0.5)]">
+    <div className="fixed left-4 right-4 top-[72px] z-50 max-h-[calc(100vh-88px)] overflow-y-auto sm:absolute sm:left-auto sm:right-0 sm:top-[calc(100%+8px)] sm:max-h-none sm:overflow-visible sm:w-[360px] glass-card p-4 shadow-[0_8px_40px_rgba(0,0,0,0.5)]">
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-grotesk font-bold text-sm text-on-surface">
           Tasks {openCount > 0 && <span className="text-on-surface-variant font-normal">({openCount} open)</span>}
