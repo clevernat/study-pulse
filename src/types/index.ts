@@ -47,6 +47,16 @@ export interface Session {
   endTime: string;
 }
 
+export interface Task {
+  id: string;
+  uid: string;
+  title: string;
+  completed: boolean;
+  subjectId?: string;
+  subjectName?: string;
+  createdAt: string;
+}
+
 export interface Goal {
   id: string;
   uid: string;

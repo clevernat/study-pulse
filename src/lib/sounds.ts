@@ -1,11 +1,23 @@
 // Web Audio API — no files needed, works everywhere
+import { useAmbientStore } from "@/store/ambientStore";
+
+function masterMult(): number {
+  if (typeof window === "undefined") return 1;
+  try {
+    return useAmbientStore.getState().masterVolume;
+  } catch {
+    return 1;
+  }
+}
 
 export function playCompletionChime() {
   try {
     const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     const ctx = new AudioCtx();
+    const m = masterMult();
 
-    const note = (freq: number, start: number, dur: number, vol = 0.28) => {
+    const note = (freq: number, start: number, dur: number, baseVol = 0.28) => {
+      const vol = baseVol * m;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
@@ -33,8 +45,10 @@ export function playBreakEndChime() {
   try {
     const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     const ctx = new AudioCtx();
+    const m = masterMult();
 
-    const note = (freq: number, start: number, dur: number, vol = 0.22) => {
+    const note = (freq: number, start: number, dur: number, baseVol = 0.22) => {
+      const vol = baseVol * m;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);

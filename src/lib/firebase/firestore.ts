@@ -13,7 +13,7 @@ import {
   serverTimestamp,
   onSnapshot,
 } from "firebase/firestore";
-import type { Subject, Session, Goal, TimerSyncDoc } from "@/types";
+import type { Subject, Session, Goal, Task, TimerSyncDoc } from "@/types";
 
 export async function getUserSessions(uid: string): Promise<Session[]> {
   const q = query(
@@ -124,8 +124,28 @@ export function subscribeGoals(uid: string, cb: (goals: Goal[]) => void): () => 
     cb(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Goal))));
 }
 
+// ── Tasks ────────────────────────────────────────────────────────────────────
+
+export async function addTask(uid: string, task: Omit<Task, "id">): Promise<string> {
+  const ref = await addDoc(collection(db, "users", uid, "tasks"), task);
+  return ref.id;
+}
+
+export async function updateTask(uid: string, taskId: string, updates: Partial<Omit<Task, "id" | "uid">>): Promise<void> {
+  await updateDoc(doc(db, "users", uid, "tasks", taskId), updates);
+}
+
+export async function deleteTask(uid: string, taskId: string): Promise<void> {
+  await deleteDoc(doc(db, "users", uid, "tasks", taskId));
+}
+
+export function subscribeTasks(uid: string, cb: (tasks: Task[]) => void): () => void {
+  return onSnapshot(collection(db, "users", uid, "tasks"), (snap) =>
+    cb(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Task))));
+}
+
 export async function deleteAllUserData(uid: string): Promise<void> {
-  const subcollections = ["sessions", "subjects", "goals"];
+  const subcollections = ["sessions", "subjects", "goals", "tasks"];
   await Promise.all(
     subcollections.map(async (col) => {
       const snap = await getDocs(collection(db, "users", uid, col));
