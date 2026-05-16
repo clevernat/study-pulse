@@ -478,7 +478,7 @@ export default function ReportsPage() {
                       key={h}
                       onMouseEnter={() => setHourHover(h)}
                       onMouseLeave={() => setHourHover(null)}
-                      className="flex-1 cursor-pointer flex items-end min-h-full"
+                      className="flex-1 cursor-pointer flex items-end h-full"
                     >
                       <div
                         className="w-full rounded-t transition-all"
