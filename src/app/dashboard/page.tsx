@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 function LiveClock() {
@@ -287,7 +287,7 @@ function ActiveSubjects({ subjects }: { subjects: Subject[] }) {
 
 // ── Recent Sessions ───────────────────────────────────────────────────────────
 
-function RecentSessions({ sessions }: { sessions: Session[] }) {
+function RecentSessions({ sessions, subjectById }: { sessions: Session[]; subjectById: Map<string, Subject> }) {
   const displayed = [...sessions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
 
   function handleExport() {
@@ -323,9 +323,11 @@ function RecentSessions({ sessions }: { sessions: Session[] }) {
             </tr>
           </thead>
           <tbody>
-            {displayed.map((session: Session) => (
+            {displayed.map((session: Session) => {
+              const displayName = subjectById.get(session.subjectId)?.name ?? session.subjectName;
+              return (
               <tr key={session.id} className="border-b border-outline-variant/50 last:border-0 hover:bg-surface-container/30 transition-colors">
-                <td className="px-4 py-3 text-sm text-on-surface font-inter">{session.subjectName}</td>
+                <td className="px-4 py-3 text-sm text-on-surface font-inter">{displayName}</td>
                 <td className="px-4 py-3 text-sm font-jetbrains text-on-surface-variant">
                   {formatDuration(session.durationMinutes)}
                 </td>
@@ -333,7 +335,8 @@ function RecentSessions({ sessions }: { sessions: Session[] }) {
                   {session.focusScore}%
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -376,6 +379,12 @@ export default function DashboardPage() {
     sessions.map((s) => s.date),
     localDateStr()
   );
+
+  const subjectById = useMemo(() => {
+    const m = new Map<string, Subject>();
+    for (const s of subjects) m.set(s.id, s);
+    return m;
+  }, [subjects]);
 
   const dailyAvg = (() => {
     const uniqueDays = new Set(sessions.map((s) => s.date)).size;
@@ -458,7 +467,7 @@ export default function DashboardPage() {
       {/* Bottom Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
         <ActiveSubjects subjects={subjects} />
-        <RecentSessions sessions={sessions} />
+        <RecentSessions sessions={sessions} subjectById={subjectById} />
       </div>
     </div>
   );

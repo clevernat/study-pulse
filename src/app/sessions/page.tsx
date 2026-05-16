@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { subscribeSessions } from "@/lib/firebase/firestore";
+import { subscribeSessions, subscribeSubjects } from "@/lib/firebase/firestore";
 import { getColor } from "@/lib/colorPalette";
 import { localDateStr } from "@/lib/dateUtils";
-import type { Session } from "@/types";
+import type { Session, Subject } from "@/types";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -61,9 +61,10 @@ interface DayGroupProps {
   sessions: Session[];
   label: string;
   defaultOpen: boolean;
+  subjectById: Map<string, Subject>;
 }
 
-function DayGroup({ date, sessions, label, defaultOpen }: DayGroupProps) {
+function DayGroup({ date, sessions, label, defaultOpen, subjectById }: DayGroupProps) {
   const [open, setOpen] = useState(defaultOpen);
   const [showAll, setShowAll] = useState(false);
 
@@ -103,7 +104,9 @@ function DayGroup({ date, sessions, label, defaultOpen }: DayGroupProps) {
       {open && (
         <div className="flex flex-col gap-2 pl-2">
           {visible.map((session) => {
-            const dotHexColor = dotHex(session.subjectColor);
+            const sub = subjectById.get(session.subjectId);
+            const displayName = sub?.name ?? session.subjectName;
+            const dotHexColor = dotHex(sub?.color ?? session.subjectColor);
             const scoreClasses = focusColorClass(session.focusScore);
 
             return (
@@ -116,7 +119,7 @@ function DayGroup({ date, sessions, label, defaultOpen }: DayGroupProps) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-inter font-semibold text-sm text-on-surface">
-                        {session.subjectName}
+                        {displayName}
                       </span>
                       <span className="font-jetbrains text-xs text-on-surface-variant bg-surface-container px-2 py-0.5 rounded">
                         {formatDuration(session.durationMinutes)}
@@ -166,12 +169,20 @@ export default function SessionsPage() {
   const { user } = useAuth();
   const [activeFilter, setActiveFilter] = useState<Filter>("All");
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
 
   useEffect(() => {
     if (!user) return;
-    const unsub = subscribeSessions(user.uid, setSessions);
-    return () => unsub();
+    const unsub1 = subscribeSessions(user.uid, setSessions);
+    const unsub2 = subscribeSubjects(user.uid, setSubjects);
+    return () => { unsub1(); unsub2(); };
   }, [user]);
+
+  const subjectById = useMemo(() => {
+    const m = new Map<string, Subject>();
+    for (const s of subjects) m.set(s.id, s);
+    return m;
+  }, [subjects]);
 
   const todayStr = localDateStr();
   const weekAgoDate = new Date();
@@ -263,6 +274,7 @@ export default function SessionsPage() {
             label={formatDateLabel(date, todayStr, yesterdayStr)}
             // Today expanded by default; first day in non-today filters also expanded
             defaultOpen={date === todayStr || (idx === 0 && !sortedDates.includes(todayStr))}
+            subjectById={subjectById}
           />
         ))}
       </div>
