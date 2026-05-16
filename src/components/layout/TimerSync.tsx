@@ -9,6 +9,7 @@ import {
   saveTimerState,
   subscribeTimerState,
 } from "@/lib/firebase/firestore";
+import { usePromptStore } from "@/store/promptStore";
 import {
   playCompletionChime,
   playBreakEndChime,
@@ -141,6 +142,11 @@ export default function TimerSync() {
     };
     try {
       await addSession(user.uid, session);
+      // Signal the completion toast — only meaningful when a real subject
+      // was attached, otherwise there are no matching tasks to suggest.
+      if (currentSubject?.id) {
+        usePromptStore.getState().setPending(currentSubject.id);
+      }
     } catch (err) {
       console.error("Failed to save session:", err);
     }

@@ -9,6 +9,7 @@ import TopBar from "./TopBar";
 import FloatingTimer from "./FloatingTimer";
 import TimerSync from "./TimerSync";
 import AmbientController from "./AmbientController";
+import CompletionToast from "./CompletionToast";
 
 export default function ClientShell({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -131,6 +132,7 @@ export default function ClientShell({ children }: { children: React.ReactNode })
       <FloatingTimer />
       <TimerSync />
       <AmbientController />
+      <CompletionToast />
     </div>
   );
 }
