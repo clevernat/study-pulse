@@ -54,6 +54,30 @@ export async function updateSubject(
   updates: Partial<Subject>
 ): Promise<void> {
   await updateDoc(doc(db, "users", uid, "subjects", subjectId), updates);
+
+  // Cascade name + color into the denormalized copies on sessions, goals, and tasks.
+  // Without this, renaming a subject leaves stale labels on historical records.
+  const renamePayload: Record<string, string> = {};
+  if (typeof updates.name === "string") renamePayload.subjectName = updates.name;
+  if (typeof updates.color === "string") renamePayload.subjectColor = updates.color;
+  if (Object.keys(renamePayload).length === 0) return;
+
+  const [sessionsSnap, goalsSnap, tasksSnap] = await Promise.all([
+    getDocs(query(collection(db, "users", uid, "sessions"), where("subjectId", "==", subjectId))),
+    getDocs(query(collection(db, "users", uid, "goals"),    where("subjectId", "==", subjectId))),
+    getDocs(query(collection(db, "users", uid, "tasks"),    where("subjectId", "==", subjectId))),
+  ]);
+
+  await Promise.all([
+    ...sessionsSnap.docs.map((d) => updateDoc(d.ref, renamePayload)),
+    // goals + tasks only carry subjectName, ignore the color update for them
+    ...goalsSnap.docs.map((d) =>
+      renamePayload.subjectName ? updateDoc(d.ref, { subjectName: renamePayload.subjectName }) : Promise.resolve()
+    ),
+    ...tasksSnap.docs.map((d) =>
+      renamePayload.subjectName ? updateDoc(d.ref, { subjectName: renamePayload.subjectName }) : Promise.resolve()
+    ),
+  ]);
 }
 
 export async function deleteSubject(

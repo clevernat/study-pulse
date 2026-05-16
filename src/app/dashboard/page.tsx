@@ -101,44 +101,89 @@ function heatIntensityClass(intensity: HeatmapCell["intensity"]): string {
 // ── Bar Chart ─────────────────────────────────────────────────────────────────
 
 function WeeklyBarChart({ sessions }: { sessions: Session[] }) {
+  const [hover, setHover] = useState<number | null>(null);
+
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));
-    return localDateStr(d);   // local date, not UTC
+    return localDateStr(d);
   });
 
   const dayTotals = days.map((dateStr) => {
     const total = sessions
       .filter((s) => s.date === dateStr)
       .reduce((sum, s) => sum + s.durationMinutes, 0);
-    // append noon to prevent any timezone shift when parsing for display
     const dayLabel = new Date(dateStr + "T12:00:00").toLocaleDateString("en-US", { weekday: "short" });
-    return { day: dayLabel, minutes: total, dateStr };
+    const fullLabel = new Date(dateStr + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
+    return { day: dayLabel, fullLabel, minutes: total, dateStr };
   });
 
   const maxMinutes = Math.max(...dayTotals.map((d) => d.minutes), 1);
+  // Nice round upper bound for Y axis: next 30-min boundary above max
+  const yMax = Math.max(30, Math.ceil(maxMinutes / 30) * 30);
+  const ticks = [yMax, Math.round(yMax * 0.66), Math.round(yMax * 0.33), 0];
 
   return (
-    <div className="glass-card p-6 flex flex-col gap-4">
-      <h2 className="font-grotesk font-bold text-lg text-on-surface">Weekly Study Hours</h2>
-      <div className="flex items-end justify-between h-48 gap-2">
-        {dayTotals.map((d) => {
-          const isBest = d.minutes === maxMinutes && maxMinutes > 0;
-          const pct = (d.minutes / maxMinutes) * 100;
-          return (
-            <div key={d.dateStr} className="flex-1 flex flex-col items-center gap-2">
-              <div className="w-full flex items-end" style={{ height: "160px" }}>
+    <div className="glass-card p-6 flex flex-col gap-3">
+      <div>
+        <h2 className="font-grotesk font-bold text-lg text-on-surface">Weekly Study Hours</h2>
+        <p className="text-xs text-on-surface-variant mt-0.5">Minutes studied per day · last 7 days · hover a bar for details</p>
+      </div>
+      <div className="flex gap-3 mt-2">
+        {/* Y-axis labels */}
+        <div className="flex flex-col justify-between h-48 py-1 text-[10px] text-on-surface-variant font-jetbrains text-right w-9">
+          {ticks.map((t) => (
+            <span key={t}>{t}m</span>
+          ))}
+        </div>
+        {/* Bars */}
+        <div className="flex-1 relative">
+          {/* Gridlines */}
+          <div className="absolute inset-0 flex flex-col justify-between py-1 pointer-events-none">
+            {ticks.map((t, i) => (
+              <div key={i} className="border-t border-outline-variant/30" />
+            ))}
+          </div>
+          <div className="flex items-end justify-between h-48 gap-2 relative">
+            {dayTotals.map((d, i) => {
+              const isBest = d.minutes === maxMinutes && maxMinutes > 0;
+              const pct = (d.minutes / yMax) * 100;
+              const isHover = hover === i;
+              return (
                 <div
-                  className={`w-full rounded-t-sm transition-all ${isBest ? "bg-secondary" : "bg-primary/60"}`}
-                  style={{ height: `${pct}%` }}
-                />
-              </div>
-              <span className={`text-xs font-inter ${isBest ? "text-secondary font-semibold" : "text-on-surface-variant"}`}>
-                {d.day}
-              </span>
-            </div>
-          );
-        })}
+                  key={d.dateStr}
+                  className="flex-1 flex flex-col items-center gap-2 relative cursor-pointer"
+                  onMouseEnter={() => setHover(i)}
+                  onMouseLeave={() => setHover(null)}
+                >
+                  <div className="w-full flex items-end" style={{ height: "160px" }}>
+                    <div
+                      className={`w-full rounded-t-sm transition-all ${
+                        d.minutes === 0
+                          ? "bg-outline-variant/30"
+                          : isBest
+                            ? "bg-secondary"
+                            : "bg-primary/60"
+                      } ${isHover && d.minutes > 0 ? "opacity-100 shadow-[0_0_20px_rgba(124,58,237,0.4)]" : ""}`}
+                      style={{ height: `${Math.max(pct, d.minutes > 0 ? 2 : 0)}%` }}
+                    />
+                  </div>
+                  <span className={`text-xs font-inter ${isBest ? "text-secondary font-semibold" : "text-on-surface-variant"}`}>
+                    {d.day}
+                  </span>
+                  {isHover && (
+                    <div className="absolute -top-14 left-1/2 -translate-x-1/2 z-10 bg-[#0e0e14] border border-primary/40 rounded-lg px-3 py-2 shadow-[0_4px_16px_rgba(0,0,0,0.5)] whitespace-nowrap pointer-events-none">
+                      <div className="text-[10px] text-on-surface-variant">{d.fullLabel}</div>
+                      <div className="text-sm font-jetbrains text-on-surface font-semibold">
+                        {d.minutes === 0 ? "No study" : `${d.minutes} min`}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -148,19 +193,34 @@ function WeeklyBarChart({ sessions }: { sessions: Session[] }) {
 
 function Heatmap({ sessions }: { sessions: Session[] }) {
   const cells = buildHeatmap(sessions);
+  const [hover, setHover] = useState<{ idx: number; x: number; y: number } | null>(null);
+
+  const totalDays = cells.filter((c) => c.minutes > 0).length;
+  const totalHours = (cells.reduce((s, c) => s + c.minutes, 0) / 60).toFixed(1);
+
   return (
-    <div className="glass-card p-6 flex flex-col gap-4 overflow-hidden">
-      <h2 className="font-grotesk font-bold text-lg text-on-surface">90-Day Velocity</h2>
-      <div className="overflow-x-auto">
-      <div className="grid gap-1 min-w-[260px]" style={{ gridTemplateColumns: "repeat(13, 1fr)" }}>
-        {cells.map((cell) => (
-          <div
-            key={cell.date}
-            title={`${cell.date}: ${cell.minutes}m`}
-            className={`w-full aspect-square rounded-sm ${heatIntensityClass(cell.intensity)}`}
-          />
-        ))}
+    <div className="glass-card p-6 flex flex-col gap-4 overflow-hidden relative">
+      <div>
+        <h2 className="font-grotesk font-bold text-lg text-on-surface">90-Day Velocity</h2>
+        <p className="text-xs text-on-surface-variant mt-0.5">
+          {totalDays} active days · {totalHours}h total
+        </p>
       </div>
+      <div className="overflow-x-auto">
+        <div className="grid gap-1 min-w-[260px]" style={{ gridTemplateColumns: "repeat(13, 1fr)" }}>
+          {cells.map((cell, i) => (
+            <div
+              key={cell.date}
+              onMouseEnter={(e) => {
+                const r = (e.target as HTMLElement).getBoundingClientRect();
+                const parent = (e.currentTarget.closest(".glass-card") as HTMLElement)?.getBoundingClientRect();
+                if (parent) setHover({ idx: i, x: r.left - parent.left + r.width / 2, y: r.top - parent.top });
+              }}
+              onMouseLeave={() => setHover(null)}
+              className={`w-full aspect-square rounded-sm ${heatIntensityClass(cell.intensity)} hover:ring-2 hover:ring-primary/50 cursor-pointer transition-all`}
+            />
+          ))}
+        </div>
       </div>
       {/* Legend */}
       <div className="flex items-center gap-2 text-xs text-on-surface-variant">
@@ -170,6 +230,21 @@ function Heatmap({ sessions }: { sessions: Session[] }) {
         ))}
         <span>More</span>
       </div>
+
+      {/* Tooltip */}
+      {hover !== null && (
+        <div
+          className="absolute z-20 bg-[#0e0e14] border border-primary/40 rounded-lg px-3 py-1.5 shadow-[0_4px_16px_rgba(0,0,0,0.5)] whitespace-nowrap pointer-events-none -translate-x-1/2 -translate-y-full"
+          style={{ left: hover.x, top: hover.y - 8 }}
+        >
+          <div className="text-[10px] text-on-surface-variant">
+            {new Date(cells[hover.idx].date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+          </div>
+          <div className="text-xs font-jetbrains text-on-surface font-semibold">
+            {cells[hover.idx].minutes === 0 ? "No study" : `${cells[hover.idx].minutes} min`}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
