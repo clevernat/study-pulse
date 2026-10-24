@@ -135,7 +135,7 @@ async function shoot(viewport, scale, list) {
   await ctx.close();
 }
 if (process.env.SHOT_ALL) {
-  const pages = ["/today/", "/dashboard/", "/calendar/", "/tasks/", "/exams/", "/timetable/", "/habits/", "/flashcards/",
+  const pages = process.env.SHOT_PAGES ? process.env.SHOT_PAGES.split(",") : ["/today/", "/dashboard/", "/calendar/", "/tasks/", "/exams/", "/timetable/", "/habits/", "/flashcards/",
     "/timer/", "/subjects/", "/sessions/", "/goals/", "/reports/", "/settings/"];
   const list = (prefix) => pages.map((p) => [`${prefix}${p.replace(/\//g, "-").replace(/-$/, "")}`, p]);
   await shoot({ width: 1440, height: 900 }, 1, list("laptop"));
