@@ -5,7 +5,7 @@ const config = {
   // Only look in src/ and tests/ — scanning the whole folder is slow (and can
   // freeze when iCloud has moved generated folders to the cloud).
   roots: ["<rootDir>/src", "<rootDir>/tests"],
-  testPathIgnorePatterns: ["/node_modules/", "<rootDir>/tests/rules/"],
+  testPathIgnorePatterns: ["/node_modules/", "/tests/rules/"],
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
   },

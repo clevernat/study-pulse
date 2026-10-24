@@ -47,3 +47,5 @@ next-env.d.ts
 /test-results/
 /docs/evidence/playwright-report/
 /test-fixtures/
+/firestore-debug.log
+/*-debug.log
