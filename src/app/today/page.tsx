@@ -14,6 +14,8 @@ import { blockMinutes, blockDone } from "@/lib/calendar";
 import { startBlockTimer } from "@/components/planner/BlockModal";
 import type { StudyBlock, Habit } from "@/types";
 import HabitRow from "@/components/planner/HabitRow";
+import { useFlashcards } from "@/lib/firebase/useFlashcards";
+import { buildQueue } from "@/lib/flashcards/queue";
 import { useHabitContext } from "@/lib/firebase/useHabitContext";
 import type { ClassItem } from "@/types";
 import { upcomingExams, daysUntil, countdownLabel, urgency, URGENCY_CLASSES } from "@/lib/exams";
@@ -47,6 +49,9 @@ export default function TodayPage() {
   const { items: blocks } = useCollection<StudyBlock>("studyBlocks");
   const { items: habits } = useCollection<Habit>("habits");
   const habitCtx = useHabitContext();
+  const fc = useFlashcards();
+  const fcQueue = buildQueue(fc.cards, fc.decks, fc.logsToday, new Date(), today);
+  const fcDue = fcQueue.counts.learning + fcQueue.counts.review + fcQueue.counts.new;
   const activeHabits = habits.filter((h) => !h.archived);
   const blocksToday = blocks.filter((b) => b.date === today).sort((a, b) => a.start.localeCompare(b.start));
   const examsSoon = upcomingExams(exams, today).filter((e) => daysUntil(e.date, today) <= 14);
@@ -152,6 +157,18 @@ export default function TodayPage() {
         </section>
       )}
 
+      {/* Flashcards due today */}
+      {fc.decks.length > 0 && (
+        <section data-testid="today-flashcards" className="glass-card p-4 flex items-center gap-3">
+          <span className="material-symbols-outlined text-primary">style</span>
+          <div className="flex-1">
+            <p className="text-sm text-on-surface">{fcDue > 0 ? `${fcDue} flashcard${fcDue === 1 ? "" : "s"} to study` : "Flashcards done for today"}</p>
+            <p className="text-[11px] text-on-surface-variant font-jetbrains">{fcQueue.counts.review} due · {fcQueue.counts.learning} learning · {fcQueue.counts.new} new</p>
+          </div>
+          {fcDue > 0 && <button onClick={() => router.push("/flashcards/review")} className="px-3 py-1.5 rounded-full bg-primary-container text-on-primary-container text-xs font-bold">Study</button>}
+        </section>
+      )}
+
       {/* Planned study blocks for today */}
       {blocksToday.length > 0 && (
         <section data-testid="today-blocks" className="flex flex-col gap-2">
@@ -170,7 +187,7 @@ export default function TodayPage() {
                 {done ? (
                   <span className="material-symbols-outlined text-secondary">check_circle</span>
                 ) : sub && (
-                  <button data-testid="today-block-start" onClick={() => { startBlockTimer(b, subjects); router.push("/timer"); }}
+                  <button data-testid="today-block-start" onClick={() => { if (b.deckId) { router.push(`/flashcards/review?deck=${b.deckId}&block=${b.id}`); return; } startBlockTimer(b, subjects); router.push("/timer"); }}
                     className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-container text-on-primary-container text-xs font-bold">
                     <span className="material-symbols-outlined text-[16px]">play_arrow</span>Start
                   </button>

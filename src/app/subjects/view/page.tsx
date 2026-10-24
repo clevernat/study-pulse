@@ -10,7 +10,8 @@ import TopicList from "@/components/planner/TopicList";
 import ExamCard from "@/components/planner/ExamCard";
 import ExamModal from "@/components/planner/ExamModal";
 import { secondaryBtnCls } from "@/components/ui/Field";
-import type { Exam, Subject, Task, Topic } from "@/types";
+import type { Deck, Exam, Subject, Task, Topic } from "@/types";
+import DeckModal from "@/components/flashcards/DeckModal";
 
 function SubjectView() {
   const id = useSearchParams().get("id") ?? "";
@@ -19,6 +20,8 @@ function SubjectView() {
   const { items: exams } = useCollection<Exam>("exams");
   const { items: tasks } = useCollection<Task>("tasks");
   const [editing, setEditing] = useState<Exam | "new" | null>(null);
+  const { items: decks } = useCollection<Deck>("decks");
+  const [newDeck, setNewDeck] = useState(false);
   const subject = subjects.find((s) => s.id === id);
   const today = localDateStr();
 
@@ -64,6 +67,22 @@ function SubjectView() {
           <ExamCard key={e.id} exam={e} subject={subject} today={today} progress={examProgress(e.id, topics, tasks)} onEdit={() => setEditing(e)} />
         ))}
       </div>
+
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <h2 className="font-grotesk font-bold text-lg text-on-surface">Flashcard decks</h2>
+          <button onClick={() => setNewDeck(true)} className={secondaryBtnCls}><span className="material-symbols-outlined text-[18px]">add</span>New deck</button>
+        </div>
+        {decks.filter((d) => d.subjectId === id).map((d) => (
+          <Link key={d.id} href={`/flashcards/deck?id=${d.id}`} className="glass-card p-3 flex items-center gap-3 hover:border-primary/40">
+            <span className="material-symbols-outlined" style={{ color: c.text }}>style</span>
+            <span className="text-sm text-on-surface flex-1">{d.name}</span>
+            <span className="material-symbols-outlined text-on-surface-variant text-[18px]">chevron_right</span>
+          </Link>
+        ))}
+        {decks.every((d) => d.subjectId !== id) && <p className="text-sm text-on-surface-variant">No decks for this subject yet.</p>}
+      </div>
+      {newDeck && <DeckModal uid={uid} subjects={subjects} defaultSubjectId={id} onClose={() => setNewDeck(false)} />}
 
       {editing && (
         <ExamModal uid={uid} subjects={subjects} defaultSubjectId={id} exam={editing === "new" ? undefined : editing} onClose={() => setEditing(null)} />

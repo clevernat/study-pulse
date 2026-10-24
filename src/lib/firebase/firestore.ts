@@ -23,7 +23,7 @@ import type { Subject, Session, Goal, Task, TimerSyncDoc } from "@/types";
  * so forms must not wait for the server forever.
  */
 const OFFLINE_WAIT_MS = 1500;
-async function queue(write: Promise<unknown>): Promise<void> {
+export async function queue(write: Promise<unknown>): Promise<void> {
   write.catch((err) => console.error("Firestore write failed:", err));
   await Promise.race([write.catch(() => undefined), new Promise((r) => setTimeout(r, OFFLINE_WAIT_MS))]);
 }

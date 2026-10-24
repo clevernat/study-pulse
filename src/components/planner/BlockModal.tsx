@@ -7,7 +7,8 @@ import { addItem, updateItem, deleteItem } from "@/lib/firebase/firestore";
 import { validSlot } from "@/lib/timetable";
 import { blockMinutes } from "@/lib/calendar";
 import { useTimerStore } from "@/store/timerStore";
-import type { StudyBlock, Subject, Task } from "@/types";
+import type { Deck, StudyBlock, Subject, Task } from "@/types";
+import { useCollection } from "@/lib/firebase/useCollection";
 
 interface Props {
   uid: string;
@@ -34,6 +35,9 @@ export default function BlockModal({ uid, subjects, tasks, block, initial, onClo
   const [title, setTitle] = useState(block?.title ?? "");
   const [subjectId, setSubjectId] = useState(block?.subjectId ?? subjects[0]?.id ?? "");
   const [taskId, setTaskId] = useState(block?.taskId ?? "");
+  const [deckId, setDeckId] = useState(block?.deckId ?? "");
+  const { items: decks } = useCollection<Deck>("decks");
+  const subjectDecks = decks.filter((d) => !subjectId || d.subjectId === subjectId);
   const [date, setDate] = useState(block?.date ?? initial?.date ?? "");
   const [start, setStart] = useState(block?.start ?? initial?.start ?? "16:00");
   const [end, setEnd] = useState(block?.end ?? initial?.end ?? "17:00");
@@ -50,6 +54,7 @@ export default function BlockModal({ uid, subjects, tasks, block, initial, onClo
       title: title.trim() || task?.title || (subject ? `Study ${subject.name}` : "Study"),
       subjectId: subjectId || undefined,
       taskId: taskId || undefined,
+      deckId: deckId || undefined,
       date, start, end,
       reminderMinutesBefore: reminder === "" ? undefined : parseInt(reminder, 10),
     };
@@ -68,6 +73,8 @@ export default function BlockModal({ uid, subjects, tasks, block, initial, onClo
   async function startNow() {
     const saved = await save();
     if (!saved) return;
+    // A flashcard block opens the review; its time is saved on the block.
+    if (saved.deckId) return router.push(`/flashcards/review?deck=${saved.deckId}&block=${saved.id}`);
     if (!startBlockTimer(saved, subjects)) return setError("Pick a subject to start the timer.");
     router.push("/timer");
   }
@@ -95,6 +102,14 @@ export default function BlockModal({ uid, subjects, tasks, block, initial, onClo
             <select className={inputCls} value={taskId} onChange={(e) => setTaskId(e.target.value)}>
               <option value="">None</option>
               {openTasks.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}
+            </select>
+          </Field>
+        )}
+        {subjectDecks.length > 0 && (
+          <Field label="Review a flashcard deck (optional)">
+            <select data-testid="block-deck" className={inputCls} value={deckId} onChange={(e) => setDeckId(e.target.value)}>
+              <option value="">No — use the focus timer</option>
+              {subjectDecks.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
           </Field>
         )}

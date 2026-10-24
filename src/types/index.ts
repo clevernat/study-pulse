@@ -248,3 +248,74 @@ export interface Habit {
   log: Record<string, number>;
   createdAt: number;
 }
+
+// ── Flashcards ───────────────────────────────────────────────────────────────
+
+export interface Deck {
+  id: string;
+  name: string;
+  subjectId: string;
+  /** New cards shown per day (default 20) */
+  newPerDay: number;
+  /** Reviews shown per day (default 200) */
+  reviewsPerDay: number;
+  /** Wanted chance to remember a card when it comes back (default 0.9) */
+  retention: number;
+  createdAt: number;
+}
+
+export type NoteType = "basic" | "basicReverse" | "cloze";
+
+export interface Note {
+  id: string;
+  deckId: string;
+  subjectId: string;
+  type: NoteType;
+  /** HTML. basic: front/back. cloze: text/extra. */
+  fields: { front?: string; back?: string; text?: string; extra?: string };
+  tags: string[];
+  source?: "csv" | "apkg";
+  createdAt: number;
+}
+
+/** Scheduling state of one card (FSRS). Times are milliseconds. */
+export interface Card {
+  id: string;
+  noteId: string;
+  deckId: string;
+  /** basic: 0; reverse card: 1; cloze: the cloze number (1, 2, …) */
+  ord: number;
+  due: number;
+  stability: number;
+  difficulty: number;
+  scheduled_days: number;
+  learning_steps: number;
+  reps: number;
+  lapses: number;
+  /** 0 new, 1 learning, 2 review, 3 relearning */
+  state: number;
+  last_review: number | null;
+  suspended: boolean;
+  /** Hidden until this day ("YYYY-MM-DD", exclusive) */
+  buriedUntil: string | null;
+  createdAt: number;
+}
+
+export interface ReviewLogDoc {
+  id: string;
+  cardId: string;
+  noteId: string;
+  deckId: string;
+  /** 1 Again, 2 Hard, 3 Good, 4 Easy */
+  rating: number;
+  /** Card state before the answer */
+  state: number;
+  due: number;
+  stability: number;
+  difficulty: number;
+  scheduled_days: number;
+  /** When the answer was given (ms) */
+  review: number;
+  /** Time spent on the card (ms) */
+  durationMs: number;
+}

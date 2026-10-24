@@ -26,6 +26,7 @@ export const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
   {
     title: "Study",
     items: [
+      { href: "/flashcards", label: "Flashcards", icon: "style" },
       { href: "/timer", label: "Timer", icon: "timer" },
       { href: "/subjects", label: "Subjects", icon: "category" },
       { href: "/sessions", label: "Sessions", icon: "history" },
@@ -39,12 +40,12 @@ export const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
   },
 ];
 
-// Phone bottom bar: 4 main pages + "More" (opens every page).
+// Phone bottom bar: 4 daily pages + "More" (opens every page, incl. Dashboard).
 const bottomNavItems: NavItem[] = [
-  { href: "/dashboard", label: "Home", icon: "dashboard" },
   { href: "/today", label: "Today", icon: "today" },
-  { href: "/timer", label: "Timer", icon: "timer" },
   { href: "/calendar", label: "Calendar", icon: "calendar_month" },
+  { href: "/timer", label: "Timer", icon: "timer" },
+  { href: "/flashcards", label: "Cards", icon: "style" },
 ];
 
 function isActive(pathname: string, href: string) {
