@@ -14,7 +14,7 @@ interface Props {
 
 export default function LogSessionModal({ onClose, onSaved }: Props) {
   const { user } = useAuth();
-  const { selectedSubjectId, selectedSubjectName } = useTimerStore();
+  const { selectedSubjectId } = useTimerStore();
 
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [subjectId, setSubjectId] = useState(selectedSubjectId);
@@ -31,13 +31,14 @@ export default function LogSessionModal({ onClose, onSaved }: Props) {
     getUserSubjects(user.uid).then(setSubjects);
   }, [user]);
 
-  const selectedSubject = subjects.find((s) => s.id === subjectId);
+  // Falls back to the first subject when none (or a deleted one) is picked.
+  const selectedSubject = subjects.find((s) => s.id === subjectId) ?? subjects[0];
   const totalMinutes = parseInt(hours || "0") * 60 + parseInt(minutes || "0");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (subjects.length === 0) { setError("Add a subject first before logging a session."); return; }
-    if (!subjectId) { setError("Please select a subject."); return; }
+    if (!selectedSubject) { setError("Please select a subject."); return; }
     const h = parseInt(hours || "0");
     const m = parseInt(minutes || "0");
     if (isNaN(h) || h < 0 || h > 12) { setError("Hours must be between 0 and 12."); return; }
@@ -53,14 +54,14 @@ export default function LogSessionModal({ onClose, onSaved }: Props) {
       const now = new Date();
       const session: Omit<Session, "id"> = {
         uid: user.uid,
-        subjectId: selectedSubject?.id ?? subjectId ?? "manual",
-        subjectName: selectedSubject?.name ?? selectedSubjectName ?? "General",
-        subjectColor: selectedSubject?.color ?? "violet",
+        subjectId: selectedSubject.id,
+        subjectName: selectedSubject.name,
+        subjectColor: selectedSubject.color ?? "violet",
         durationMinutes: totalMinutes,
         focusScore: score,
         pomodoroCount: Math.floor(totalMinutes / 25),
         date,
-        startTime: now.toTimeString().slice(0, 5),
+        startTime: new Date(now.getTime() - totalMinutes * 60_000).toTimeString().slice(0, 5),
         endTime: now.toTimeString().slice(0, 5),
         notes,
       };
@@ -114,7 +115,7 @@ export default function LogSessionModal({ onClose, onSaved }: Props) {
                     type="button"
                     onClick={() => setSubjectId(s.id)}
                     className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left transition-all ${
-                      subjectId === s.id
+                      selectedSubject?.id === s.id
                         ? "border-primary bg-primary/10"
                         : "border-outline-variant hover:border-primary/40"
                     }`}

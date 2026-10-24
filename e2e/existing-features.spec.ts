@@ -9,7 +9,7 @@ test("old features: log session, sessions list, dashboard, goals, reports, sound
 
   // Manual "Log Session"
   await page.getByRole("button", { name: /Log/ }).first().click();
-  await page.getByRole("button", { name: "History" }).click();
+  // No subject click: the only subject is picked by default.
   await page.locator('input[type="number"]').nth(1).fill("45");
   await page.getByPlaceholder("What did you cover? Any blockers?").fill("Chapter 2");
   await page.locator("form").getByRole("button", { name: "Log Session" }).click();
