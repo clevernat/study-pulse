@@ -1,0 +1,49 @@
+npm notice run studypulse@0.1.0 build
+npm notice run next build
+  ▲ Next.js 14.2.35
+  - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/25) ...
+   Generating static pages (6/25) 
+   Generating static pages (12/25) 
+   Generating static pages (18/25) 
+ ✓ Generating static pages (25/25)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+┌ ○ /                                    4.85 kB         101 kB
+├ ○ /_not-found                          876 B          88.4 kB
+├ ○ /calendar                            4.95 kB         239 kB
+├ ○ /dashboard                           9.31 kB         245 kB
+├ ○ /exams                               3.08 kB         233 kB
+├ ○ /flashcards                          2.83 kB         249 kB
+├ ○ /flashcards/deck                     3.4 kB          262 kB
+├ ○ /flashcards/import                   7.51 kB         246 kB
+├ ○ /flashcards/review                   5.79 kB         259 kB
+├ ○ /flashcards/stats                    5.91 kB         238 kB
+├ ○ /goals                               6.34 kB         233 kB
+├ ○ /habits                              5.71 kB         232 kB
+├ ○ /login                               3.46 kB         235 kB
+├ ○ /reports                             5.99 kB         233 kB
+├ ○ /sessions                            3.27 kB         230 kB
+├ ○ /settings                            10.7 kB         245 kB
+├ ○ /subjects                            7.69 kB         246 kB
+├ ○ /subjects/view                       2.48 kB         252 kB
+├ ○ /tasks                               5.11 kB         232 kB
+├ ○ /timer                               7.81 kB         239 kB
+├ ○ /timetable                           5.61 kB         232 kB
+└ ○ /today                               6.3 kB          241 kB
++ First Load JS shared by all            87.5 kB
+  ├ chunks/117-655d1a30eb0b655d.js       31.9 kB
+  ├ chunks/fd9d1056-3054852c68a3097a.js  53.7 kB
+  └ other shared chunks (total)          2 kB
+
+
+○  (Static)  prerendered as static content
+
+exit 0

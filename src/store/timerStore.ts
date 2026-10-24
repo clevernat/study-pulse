@@ -25,6 +25,10 @@ interface TimerStore {
   _hasHydrated: boolean;
   setHasHydrated: (val: boolean) => void;
 
+  /** UID of the account this timer state belongs to. Used to detect account switches. */
+  ownerUid: string;
+  setOwnerUid: (uid: string) => void;
+
   state: TimerState;
   mode: "focus" | "short-break" | "long-break";
   secondsRemaining: number;
@@ -33,6 +37,12 @@ interface TimerStore {
   totalPomodoros: number;
   selectedSubjectId: string;
   selectedSubjectName: string;
+  sessionType: string;
+  setSessionType: (type: string) => void;
+
+  /** Planned study block the running timer belongs to ("" = none). Cleared when the subject changes. */
+  activeBlockId: string;
+  setActiveBlock: (id: string) => void;
   pomodoroLength: number;
   shortBreak: number;
   longBreak: number;
@@ -58,6 +68,9 @@ export const useTimerStore = create<TimerStore>()(
       _hasHydrated: false,
       setHasHydrated: (val) => set({ _hasHydrated: val }),
 
+      ownerUid: "",
+      setOwnerUid: (uid) => set({ ownerUid: uid }),
+
       state: "idle",
       mode: "focus",
       secondsRemaining: 25 * 60,
@@ -66,6 +79,8 @@ export const useTimerStore = create<TimerStore>()(
       totalPomodoros: 4,
       selectedSubjectId: "",
       selectedSubjectName: "Select a Subject",
+      sessionType: "Deep Work",
+      setSessionType: (type) => set({ sessionType: type }),
       pomodoroLength: 25,
       shortBreak: 5,
       longBreak: 15,
@@ -121,7 +136,9 @@ export const useTimerStore = create<TimerStore>()(
         _interval = setInterval(() => get().tick(), 500);
       },
 
-      setSubject: (id, name) => set({ selectedSubjectId: id, selectedSubjectName: name }),
+      setSubject: (id, name) => set((s) => ({ selectedSubjectId: id, selectedSubjectName: name, ...(id !== s.selectedSubjectId ? { activeBlockId: "" } : {}) })),
+      activeBlockId: "",
+      setActiveBlock: (id) => set({ activeBlockId: id }),
 
       setDurations: (focus, shortB, longB) => {
         clearTick();
@@ -257,14 +274,19 @@ export const useTimerStore = create<TimerStore>()(
       // Called after localStorage is read and state is merged.
       // Flips _hasHydrated so components know real state is now available.
       onRehydrateStorage: () => (state) => {
+        // Old builds stored "Select a Focus Area" as the empty-subject label.
+        if (state?.selectedSubjectName === "Select a Focus Area") state.setSubject(state.selectedSubjectId, "Select a Subject");
         state?.setHasHydrated(true);
       },
       // _hasHydrated and setHasHydrated are intentionally excluded — they must
       // always start as false/undefined on a fresh page load.
       partialize: (s) => ({
+        ownerUid: s.ownerUid,
         state: s.state, mode: s.mode, secondsRemaining: s.secondsRemaining, totalSeconds: s.totalSeconds,
         pomodoroIndex: s.pomodoroIndex, totalPomodoros: s.totalPomodoros,
         selectedSubjectId: s.selectedSubjectId, selectedSubjectName: s.selectedSubjectName,
+        sessionType: s.sessionType,
+        activeBlockId: s.activeBlockId,
         pomodoroLength: s.pomodoroLength, shortBreak: s.shortBreak, longBreak: s.longBreak,
         startTimestamp: s.startTimestamp, remainingWhenStarted: s.remainingWhenStarted,
       }),

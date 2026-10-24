@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { subscribeSessions, subscribeSubjects } from "@/lib/firebase/firestore";
+import { subscribeSessions, subscribeSubjects, deleteSession } from "@/lib/firebase/firestore";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import { getColor } from "@/lib/colorPalette";
-import { localDateStr } from "@/lib/dateUtils";
+import { localDateStr, daysAgoStr } from "@/lib/dateUtils";
 import type { Session, Subject } from "@/types";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -62,9 +63,11 @@ interface DayGroupProps {
   label: string;
   defaultOpen: boolean;
   subjectById: Map<string, Subject>;
+  onDeleteSession: (session: Session) => void;
+  deletingId: string | null;
 }
 
-function DayGroup({ date, sessions, label, defaultOpen, subjectById }: DayGroupProps) {
+function DayGroup({ date, sessions, label, defaultOpen, subjectById, onDeleteSession, deletingId }: DayGroupProps) {
   const [open, setOpen] = useState(defaultOpen);
   const [showAll, setShowAll] = useState(false);
 
@@ -134,7 +137,7 @@ function DayGroup({ date, sessions, label, defaultOpen, subjectById }: DayGroupP
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 flex-shrink-0">
+                <div className="flex items-center gap-3 flex-shrink-0">
                   <span className="text-xs text-on-surface-variant font-inter">
                     {session.startTime} – {session.endTime}
                   </span>
@@ -143,6 +146,16 @@ function DayGroup({ date, sessions, label, defaultOpen, subjectById }: DayGroupP
                   >
                     {session.focusScore}%
                   </div>
+                  <button
+                    onClick={() => onDeleteSession(session)}
+                    disabled={deletingId === session.id}
+                    className="text-on-surface-variant/40 hover:text-error transition-colors p-1 rounded-lg hover:bg-error/10"
+                    title="Delete session"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">
+                      {deletingId === session.id ? "hourglass_empty" : "delete_outline"}
+                    </span>
+                  </button>
                 </div>
               </div>
             );
@@ -170,6 +183,8 @@ export default function SessionsPage() {
   const [activeFilter, setActiveFilter] = useState<Filter>("All");
   const [sessions, setSessions] = useState<Session[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [confirmSession, setConfirmSession] = useState<Session | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -178,6 +193,17 @@ export default function SessionsPage() {
     return () => { unsub1(); unsub2(); };
   }, [user]);
 
+  const handleDeleteConfirm = async () => {
+    if (!user || !confirmSession) return;
+    setDeletingId(confirmSession.id);
+    setConfirmSession(null);
+    try {
+      await deleteSession(user.uid, confirmSession.id);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const subjectById = useMemo(() => {
     const m = new Map<string, Subject>();
     for (const s of subjects) m.set(s.id, s);
@@ -185,9 +211,7 @@ export default function SessionsPage() {
   }, [subjects]);
 
   const todayStr = localDateStr();
-  const weekAgoDate = new Date();
-  weekAgoDate.setDate(weekAgoDate.getDate() - 7);
-  const weekAgoStr = localDateStr(weekAgoDate);
+  const weekAgoStr = daysAgoStr(6); // 7 days including today
   const monthStr = todayStr.slice(0, 7);
   const yesterdayDate = new Date();
   yesterdayDate.setDate(yesterdayDate.getDate() - 1);
@@ -216,9 +240,8 @@ export default function SessionsPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      {/* Header + Filters */}
+      {/* Filters */}
       <div className="flex flex-col gap-4">
-        <h1 className="font-grotesk font-bold text-3xl text-on-surface">Study Sessions</h1>
         <div className="flex flex-wrap gap-2">
           {FILTERS.map((f) => (
             <button
@@ -275,9 +298,23 @@ export default function SessionsPage() {
             // Today expanded by default; first day in non-today filters also expanded
             defaultOpen={date === todayStr || (idx === 0 && !sortedDates.includes(todayStr))}
             subjectById={subjectById}
+            onDeleteSession={setConfirmSession}
+            deletingId={deletingId}
           />
         ))}
       </div>
+
+      <ConfirmModal
+        open={!!confirmSession}
+        title="Delete Session"
+        description={`Delete this ${confirmSession?.durationMinutes ?? 0}-minute ${confirmSession?.subjectName ?? ""} session? This cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        destructive
+        icon="timer_off"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setConfirmSession(null)}
+      />
     </div>
   );
 }

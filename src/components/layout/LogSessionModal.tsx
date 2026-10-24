@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTimerStore } from "@/store/timerStore";
 import { getUserSubjects, addSession } from "@/lib/firebase/firestore";
 import type { Subject, Session } from "@/types";
+import { localDateStr } from "@/lib/dateUtils";
 
 interface Props {
   onClose: () => void;
@@ -20,7 +21,7 @@ export default function LogSessionModal({ onClose, onSaved }: Props) {
   const [hours, setHours] = useState("0");
   const [minutes, setMinutes] = useState("25");
   const [focusScore, setFocusScore] = useState("85");
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(localDateStr());
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");

@@ -343,7 +343,7 @@ function Hero() {
           }}
         >
           <span style={{ color: "#7c3aed" }}>✦</span>
-          AI-Powered Study Intelligence
+          Study and planning in one app
         </div>
 
         {/* Headline */}
@@ -370,8 +370,8 @@ function Hero() {
             color: "#ccc3d8",
           }}
         >
-          The AI-powered study tracker that transforms how students learn. Log sessions,
-          visualize progress, and build unstoppable momentum.
+          Flashcards with spaced repetition, a focus timer, exams, a class timetable
+          and a study calendar. One app for your laptop and your phone.
         </p>
 
         {/* CTA buttons */}
@@ -419,10 +419,10 @@ function Hero() {
         {/* Stats row */}
         <div className="flex flex-wrap justify-center gap-6 sm:gap-8 mb-4">
           {[
-            { value: "10,000+", label: "Students" },
-            { value: "4.9★", label: "Rating" },
-            { value: "2.4h", label: "Avg Daily" },
-            { value: "94%", label: "Hit Goals" },
+            { value: "Free", label: "No paid plan" },
+            { value: "2 screens", label: "Laptop + phone" },
+            { value: "Offline", label: "Works without internet" },
+            { value: "Private", label: "Only you see your data" },
           ].map(({ value, label }) => (
             <div key={label} className="flex flex-col items-center">
               <span
@@ -452,44 +452,44 @@ function Hero() {
 
 const features = [
   {
-    icon: "timer",
-    title: "Pomodoro Focus Timer",
-    desc: "Deep work sessions with the proven Pomodoro technique. Built-in break reminders keep you sharp.",
+    icon: "style",
+    title: "Flashcards That Remember for You",
+    desc: "Basic and cloze cards in decks for each subject. Spaced repetition shows each card again just before you would forget it.",
     color: "#d2bbff",
     bg: "rgba(210,187,255,0.1)",
   },
   {
-    icon: "grid_on",
-    title: "90-Day Heatmap",
-    desc: "GitHub-style activity heatmap shows your consistency at a glance. Never break the streak.",
+    icon: "calendar_month",
+    title: "Study Calendar",
+    desc: "Day, week and month views with tasks, exams, classes and planned study blocks. Start the timer straight from a block.",
     color: "#40efb7",
     bg: "rgba(64,239,183,0.1)",
   },
   {
-    icon: "track_changes",
-    title: "Goal Tracking",
-    desc: "Set daily, weekly, and monthly targets. SVG progress rings show exactly where you stand.",
+    icon: "event_upcoming",
+    title: "Exams and Timetable",
+    desc: "Exam countdowns on your dashboard, a weekly class timetable, homework with due dates and topics to check off.",
     color: "#ffb95f",
     bg: "rgba(255,185,95,0.1)",
   },
   {
-    icon: "insights",
-    title: "Smart Analytics",
-    desc: "Deep-dive reports on your study patterns. Know which subjects need more attention.",
+    icon: "timer",
+    title: "Pomodoro Focus Timer",
+    desc: "Focus and break cycles with ambient sounds. Every focus block is saved as a study session.",
     color: "#d2bbff",
     bg: "rgba(210,187,255,0.1)",
   },
   {
-    icon: "subject",
-    title: "Subject Management",
-    desc: "Organize your coursework by subject. Track hours logged and focus scores per topic.",
+    icon: "local_fire_department",
+    title: "Habits, Streaks and Goals",
+    desc: "Daily or weekly habits, study streaks, a 90-day heat map and goals that fill up from your real sessions.",
     color: "#40efb7",
     bg: "rgba(64,239,183,0.1)",
   },
   {
-    icon: "history_edu",
-    title: "Session Logging",
-    desc: "Every study session recorded and filterable. Full audit trail of your academic journey.",
+    icon: "notifications_active",
+    title: "Reminders and Calendar Sync",
+    desc: "Reminders on your phone and laptop, and a private calendar link for Google, Apple or Outlook Calendar.",
     color: "#ffb95f",
     bg: "rgba(255,185,95,0.1)",
   },
@@ -582,7 +582,7 @@ const steps = [
     num: "01",
     icon: "add_circle",
     title: "Create Your Subjects",
-    desc: "Add your courses and subjects. Assign colors and categories to organize your academic world.",
+    desc: "Add your courses and subjects. Pick a color and a category for each one.",
   },
   {
     num: "02",
@@ -594,7 +594,7 @@ const steps = [
     num: "03",
     icon: "trending_up",
     title: "Watch Your Growth",
-    desc: "Visualize 90 days of progress. Hit your goals. Watch your streak grow. Become unstoppable.",
+    desc: "Review your cards, plan your week, and see your hours, streaks and goals grow.",
   },
 ];
 
@@ -619,7 +619,7 @@ function HowItWorks() {
               color: "#e5e1e6",
             }}
           >
-            From zero to academic elite in 3 steps
+            Get started in 3 steps
           </h2>
         </div>
 
@@ -687,170 +687,6 @@ function HowItWorks() {
   );
 }
 
-// ── Stats / Social Proof ──────────────────────────────────────────────────────
-
-const bigStats = [
-  { value: "10,247", label: "Active Students" },
-  { value: "98,431", label: "Sessions Logged" },
-  { value: "12,847", label: "Goals Achieved" },
-  { value: "94%", label: "Report Better Grades" },
-];
-
-function StatsSection() {
-  return (
-    <section
-      id="stats"
-      className="py-16 sm:py-24 px-4 sm:px-6"
-      style={{
-        background: "#131316",
-        borderTop: "1px solid rgba(124,58,237,0.3)",
-      }}
-    >
-      <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          {bigStats.map(({ value, label }) => (
-            <div key={label} className="flex flex-col items-center">
-              <span
-                className="font-bold"
-                style={{
-                  fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: "clamp(32px, 4vw, 48px)",
-                  color: "#d2bbff",
-                }}
-              >
-                {value}
-              </span>
-              <span
-                className="text-xs uppercase tracking-widest mt-1"
-                style={{ fontFamily: "'Inter', sans-serif", color: "#ccc3d8" }}
-              >
-                {label}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ── Testimonials ──────────────────────────────────────────────────────────────
-
-const testimonials = [
-  {
-    quote:
-      "StudyPulse completely changed how I study. I went from random cramming sessions to structured, data-driven learning. My GPA went from 3.1 to 3.8 in one semester.",
-    name: "Sarah K.",
-    role: "Computer Science @ MIT",
-    initials: "SK",
-    avatarBg: "rgba(124,58,237,0.3)",
-    avatarColor: "#d2bbff",
-  },
-  {
-    quote:
-      "The heatmap feature is addictive. I haven't broken my streak in 47 days. It's like GitHub for studying.",
-    name: "Marcus T.",
-    role: "Pre-Med @ Johns Hopkins",
-    initials: "MT",
-    avatarBg: "rgba(64,239,183,0.2)",
-    avatarColor: "#40efb7",
-  },
-  {
-    quote:
-      "I used to guess how much I was studying. Now I KNOW. The analytics dashboard is incredibly eye-opening.",
-    name: "Priya M.",
-    role: "Law School @ Harvard",
-    initials: "PM",
-    avatarBg: "rgba(255,185,95,0.2)",
-    avatarColor: "#ffb95f",
-  },
-];
-
-function Testimonials() {
-  return (
-    <section
-      className="py-20 sm:py-32 px-4 sm:px-6"
-      style={{ background: "#0e0e11", borderTop: "1px solid #252535" }}
-    >
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16">
-          <h2
-            className="font-bold mb-4"
-            style={{
-              fontFamily: "'Space Grotesk', sans-serif",
-              fontSize: "clamp(32px, 4vw, 48px)",
-              color: "#e5e1e6",
-            }}
-          >
-            What students say
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {testimonials.map(({ quote, name, role, initials, avatarBg, avatarColor }) => (
-            <div
-              key={name}
-              className="p-6 rounded-xl flex flex-col gap-4 transition-all duration-300"
-              style={{ background: "#12121a", border: "1px solid #252535" }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = "rgba(210,187,255,0.2)";
-                (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = "#252535";
-                (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
-              }}
-            >
-              {/* Stars */}
-              <div className="flex gap-0.5" style={{ color: "#ffb95f", fontSize: "16px" }}>
-                {"★★★★★".split("").map((star, i) => (
-                  <span key={i}>{star}</span>
-                ))}
-              </div>
-
-              {/* Quote */}
-              <p
-                className="text-sm leading-relaxed flex-1"
-                style={{ fontFamily: "'Inter', sans-serif", color: "#ccc3d8" }}
-              >
-                &ldquo;{quote}&rdquo;
-              </p>
-
-              {/* Author */}
-              <div className="flex items-center gap-3 pt-2" style={{ borderTop: "1px solid #252535" }}>
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"
-                  style={{
-                    background: avatarBg,
-                    color: avatarColor,
-                    fontFamily: "'Space Grotesk', sans-serif",
-                  }}
-                >
-                  {initials}
-                </div>
-                <div>
-                  <div
-                    className="font-bold text-sm"
-                    style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#e5e1e6" }}
-                  >
-                    {name}
-                  </div>
-                  <div
-                    className="text-xs"
-                    style={{ fontFamily: "'Inter', sans-serif", color: "#666680" }}
-                  >
-                    {role}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 // ── Final CTA ─────────────────────────────────────────────────────────────────
 
 function FinalCTA() {
@@ -875,13 +711,13 @@ function FinalCTA() {
             color: "#e5e1e6",
           }}
         >
-          Ready to become an academic elite?
+          Ready to plan your next study session?
         </h2>
         <p
           className="mb-10 text-lg"
           style={{ fontFamily: "'Inter', sans-serif", color: "#ccc3d8" }}
         >
-          Join 10,000+ students already tracking their way to success. Free forever.
+          Free to use. Your data stays in your own account.
         </p>
 
         <Link
@@ -911,7 +747,7 @@ function FinalCTA() {
           className="flex flex-wrap justify-center gap-6 mt-6 text-sm"
           style={{ fontFamily: "'Inter', sans-serif", color: "#666680" }}
         >
-          <span>✓ Free forever</span>
+          <span>✓ Free</span>
           <span>✓ No credit card</span>
           <span>✓ Start in 60 seconds</span>
         </div>
@@ -1014,8 +850,6 @@ export default function LandingPage() {
       <Hero />
       <Features />
       <HowItWorks />
-      <StatsSection />
-      <Testimonials />
       <FinalCTA />
       <Footer />
     </div>

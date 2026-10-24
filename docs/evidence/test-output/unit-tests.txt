@@ -1,0 +1,8 @@
+npm notice run studypulse@0.1.0 npx
+npm notice run 'jest' --verbose
+Test Suites: 13 passed, 13 total
+Tests:       104 passed, 104 total
+Snapshots:   0 total
+Time:        1.071 s
+Ran all test suites.
+exit 0

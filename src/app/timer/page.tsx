@@ -5,10 +5,25 @@ import { useSearchParams } from "next/navigation";
 import { useTimerStore, formatTime } from "@/store/timerStore";
 import { getColor } from "@/lib/colorPalette";
 import { useAuth } from "@/context/AuthContext";
-import { subscribeSubjects, subscribeSessions } from "@/lib/firebase/firestore";
+import { subscribeSubjects, subscribeSessions, subscribeGoals } from "@/lib/firebase/firestore";
 import { computeStreak } from "@/lib/streakLogic";
-import { localDateStr } from "@/lib/dateUtils";
-import type { Subject, Session } from "@/types";
+import { localDateStr, daysAgoStr } from "@/lib/dateUtils";
+import { togglePiPTimer, isPiPSupported, isPiPOpen } from "@/lib/pipTimer";
+import type { Subject, Session, Goal } from "@/types";
+import { requestNotificationPermission } from "@/lib/sounds";
+import { useCollection } from "@/lib/firebase/useCollection";
+import { blockMinutes } from "@/lib/calendar";
+import type { StudyBlock } from "@/types";
+
+const BREAK_SUGGESTIONS = [
+  { icon: "directions_walk", title: "Take a short walk", desc: "Even 5 minutes outside resets your focus." },
+  { icon: "self_improvement", title: "Do some stretches", desc: "Release tension in your neck and shoulders." },
+  { icon: "water_drop", title: "Drink some water", desc: "Staying hydrated improves concentration." },
+  { icon: "air", title: "Try box breathing", desc: "In 4s → hold 4s → out 4s → hold 4s." },
+  { icon: "visibility_off", title: "Rest your eyes", desc: "Look 20 feet away for 20 seconds (20-20-20 rule)." },
+  { icon: "restaurant", title: "Have a light snack", desc: "Fuel your brain for the next session." },
+  { icon: "phone_disabled", title: "Stay off your phone", desc: "Give your brain a true screen break." },
+];
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const MODE_LABELS: Record<string, string> = {
@@ -94,14 +109,23 @@ function TimerPageInner() {
     setTotalPomodoros,
     shortBreak,
     longBreak,
+    sessionType,
+    setSessionType,
   } = useTimerStore();
 
+  const SESSION_TYPES = ["Deep Work","Reading","Writing","Coding","Research","Review","Planning","Admin","Practice","Job Search"];
+
   const { user } = useAuth();
+  const activeBlockId = useTimerStore((s) => s.activeBlockId);
+  const setActiveBlock = useTimerStore((s) => s.setActiveBlock);
+  const { items: blocks } = useCollection<StudyBlock>("studyBlocks");
   const searchParams = useSearchParams();
 
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [pipOpen, setPipOpen] = useState(false);
   const [draftFocus, setDraftFocus] = useState(String(pomodoroLength));
   const [draftShort, setDraftShort] = useState(String(shortBreak));
   const [draftLong, setDraftLong] = useState(String(longBreak));
@@ -133,8 +157,9 @@ function TimerPageInner() {
       }
     });
     const unsub2 = subscribeSessions(user.uid, setSessions);
-    return () => { unsub1(); unsub2(); };
-  }, [user]);
+    const unsub3 = subscribeGoals(user.uid, setGoals);
+    return () => { unsub1(); unsub2(); unsub3(); };
+  }, [user, setSubject]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -145,6 +170,12 @@ function TimerPageInner() {
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Keep PiP button in sync with actual window state
+  useEffect(() => {
+    const id = setInterval(() => setPipOpen(isPiPOpen()), 800);
+    return () => clearInterval(id);
   }, []);
 
 
@@ -159,13 +190,14 @@ function TimerPageInner() {
   const todayProgress = Math.min(todayHours / todayGoalHours, 1);
 
   // Productivity: compare this week vs last week hours
-  const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
-  const twoWeeksAgo = new Date(); twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+  // Last 7 days (today included) vs the 7 days before. Compare local date strings.
+  const weekStart = daysAgoStr(6);
+  const prevWeekStart = daysAgoStr(13);
   const thisWeekMins = sessions
-    .filter((s) => new Date(s.date) >= weekAgo)
+    .filter((s) => s.date >= weekStart)
     .reduce((sum, s) => sum + s.durationMinutes, 0);
   const lastWeekMins = sessions
-    .filter((s) => new Date(s.date) >= twoWeeksAgo && new Date(s.date) < weekAgo)
+    .filter((s) => s.date >= prevWeekStart && s.date < weekStart)
     .reduce((sum, s) => sum + s.durationMinutes, 0);
   const productivityChange = lastWeekMins === 0
     ? null
@@ -190,6 +222,11 @@ function TimerPageInner() {
   const completedPomodoros = pomodoroIndex % totalPomodoros;
   const currentSubject = subjects.find((s) => s.id === selectedSubjectId);
   const hasSubject = !!selectedSubjectId;
+
+  const today = localDateStr();
+  const hasActiveGoal = !selectedSubjectId || goals.some(
+    (g) => g.subjectId === selectedSubjectId && g.deadline >= today
+  );
 
   // Determine display list: real subjects if loaded, else empty (no mock fallback)
   const displaySubjects = subjects;
@@ -243,9 +280,24 @@ function TimerPageInner() {
     },
   } as const;
   const theme = modeTheme[mode] ?? modeTheme.focus;
+  const activeBlock = blocks.find((b) => b.id === activeBlockId);
 
   return (
     <div className="flex flex-col items-center gap-3 max-w-xl mx-auto w-full">
+
+      {/* Planned study block this timer belongs to */}
+      {activeBlock && (
+        <div data-testid="timer-active-block" className="glass-card w-full px-4 py-3 flex items-center gap-3 border-primary/40">
+          <span className="material-symbols-outlined text-primary">edit_calendar</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-on-surface truncate">{activeBlock.title}</p>
+            <p className="text-[11px] text-on-surface-variant">Planned {activeBlock.start}–{activeBlock.end} · {activeBlock.minutesDone ?? 0} of {blockMinutes(activeBlock)} min done</p>
+          </div>
+          <button onClick={() => setActiveBlock("")} aria-label="Stop linking to this block" className="text-on-surface-variant hover:text-on-surface p-1">
+            <span className="material-symbols-outlined text-[18px]">link_off</span>
+          </button>
+        </div>
+      )}
 
       {/* Subject Selector */}
       <div className="relative w-full" ref={dropdownRef}>
@@ -279,6 +331,40 @@ function TimerPageInner() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* No active goal banner */}
+      {hasSubject && !hasActiveGoal && (
+        <div className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-tertiary/10 border border-tertiary/30">
+          <span className="material-symbols-outlined text-tertiary text-[18px] flex-shrink-0">flag</span>
+          <p className="text-xs text-tertiary flex-1">
+            No active goal for <span className="font-semibold">{currentSubject?.name}</span> — set one to track your progress.
+          </p>
+          <a href="/goals" className="text-xs font-bold text-tertiary underline underline-offset-2 flex-shrink-0">
+            Create goal
+          </a>
+        </div>
+      )}
+
+      {/* Session Type Selector */}
+      <div className="w-full flex flex-col gap-2">
+        <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-on-surface-variant">Session Type</span>
+        <div className="flex flex-wrap gap-1.5">
+          {SESSION_TYPES.map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setSessionType(t)}
+              className={`px-3 py-1 rounded-full text-[12px] font-inter font-medium border transition-all ${
+                sessionType === t
+                  ? "bg-primary/20 text-primary border-primary/50"
+                  : "border-outline-variant text-on-surface-variant hover:border-primary/40 hover:text-on-surface"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* SVG Ring */}
@@ -337,7 +423,8 @@ function TimerPageInner() {
         </button>
         <div className="flex flex-col items-center gap-1.5">
           <button
-            onClick={() => { if (state === "running") pause(); else start(); }}
+            data-testid="timer-start"
+            onClick={() => { if (state === "running") pause(); else { requestNotificationPermission(); start(); } }}
             disabled={!hasSubject && state !== "running"}
             className="w-16 h-16 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95"
             style={hasSubject || state === "running" ? {
@@ -366,7 +453,54 @@ function TimerPageInner() {
         <button onClick={() => skip()} className="w-11 h-11 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest transition-all active:scale-95" aria-label="Skip">
           <span className="material-symbols-outlined text-[20px]">skip_next</span>
         </button>
+
+        {/* Picture-in-Picture — float the timer above all other apps */}
+        {isPiPSupported() && (
+          <button
+            onClick={() => { togglePiPTimer(); setTimeout(() => setPipOpen(isPiPOpen()), 300); }}
+            className={`w-11 h-11 rounded-full border flex items-center justify-center transition-all active:scale-95 ${
+              pipOpen
+                ? "border-primary/60 text-primary bg-primary/10"
+                : "border-outline-variant text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest"
+            }`}
+            aria-label={pipOpen ? "Close picture-in-picture" : "Open picture-in-picture"}
+            title={pipOpen ? "Close floating window" : "Float timer above all windows (Chrome only)"}
+          >
+            <span className="material-symbols-outlined text-[20px]">picture_in_picture</span>
+          </button>
+        )}
       </div>
+
+      {/* Smart Break Suggestion — shown during any break mode */}
+      {(mode === "short-break" || mode === "long-break") && (() => {
+        const s = BREAK_SUGGESTIONS[pomodoroIndex % BREAK_SUGGESTIONS.length];
+        const isLong = mode === "long-break";
+        return (
+          <div className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl border ${
+            isLong
+              ? "bg-tertiary/8 border-tertiary/25"
+              : "bg-secondary/8 border-secondary/25"
+          }`}>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+              isLong ? "bg-tertiary/15" : "bg-secondary/15"
+            }`}>
+              <span
+                className={`material-symbols-outlined text-[22px] ${isLong ? "text-tertiary" : "text-secondary"}`}
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                {s.icon}
+              </span>
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className={`text-[11px] uppercase tracking-[0.15em] font-bold mb-0.5 ${isLong ? "text-tertiary" : "text-secondary"}`}>
+                Break suggestion
+              </span>
+              <span className="text-on-surface font-semibold text-sm">{s.title}</span>
+              <span className="text-on-surface-variant text-xs mt-0.5">{s.desc}</span>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Duration Controls */}
       <div className="w-full bg-[#12121a] border border-[#252535] rounded-2xl overflow-hidden">

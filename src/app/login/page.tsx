@@ -130,6 +130,8 @@ export default function LoginPage() {
                 Email
               </label>
               <input
+                data-testid="login-email"
+                autoComplete="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -143,6 +145,8 @@ export default function LoginPage() {
                 Password
               </label>
               <input
+                data-testid="login-password"
+                autoComplete={mode === "signup" ? "new-password" : "current-password"}
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -161,6 +165,7 @@ export default function LoginPage() {
 
             {/* Submit */}
             <button
+              data-testid="login-submit"
               type="submit"
               disabled={submitting}
               className="w-full bg-primary-container text-on-primary-container py-3 rounded-xl font-bold font-inter text-sm mt-1 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
@@ -199,9 +204,9 @@ export default function LoginPage() {
         {/* Stats row */}
         <div className="flex items-center justify-center gap-8 mt-6">
           {[
-            { stat: "10K+", label: "Students" },
-            { stat: "4.9★", label: "Rating" },
-            { stat: "100%", label: "Free" },
+            { stat: "Free", label: "No paid plan" },
+            { stat: "Offline", label: "Works anywhere" },
+            { stat: "Private", label: "Your data only" },
           ].map(({ stat, label }) => (
             <div key={label} className="text-center">
               <div className="font-jetbrains font-semibold text-primary text-sm">{stat}</div>

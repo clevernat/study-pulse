@@ -1,4 +1,4 @@
-# StudyPulse — AI Study Tracker
+# StudyPulse — Study Planner and Flashcards
 
 <div align="center">
 
@@ -6,289 +6,160 @@
 [![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)](https://nextjs.org)
 [![Firebase](https://img.shields.io/badge/Firebase-Firestore%20%2B%20Auth-orange?style=for-the-badge&logo=firebase)](https://firebase.google.com)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-3-06b6d4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 
-**Track every session. Build unstoppable momentum.**
-
-[Live App](https://studypulse-tracker-app.web.app) · [Report a Bug](https://github.com/clevernat/study-pulse/issues) · [Request a Feature](https://github.com/clevernat/study-pulse/issues)
+**One app to study and plan, on your laptop and your phone.**
 
 </div>
 
 ---
 
-## Overview
-
-StudyPulse is a full-stack study tracking web app built with Next.js 14 and Firebase. It gives students a single place to run Pomodoro sessions, log study hours, manage subjects and goals, and visualise progress with real-time charts — all synced across every device they own.
-
-Everything is free, no account-gating, and the data never leaves the user's own Firestore database.
-
----
-
 ## Features
 
-### Authentication
-- Email / password sign-up and sign-in
-- Google OAuth one-click login
-- Persistent sessions via Firebase Auth
-- Protected routes — unauthenticated users are redirected to `/login`
+**Study**
+- **Flashcards** — decks per subject; Basic, Basic + reverse and Cloze (`{{c1::answer::hint}}`) cards; spaced repetition with FSRS ([ts-fsrs](https://github.com/open-spaced-repetition/ts-fsrs)); Again / Hard / Good / Easy with the next interval on each button; keyboard keys; undo; daily limits; stats and a 30-day forecast.
+- **Import** — Anki `.apkg` files (old and current formats) and CSV/TSV files.
+- **Focus timer** — Pomodoro with breaks, ambient sounds, picture-in-picture, synced across devices. Every focus period (and every flashcard review) is saved as a study session.
+- **Subjects, topics and goals** — topics to check off per subject, goals that fill up from real sessions, reports, streaks, badges and a 90-day heat map.
 
-### Dashboard
-- **Daily streak counter** — computed from real session dates using a streak-logic library with full test coverage
-- **Weekly study hours bar chart** — last 7 days, computed dynamically from Firestore sessions
-- **90-Day velocity heatmap** — fluid grid that fills its card, colour intensity based on hours studied
-- **Recent sessions list** — last 5 sessions sorted by date
-- **Export logs** — one-click CSV download of all sessions
+**Plan**
+- **Today** — classes, planned study, cards to review, habits, exams soon, tasks due.
+- **Calendar** — day, week and month views with classes, exams, tasks, planned study blocks and finished sessions. Click an empty hour to plan study time, then start the timer from the block.
+- **Exams** — countdown on the dashboard, room and seat, revision progress, warning when an exam clashes with a class.
+- **Timetable** — weekly classes, A/B (up to 4) week rotation, term dates and holidays.
+- **Tasks** — tasks, homework and revision with due date and time, priority, and "repeat N days after I finish".
+- **Habits** — every day or N days a week, amounts (for example 20 cards), automatic habits, streaks.
+- **Reminders** — before tasks, exams, classes and study blocks, for habits, and a daily summary (shown while the app is open; push when closed comes with a server later).
+- **Calendar sync** — download a .ics file for Google, Apple or Outlook Calendar (a live link comes later).
 
-### Pomodoro Timer
-- Configurable focus / short break / long break durations
-- Visual progress ring and phase indicator
-- Auto-advances through cycles
-- Completed focus sessions are automatically saved to Firestore with subject, duration, and timestamp
-
-### Sessions
-- Full session history loaded from Firestore
-- Filter by Today / This Week / This Month / All Time
-- Empty state with call to action when no sessions exist
-
-### Subjects
-- Create and manage study subjects
-- Total hours per subject tracked automatically from logged sessions
-- Data synced to Firestore under the user's document
-
-### Goals
-- Create daily and weekly study targets
-- Progress tracked against real session data
-- Empty state guidance for new users
-
-### Reports
-- **Weekly trend line** — ISO-week grouping over the last 8 weeks
-- **Subject breakdown donut** — percentage split by subject
-- **Study time heatmap** — 7 × 7 grid with quartile intensity, fills the card
-- **Focus score bars** — average focus score by day of week
-- Period selector: This Week / This Month / Last 3 Months
-- All charts show a meaningful empty state when no data exists
-
-### Settings
-- Display name and email from Firebase Auth
-- Notification preferences
-- One-click data export from Settings page
-- Account deletion flow
-
-### Landing Page
-- Fully responsive (mobile-first)
-- Hero with animated badge and CTA buttons
-- Feature highlights, testimonials, and FAQ accordion
-- Dynamic copyright year
+**Everywhere**
+- Installable app (PWA) for laptop and phone, works offline, data synced through Firebase.
 
 ---
 
-## Tech Stack
+## Install the app on your laptop and phone
 
-| Layer | Technology |
-|---|---|
-| Framework | Next.js 14 (App Router, static export) |
-| Language | TypeScript 5 |
-| Styling | Tailwind CSS v3 with custom design tokens |
-| State | Zustand |
-| Backend | Firebase Firestore + Firebase Auth |
-| Hosting | Firebase Hosting |
-| Fonts | Space Grotesk · Inter · JetBrains Mono |
-| Icons | Material Symbols Outlined |
-| Testing | Jest + ts-jest |
+StudyPulse is a web app you can install. It then opens in its own window, has its own icon, and works offline.
+
+### Laptop (Windows, Mac, Linux)
+- **Chrome or Edge:** open https://studypulse-tracker-app.web.app, sign in, then click the **install icon** at the right end of the address bar (or go to **Settings → Install the app → Install StudyPulse**).
+- **Safari on Mac:** open the site, then **File → Add to Dock**.
+
+### iPhone and iPad
+1. Open the site in **Safari**.
+2. Tap the **Share** button (square with an arrow).
+3. Tap **Add to Home Screen**, then **Add**.
+4. Open StudyPulse **from the new icon**.
+5. In the app: **Settings → Reminders → Turn on reminders** and allow notifications.
+   (Today reminders appear while the app is open. Reminders when the app is closed need the push server, planned for later.)
+
+### Android
+Open the site in Chrome, then menu **⋮ → Install app**. Turn on reminders in **Settings → Reminders**.
+
+### Offline
+After you open the app once, it works without internet. Changes you make offline are saved on the device and sent when you are online again. An "Offline" badge shows in the top bar.
 
 ---
 
-## Getting Started
+## Add your plan to Google, Apple or Outlook Calendar
 
-### Prerequisites
+**Now (free Firebase plan):** open **Settings → Calendar sync → Download calendar file (.ics)**, then import the file:
+- **Google Calendar** (computer): ⚙ Settings → Import & export → Import → choose the file.
+- **Apple Calendar** (Mac): File → Import → choose the file.
+- **Outlook:** Add calendar → Upload from file.
 
-- Node.js 18+
-- npm 9+
-- A Firebase project with **Authentication** and **Firestore** enabled
+The file is a copy: download and import it again after you change your plan.
 
-### 1. Clone the repo
+**Later (live link, needs a small server, for example a free Cloudflare Worker):** the steps below. The app shows them when the build has `NEXT_PUBLIC_CALENDAR_FEED=1`.
 
+1. In StudyPulse, open **Settings → Calendar sync**.
+2. Click **Create my private calendar link**.
+3. Add it to your calendar app:
+   - **Google Calendar:** click **Add to Google Calendar**, or in Google Calendar on a computer: **Other calendars → + → From URL**, paste the link, **Add calendar**.
+   - **Apple Calendar (Mac, iPhone):** click **Add to Apple Calendar**, or on Mac: **File → New Calendar Subscription**, paste the link. On iPhone: **Settings → Calendar → Accounts → Add Account → Other → Add Subscribed Calendar**.
+   - **Outlook:** click **Add to Outlook**, or **Add calendar → Subscribe from web**, paste the link.
+
+What you see: exams, homework and tasks with a due date, planned study blocks and your classes (30 days back, 180 days ahead).
+The calendar app checks for changes every few hours (Google can take up to a day). The feed is read-only: changes made in the calendar app do not come back to StudyPulse.
+**Keep the link private.** If it leaks, click **Make a new link** — the old one stops working.
+No subscription wanted? Use **Download a .ics file instead** for a one-time copy.
+
+---
+
+## Development
+
+### Requirements
+- Node.js 20+ and npm
+- Firebase CLI (`npm i -g firebase-tools`) and Java (for the emulators)
+
+### Set up
 ```bash
 git clone https://github.com/clevernat/study-pulse.git
-cd study-pulse/studypulse
+cd study-pulse
 npm install
+npm --prefix functions install
 ```
 
-### 2. Set up Firebase
-
-1. Go to the [Firebase Console](https://console.firebase.google.com) and create a project.
-2. Enable **Email/Password** and **Google** sign-in providers under Authentication → Sign-in method.
-3. Create a **Firestore** database in production mode.
-4. Register a Web app and copy the config values.
-
-### 3. Configure environment variables
-
-Create a `.env.local` file in the `studypulse/` directory:
+Create `.env.local` with your Firebase web app config:
 
 ```env
-NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+NEXT_PUBLIC_FIREBASE_API_KEY=...
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
+NEXT_PUBLIC_FIREBASE_APP_ID=...
+# Web push key: Firebase console → Project settings → Cloud Messaging → Web Push certificates
+NEXT_PUBLIC_FIREBASE_VAPID_KEY=...
 ```
 
-> `.env.local` is listed in `.gitignore` and will never be committed.
-
-### 4. Set Firestore security rules
-
-In the Firebase Console → Firestore → Rules, paste:
-
-```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-  }
-}
-```
-
-### 5. Run locally
-
+### Run locally (emulators)
 ```bash
-npm run dev
+npm run dev:local     # emulators + next dev on http://localhost:3000
+npm run seed:local    # creates the test login (see LOCAL_CREDENTIALS.md)
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
-
----
-
-## Available Scripts
-
-| Script | Description |
+### Tests
+| Command | What it runs |
 |---|---|
-| `npm run dev` | Start the development server on port 3000 |
-| `npm run build` | Build the static export to `out/` |
-| `npm run start` | Serve the production build locally |
-| `npm run lint` | Run ESLint |
-| `npm test` | Run the Jest test suite |
+| `npm test` | Unit tests (Jest) |
+| `npm run test:rules` | Firestore security rules on the emulator |
+| `npm run test:functions` | Cloud Functions logic on the emulator |
+| `npm run test:e2e` | Builds the app and runs Playwright on the Hosting/Auth/Firestore/Functions emulators (laptop + phone sizes) |
+| `npm run test:all` | All of the above |
+| `npm run lint` / `npm run build` | Lint / production build |
 
-### Deploy to Firebase Hosting
+Test results and screenshots: `TEST_REPORT.md` and `docs/evidence/`.
 
+### Deploy (free Spark plan)
 ```bash
-npm run build
-firebase deploy --only hosting
+npm run build        # uses .env.local (never deploy the output of build:e2e)
+firebase deploy --only firestore:rules,firestore:indexes,hosting
 ```
+The `functions/` folder (live calendar feed, push reminders) needs the Blaze plan on Firebase, so it is not deployed. The same code can later run on a free Cloudflare Worker.
 
 ---
 
-## Project Structure
+## Architecture
 
-```
-studypulse/
-├── public/
-│   ├── favicon.svg          # SVG favicon (pulse line icon)
-│   └── og.svg               # Open Graph image (1200 × 630)
-├── src/
-│   ├── app/                 # Next.js App Router pages
-│   │   ├── page.tsx         # Landing page
-│   │   ├── login/
-│   │   ├── signup/
-│   │   ├── dashboard/
-│   │   ├── timer/
-│   │   ├── sessions/
-│   │   ├── subjects/
-│   │   ├── goals/
-│   │   ├── reports/
-│   │   └── settings/
-│   ├── components/
-│   │   ├── layout/
-│   │   │   ├── ClientShell.tsx   # Auth-aware shell (navbar vs bare)
-│   │   │   ├── Sidebar.tsx
-│   │   │   └── TopBar.tsx
-│   │   └── ui/              # Reusable UI primitives
-│   ├── context/
-│   │   └── AuthContext.tsx  # Firebase Auth React context
-│   ├── lib/
-│   │   ├── firebase/
-│   │   │   ├── config.ts    # Firebase app initialisation
-│   │   │   ├── auth.ts      # Auth helpers
-│   │   │   └── firestore.ts # Firestore CRUD helpers
-│   │   ├── streakLogic.ts   # computeStreak() — fully tested
-│   │   └── mockData.ts      # Demo data (relative dates)
-│   ├── store/
-│   │   ├── timerStore.ts    # Pomodoro state machine (Zustand)
-│   │   └── appStore.ts      # Global app state (Zustand)
-│   └── types/               # Shared TypeScript interfaces
-├── next.config.mjs
-├── tailwind.config.ts
-├── jest.config.ts
-└── firebase.json
-```
+| Part | Technology |
+|---|---|
+| App | Next.js 14 (App Router, static export), TypeScript, Tailwind CSS, Zustand |
+| Data | Firestore with offline cache; everything under `users/{uid}/…` |
+| Auth | Firebase Auth (email/password, Google) |
+| Server | Cloud Functions: `calendarFeed` (`/cal/<token>.ics`), `sendReminders` (every 5 minutes, FCM web push) |
+| Offline / install | Web app manifest + service worker (`public/sw.js`) |
+| Flashcards | ts-fsrs (scheduling), sql.js + fflate + fzstd (Anki import, in a Web Worker), DOMPurify (safe card HTML) |
+| Tests | Jest, Playwright, @firebase/rules-unit-testing |
+
+### Firestore collections (`users/{uid}/…`)
+`subjects`, `sessions`, `tasks`, `goals`, `topics`, `exams`, `classes`, `studyBlocks`, `habits`, `decks`, `notes`, `cards`, `reviewLogs`, `reminders`, `devices`, `preferences/current`, `preferences/timetable`, `timerState/current`, `calendarFeed/current`.
+Top level: `calendarTokens/{token}` (owner of a calendar link).
+Security rules: each user can only read and write their own data (`firestore.rules`, tested in `tests/rules`).
 
 ---
 
-## Firestore Schema
+## Credits and license
 
-```
-users/{uid}
-  ├── profile fields (displayName, email, preferences)
-  ├── subjects/{subjectId}
-  │     name, color, totalHours, createdAt
-  ├── sessions/{sessionId}
-  │     subjectId, subjectName, duration (minutes),
-  │     date (YYYY-MM-DD), focusScore, notes, createdAt
-  └── goals/{goalId}
-        type (daily|weekly), targetHours, currentHours,
-        startDate, endDate, createdAt
-```
-
----
-
-## Design System
-
-| Token | Value | Usage |
-|---|---|---|
-| Primary | `#d2bbff` / `#7c3aed` | Accent, CTAs, active nav |
-| Secondary | `#40efb7` | Positive stats, streaks |
-| Tertiary | `#ffb95f` | Warnings, goals |
-| Background | `#131316` | Page background |
-| Surface | `#12121a` | Cards |
-| Border | `#252535` | Card borders, dividers |
-| Font — Display | Space Grotesk 600/700 | Headings, wordmark |
-| Font — Body | Inter 400/500/600 | UI text |
-| Font — Mono | JetBrains Mono 500/600 | Stats, numbers |
-
-Cards use the `glass-card` utility: `bg-[#12121a] border border-[#252535] rounded-xl`.
-
----
-
-## Tests
-
-```
-PASS  src/lib/streakLogic.test.ts
-  computeStreak
-    ✓ returns 0 for empty array
-    ✓ returns 1 for a single session today
-    ✓ returns 1 for a single session yesterday
-    ✓ returns correct streak for consecutive days
-    ✓ breaks streak on gap
-    ✓ handles duplicate dates
-    ✓ handles future dates gracefully
-    ✓ returns streak when last session is yesterday
-    ✓ handles long streaks
-    ✓ handles unsorted input
-
-Test Suites: 1 passed, 1 total
-Tests:       10 passed, 10 total
-```
-
-Run with:
-
-```bash
-npm test
-```
-
----
-
-## License
+Scheduling uses [ts-fsrs](https://github.com/open-spaced-repetition/ts-fsrs) (MIT). Anki file import uses [sql.js](https://github.com/sql-js/sql.js), [fflate](https://github.com/101arrowz/fflate) and [fzstd](https://github.com/101arrowz/fzstd) (MIT). No code was copied from other apps.
 
 MIT © Oteng A. Nathaniel

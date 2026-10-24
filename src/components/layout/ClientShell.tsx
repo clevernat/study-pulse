@@ -3,13 +3,18 @@ import { useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { usePathname, useRouter } from "next/navigation";
 import { useTimerStore } from "@/store/timerStore";
-import { subscribeTimerState, subscribeUserPreferences } from "@/lib/firebase/firestore";
+import { subscribeTimerState, subscribeUserPreferences, hasTimerPrefs } from "@/lib/firebase/firestore";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
 import FloatingTimer from "./FloatingTimer";
 import TimerSync from "./TimerSync";
 import AmbientController from "./AmbientController";
 import CompletionToast from "./CompletionToast";
+import ReflectionModal from "@/components/ui/ReflectionModal";
+import { formatTime } from "@/store/timerStore";
+import { registerServiceWorker } from "@/lib/pwa";
+import { useReminderSync } from "@/lib/firebase/useReminderSync";
+import { localDateStr } from "@/lib/dateUtils";
 
 export default function ClientShell({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -23,6 +28,39 @@ export default function ClientShell({ children }: { children: React.ReactNode })
     initTimer();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Reminders: keep the plan in Firestore and show due ones while the app is open
+  useReminderSync();
+
+  // Installable app + offline pages
+  useEffect(() => { registerServiceWorker(); }, []);
+
+  // Restore reduced-motion CSS class from localStorage on every page load
+  useEffect(() => {
+    if (localStorage.getItem("sp-reduced-motion") === "true") {
+      document.documentElement.classList.add("reduced-motion");
+    }
+  }, []);
+
+  // Daily goal reminder — fires a browser notification at 9 PM if enabled
+  useEffect(() => {
+    if (!user) return;
+    const check = () => {
+      if (localStorage.getItem("sp-notif-daily") === "false") return;
+      if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+      const now = new Date();
+      if (now.getHours() !== 21) return; // Only at 9 PM
+      const todayKey = `sp-reminded-${localDateStr(now)}`;
+      if (localStorage.getItem(todayKey)) return; // Already sent today
+      localStorage.setItem(todayKey, "true");
+      new Notification("StudyPulse — Daily Reminder 📚", {
+        body: "Don't forget to study today! Open the app to log a session.",
+      });
+    };
+    check(); // run once on mount in case it's already 9 PM
+    const interval = setInterval(check, 60_000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   // Browsers throttle/kill setInterval when the screen turns off or the tab goes to
   // the background. Re-run init() on every resume signal so the interval is revived
@@ -64,7 +102,7 @@ export default function ClientShell({ children }: { children: React.ReactNode })
     // 2. Sync timer preferences from Firestore → Zustand store.
     //    When settings change on any device, all devices get updated values.
     const unsubPrefs = subscribeUserPreferences(user.uid, (prefs) => {
-      if (!prefs) return;
+      if (!hasTimerPrefs(prefs)) return;
       const ts = useTimerStore.getState();
       if (
         prefs.pomodoroLength === ts.pomodoroLength &&
@@ -87,6 +125,29 @@ export default function ClientShell({ children }: { children: React.ReactNode })
 
     return () => { unsubTimer(); unsubPrefs(); };
   }, [user]);
+
+  // Live tab title: "🎯 03:45 — StudyPulse" when running, "⏸ 03:45 — StudyPulse" when paused
+  useEffect(() => {
+    if (isPublicPage) return;
+    const update = () => {
+      const { state, mode, secondsRemaining } = useTimerStore.getState();
+      if (state === "idle") {
+        document.title = "StudyPulse";
+        return;
+      }
+      const emoji = state === "running"
+        ? (mode === "focus" ? "🎯" : "☕")
+        : "⏸";
+      document.title = `${emoji} ${formatTime(secondsRemaining)} — StudyPulse`;
+    };
+    update();
+    const id = setInterval(update, 1000);
+    return () => {
+      clearInterval(id);
+      document.title = "StudyPulse";
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPublicPage]);
 
   useEffect(() => {
     if (!loading && !user && !isPublicPage) {
@@ -125,7 +186,7 @@ export default function ClientShell({ children }: { children: React.ReactNode })
       <div className="flex-1 md:ml-64 min-w-0">
         <TopBar />
         {/* pt for topbar, pb-20 on mobile for bottom nav */}
-        <main className="pt-16 pb-24 px-4 md:pt-20 md:pb-12 md:px-12 min-h-screen">
+        <main className="pt-20 pb-24 px-4 md:pt-28 md:pb-12 md:px-12 min-h-screen">
           {children}
         </main>
       </div>
@@ -133,6 +194,7 @@ export default function ClientShell({ children }: { children: React.ReactNode })
       <TimerSync />
       <AmbientController />
       <CompletionToast />
+      <ReflectionModal />
     </div>
   );
 }

@@ -1,13 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useCollection } from "@/lib/firebase/useCollection";
+import { topicProgress } from "@/lib/exams";
 import { useAuth } from "@/context/AuthContext";
-import { subscribeSubjects, subscribeSessions, addSubject, updateSubject, deleteSubject } from "@/lib/firebase/firestore";
+import { subscribeSubjects, subscribeSessions, subscribeGoals, addSubject, updateSubject, deleteSubject } from "@/lib/firebase/firestore";
 import { useTimerStore } from "@/store/timerStore";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import GoalModal from "@/components/ui/GoalModal";
 import { COLOR_PALETTE, getColor } from "@/lib/colorPalette";
-import type { Subject, Session } from "@/types";
+import { formatHours, localDateStr } from "@/lib/dateUtils";
+import type { Subject, Session, Goal, Topic } from "@/types";
 
 const ICON_OPTIONS = [
   { value: "school",           label: "School" },
@@ -110,7 +115,7 @@ function SubjectModal({ onClose, onSave, uid, editing }: SubjectModalProps) {
           category: effectiveCategory,
           totalMinutes: 0,
           sessionCount: 0,
-          createdAt: new Date().toISOString().slice(0, 10),
+          createdAt: localDateStr(),
         };
         const id = await addSubject(uid, newSubject);
         onSave({ id, ...newSubject });
@@ -280,38 +285,61 @@ function SubjectModal({ onClose, onSave, uid, editing }: SubjectModalProps) {
 
 export default function SubjectsPage() {
   const { user } = useAuth();
+  const { items: topics } = useCollection<Topic>("topics");
   const router = useRouter();
   const setSubject = useTimerStore((s) => s.setSubject);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  // subjectId pre-filled when opening goal modal from "Set a Goal to Study"
+  const [goalSubjectId, setGoalSubjectId] = useState<string | null>(null);
   const subjectToDelete = subjects.find((s) => s.id === confirmDeleteId);
+
+  const today = localDateStr();
+
+  // Active goal = subject matches + deadline hasn't passed yet
+  const activeGoalsBySubject = useMemo(() => {
+    const map: Record<string, boolean> = {};
+    for (const g of goals) {
+      if (g.subjectId && g.deadline >= today) map[g.subjectId] = true;
+    }
+    return map;
+  }, [goals, today]);
 
   function studyNow(subject: Subject) {
     setSubject(subject.id, subject.name);
     router.push(`/timer?subjectId=${encodeURIComponent(subject.id)}&subjectName=${encodeURIComponent(subject.name)}`);
   }
 
+  function openGoalForSubject(subject: Subject) {
+    setGoalSubjectId(subject.id);
+  }
+
   useEffect(() => {
     if (!user) return;
     const unsub1 = subscribeSubjects(user.uid, setSubjects);
     const unsub2 = subscribeSessions(user.uid, setSessions);
-    return () => { unsub1(); unsub2(); };
+    const unsub3 = subscribeGoals(user.uid, setGoals);
+    return () => { unsub1(); unsub2(); unsub3(); };
   }, [user]);
 
   // Aggregate sessions per subject — the Subject doc's denormalized
   // totalMinutes/sessionCount are never updated when sessions are added,
   // so we compute live totals from the sessions collection.
   const statsBySubject = sessions.reduce<Record<string, { minutes: number; count: number }>>((acc, s) => {
-    const entry = acc[s.subjectId] ?? { minutes: 0, count: 0 };
+    const key = s.subjectId || "";
+    const entry = acc[key] ?? { minutes: 0, count: 0 };
     entry.minutes += s.durationMinutes;
     entry.count += 1;
-    acc[s.subjectId] = entry;
+    acc[key] = entry;
     return acc;
   }, {});
+
+  const unassigned = statsBySubject[""] ?? { minutes: 0, count: 0 };
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleSave = (_subject: Subject) => {
@@ -337,14 +365,11 @@ export default function SubjectsPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      {/* Header */}
+      {/* Action row */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-grotesk font-bold text-3xl text-on-surface">Subjects</h1>
-          <p className="text-on-surface-variant text-sm font-inter mt-1">
-            {subjects.length === 0 ? "No subjects yet" : `${subjects.length} subject${subjects.length === 1 ? "" : "s"}`}
-          </p>
-        </div>
+        <p className="text-on-surface-variant text-sm font-inter">
+          {subjects.length === 0 ? "No subjects yet" : `${subjects.length} subject${subjects.length === 1 ? "" : "s"}`}
+        </p>
         <button
           onClick={() => setShowModal(true)}
           className="bg-primary-container text-on-primary-container px-5 py-2.5 rounded-full font-bold font-grotesk hover:opacity-80 transition-all text-sm flex items-center gap-2"
@@ -360,7 +385,7 @@ export default function SubjectsPage() {
           <span className="material-symbols-outlined text-5xl text-on-surface-variant/40">school</span>
           <div>
             <p className="text-on-surface font-grotesk font-bold text-lg">No subjects yet</p>
-            <p className="text-on-surface-variant font-inter text-sm mt-1">Add your first subject to start tracking study time.</p>
+            <p className="text-on-surface-variant font-inter text-sm mt-1">Add your first subject to start tracking your time.</p>
           </div>
           <button
             onClick={() => setShowModal(true)}
@@ -374,7 +399,7 @@ export default function SubjectsPage() {
           {subjects.map((subject) => {
             const c = getColor(subject.color);
             const stats = statsBySubject[subject.id] ?? { minutes: 0, count: 0 };
-            const hours = (stats.minutes / 60).toFixed(1);
+            const hoursLabel = formatHours(stats.minutes / 60);
             const pct = Math.round((stats.minutes / maxMinutes) * 100);
 
             return (
@@ -404,7 +429,13 @@ export default function SubjectsPage() {
                   </div>
                 </div>
 
-                <h2 className="font-grotesk font-bold text-[18px] text-on-surface leading-tight">{subject.name}</h2>
+                <Link href={`/subjects/view?id=${encodeURIComponent(subject.id)}`} data-testid="subject-open" className="group">
+                  <h2 className="font-grotesk font-bold text-[18px] text-on-surface leading-tight group-hover:text-primary transition-colors">{subject.name}</h2>
+                  <p className="text-xs text-on-surface-variant mt-1 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[14px]">checklist</span>
+                    {(() => { const p = topicProgress(topics, subject.id); return p.total ? `Topics ${p.done}/${p.total} · ${p.pct}%` : "Topics and exams →"; })()}
+                  </p>
+                </Link>
 
                 <span
                   className="self-start px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider"
@@ -415,8 +446,8 @@ export default function SubjectsPage() {
 
                 <div className="flex items-end justify-between">
                   <div>
-                    <div className="font-jetbrains font-semibold text-[20px]" style={{ color: c.text }}>{hours}h</div>
-                    <div className="text-xs text-on-surface-variant mt-0.5">Total Hours</div>
+                    <div className="font-jetbrains font-semibold text-[20px]" style={{ color: c.text }}>{hoursLabel}</div>
+                    <div className="text-xs text-on-surface-variant mt-0.5">Total Time</div>
                   </div>
                   <div className="text-right">
                     <div className="font-jetbrains font-semibold text-[20px] text-on-surface">{stats.count}</div>
@@ -428,21 +459,62 @@ export default function SubjectsPage() {
                   <div className="progress-fill" style={{ width: `${pct}%`, background: c.bar }} />
                 </div>
 
-                <button
-                  onClick={() => studyNow(subject)}
-                  className="text-sm font-semibold font-inter hover:opacity-80 transition-opacity mt-1 text-left"
-                  style={{ color: c.text }}
-                >
-                  Study Now →
-                </button>
+                {activeGoalsBySubject[subject.id] ? (
+                  <button
+                    onClick={() => studyNow(subject)}
+                    className="text-sm font-semibold font-inter hover:opacity-80 transition-opacity mt-1 text-left"
+                    style={{ color: c.text }}
+                  >
+                    {stats.count > 0 ? "Continue Studying →" : "Study Now →"}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => openGoalForSubject(subject)}
+                    className="text-sm font-semibold font-inter hover:opacity-80 transition-opacity mt-1 text-left text-tertiary"
+                  >
+                    Set a Goal to Study →
+                  </button>
+                )}
               </div>
             );
           })}
         </div>
       )}
 
+      {/* Unassigned sessions */}
+      {unassigned.count > 0 && (
+        <div className="glass-card p-5 flex items-center gap-4 border-dashed opacity-70">
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-surface-container">
+            <span className="material-symbols-outlined text-xl text-on-surface-variant">help_outline</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-grotesk font-bold text-sm text-on-surface-variant">Unassigned sessions</p>
+            <p className="text-xs text-on-surface-variant/60 mt-0.5">
+              {unassigned.count} session{unassigned.count === 1 ? "" : "s"} · {formatHours(unassigned.minutes / 60)} — logged without a subject selected
+            </p>
+          </div>
+        </div>
+      )}
+
       {showModal && user && (
         <SubjectModal uid={user.uid} onClose={() => setShowModal(false)} onSave={handleSave} />
+      )}
+
+      {/* Goal modal — opened when a subject has no active goal */}
+      {goalSubjectId && user && (
+        <GoalModal
+          uid={user.uid}
+          subjects={subjects}
+          initialSubjectId={goalSubjectId}
+          onClose={() => setGoalSubjectId(null)}
+          onSave={(goal) => {
+            // Goal saved — now go straight to the timer for that subject
+            const subject = subjects.find((s) => s.id === goal.subjectId);
+            if (subject) studyNow(subject);
+            setGoalSubjectId(null);
+          }}
+          onUpdate={() => setGoalSubjectId(null)}
+        />
       )}
       {editingSubject && user && (
         <SubjectModal
@@ -456,7 +528,7 @@ export default function SubjectsPage() {
       <ConfirmModal
         open={!!confirmDeleteId}
         title="Delete Subject"
-        description={`Delete "${subjectToDelete?.name ?? "this subject"}"? All its study data will be removed.`}
+        description={`Delete "${subjectToDelete?.name ?? "this subject"}"? Its sessions, goals, topics, exams, classes and flashcards will be deleted. Tasks stay, without a subject.`}
         confirmLabel="Delete"
         cancelLabel="Cancel"
         destructive
