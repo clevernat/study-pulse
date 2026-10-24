@@ -14,7 +14,9 @@ html {
 body {
   background-color: #131316;
   color: #e5e1e6;
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  caret-color: #d2bbff;
+  accent-color: #7c3aed;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -173,3 +175,20 @@ html.reduced-motion *::after {
 .cloze-blank { color: #40efb7; font-weight: 700; }
 .cloze-answer { color: #40efb7; font-weight: 700; }
 
+
+/* ── Browser surfaces and accessibility ─────────────────────────────── */
+/* One themed keyboard-focus ring for every control (mouse clicks show none). */
+:focus-visible { outline: 2px solid #d2bbff; outline-offset: 2px; }
+::selection { background: rgba(124, 58, 237, 0.45); color: #fff; }
+
+/* Numbers line up in stats, timers and tables. */
+.font-jetbrains { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+
+h1, h2, h3 { text-wrap: balance; }
+p { text-wrap: pretty; }
+
+/* Reduced motion: keep state changes, drop decorative movement. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse { animation: none; }
+  * { scroll-behavior: auto !important; }
+}

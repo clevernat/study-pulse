@@ -50,7 +50,7 @@ export default function ReflectionModal() {
               <p className="text-sm text-on-surface-variant mt-0.5">{subjectName}</p>
             )}
           </div>
-          <button onClick={handleSkip} className="text-on-surface-variant hover:text-on-surface transition-colors mt-1">
+          <button type="button" onClick={handleSkip} aria-label="Skip" className="text-on-surface-variant hover:text-on-surface transition-colors mt-1">
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>

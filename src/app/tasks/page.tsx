@@ -351,7 +351,7 @@ export default function TasksPage() {
           <div className="glass-card p-10 flex flex-col items-center gap-3 text-center">
             <span className="material-symbols-outlined text-4xl text-on-surface-variant">task_alt</span>
             <p className="text-on-surface font-grotesk font-bold">
-              {filter === "done" ? "No completed tasks yet" : filter === "overdue" ? "No overdue tasks" : filter === "today" ? "Nothing due today" : "All caught up!"}
+              {filter === "done" ? "No completed tasks yet" : filter === "overdue" ? "No overdue tasks" : filter === "today" ? "Nothing due today" : "All caught up"}
             </p>
             <p className="text-sm text-on-surface-variant">
               {filter === "all" ? "Click \"New task\" above to get started." : ""}

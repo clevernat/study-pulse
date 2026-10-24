@@ -19,6 +19,7 @@ import { buildQueue } from "@/lib/flashcards/queue";
 import { useHabitContext } from "@/lib/firebase/useHabitContext";
 import type { ClassItem } from "@/types";
 import { upcomingExams, daysUntil, countdownLabel, urgency, URGENCY_CLASSES } from "@/lib/exams";
+import StatRow from "@/components/ui/StatRow";
 
 const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 };
 
@@ -113,30 +114,11 @@ export default function TodayPage() {
         <p className="text-sm text-on-surface-variant mt-1">Here&apos;s what&apos;s on your plate today.</p>
       </div>
 
-      {/* Summary chips */}
-      <div className="flex flex-wrap gap-3">
-        <div className="glass-card px-5 py-3 flex items-center gap-3">
-          <span className="material-symbols-outlined text-secondary text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>timer</span>
-          <div>
-            <div className="font-jetbrains font-bold text-lg text-on-surface">{todayMins > 0 ? formatSmartDuration(todayMins) : "0 min"}</div>
-            <div className="text-xs text-on-surface-variant">Focused today</div>
-          </div>
-        </div>
-        <div className="glass-card px-5 py-3 flex items-center gap-3">
-          <span className="material-symbols-outlined text-primary text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>task_alt</span>
-          <div>
-            <div className="font-jetbrains font-bold text-lg text-on-surface">{tasksDone}/{tasksDone + tasksLeft}</div>
-            <div className="text-xs text-on-surface-variant">Tasks done today</div>
-          </div>
-        </div>
-        <div className="glass-card px-5 py-3 flex items-center gap-3">
-          <span className="material-symbols-outlined text-tertiary text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>checklist</span>
-          <div>
-            <div className="font-jetbrains font-bold text-lg text-on-surface">{openCount}</div>
-            <div className="text-xs text-on-surface-variant">Open tasks</div>
-          </div>
-        </div>
-      </div>
+      <StatRow stats={[
+        { label: "Focused today", value: todayMins > 0 ? formatSmartDuration(todayMins) : "0 min" },
+        { label: "Tasks done today", value: `${tasksDone}/${tasksDone + tasksLeft}` },
+        { label: "Open tasks", value: openCount },
+      ]} />
 
       {/* Classes today (from the timetable) */}
       {(classesToday.length > 0 || holidayToday) && (
@@ -345,7 +327,7 @@ export default function TodayPage() {
                     {goal.subjectName && <p className="text-[10px] text-on-surface-variant mt-0.5">{goal.subjectName}</p>}
                   </div>
                   <span className={`text-xs font-bold font-jetbrains ${urgent ? "text-error" : "text-tertiary"}`}>
-                    {days === 0 ? "Due today!" : `${days}d left`}
+                    {days === 0 ? "Due today" : `${days}d left`}
                   </span>
                 </div>
               );
@@ -374,7 +356,7 @@ function TaskRow({
 }) {
   return (
     <div className={`glass-card p-4 flex items-start gap-3 ${task.completed ? "opacity-50" : ""}`}>
-      <button type="button" onClick={onToggle}
+      <button type="button" onClick={onToggle} aria-pressed={task.completed} aria-label={`${task.completed ? "Mark not done" : "Mark done"}: ${task.title}`}
         className={`mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
           task.completed ? "bg-primary border-primary" : "border-outline-variant hover:border-primary"
         }`}>

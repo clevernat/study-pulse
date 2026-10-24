@@ -149,7 +149,7 @@ function SubjectModal({ onClose, onSave, uid, editing }: SubjectModalProps) {
               {isEdit ? `Edit "${editing!.name}"` : "Add Subject"}
             </h2>
           </div>
-          <button onClick={onClose} className="text-on-surface-variant hover:text-on-surface transition-colors">
+          <button type="button" onClick={onClose} aria-label="Close" className="text-on-surface-variant hover:text-on-surface transition-colors">
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>

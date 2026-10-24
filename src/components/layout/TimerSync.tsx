@@ -308,7 +308,7 @@ export default function TimerSync() {
         focusPausedMsRef.current = 0;
         focusPauseStartMsRef.current = null;
         playBreakEndChime();
-        sendNotification("StudyPulse — Break Over ⏱", "Back to focus — let's go!");
+        sendNotification("StudyPulse: break over", "Time to focus again.");
       }
     }
 

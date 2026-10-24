@@ -20,9 +20,9 @@ test("old features: log session, sessions list, dashboard, goals, reports, sound
   await expect(page.locator("main")).toContainText("History");
   await expect(page.locator("main")).toContainText("45");
   await page.goto("/dashboard/");
-  await expect(page.locator("main")).toContainText("1 dayCurrent streak");
+  await expect(page.locator("main")).toContainText("Current streak1 day");
   await expect(page.locator("main")).toContainText("45 min");
-  await expect(page.locator("main")).toContainText("First Session"); // badge
+  await expect(page.locator("main")).toContainText("First session"); // badge
 
   // Goals: create one, progress comes from the session
   await page.goto("/goals/");
