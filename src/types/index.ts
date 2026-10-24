@@ -56,9 +56,46 @@ export interface Task {
   subjectId?: string;
   subjectName?: string;
   dueDate?: string;
+  /** "HH:MM" local time; empty = any time that day */
+  dueTime?: string;
   priority?: "low" | "medium" | "high";
   estimatedMinutes?: number;
+  /** Missing = "task" (older documents) */
+  kind?: TaskKind;
+  /** Revision tasks can belong to an exam */
+  examId?: string;
+  reminderMinutesBefore?: number;
+  /** When done, a copy is created this many days later (spaced revision) */
+  repeatAfterDays?: number;
   createdAt: string;
+}
+
+export type TaskKind = "task" | "homework" | "revision";
+
+export interface Topic {
+  id: string;
+  subjectId: string;
+  title: string;
+  done: boolean;
+  order: number;
+  examId?: string;
+  createdAt: number;
+}
+
+export interface Exam {
+  id: string;
+  subjectId: string;
+  title: string;
+  /** "YYYY-MM-DD" */
+  date: string;
+  /** "HH:MM" */
+  startTime?: string;
+  durationMinutes?: number;
+  room?: string;
+  seat?: string;
+  notes?: string;
+  reminderMinutesBefore?: number;
+  createdAt: number;
 }
 
 export interface Goal {

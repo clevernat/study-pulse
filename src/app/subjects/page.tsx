@@ -2,6 +2,9 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useCollection } from "@/lib/firebase/useCollection";
+import { topicProgress } from "@/lib/exams";
 import { useAuth } from "@/context/AuthContext";
 import { subscribeSubjects, subscribeSessions, subscribeGoals, addSubject, updateSubject, deleteSubject } from "@/lib/firebase/firestore";
 import { useTimerStore } from "@/store/timerStore";
@@ -9,7 +12,7 @@ import ConfirmModal from "@/components/ui/ConfirmModal";
 import GoalModal from "@/components/ui/GoalModal";
 import { COLOR_PALETTE, getColor } from "@/lib/colorPalette";
 import { formatHours, localDateStr } from "@/lib/dateUtils";
-import type { Subject, Session, Goal } from "@/types";
+import type { Subject, Session, Goal, Topic } from "@/types";
 
 const ICON_OPTIONS = [
   { value: "school",           label: "School" },
@@ -282,6 +285,7 @@ function SubjectModal({ onClose, onSave, uid, editing }: SubjectModalProps) {
 
 export default function SubjectsPage() {
   const { user } = useAuth();
+  const { items: topics } = useCollection<Topic>("topics");
   const router = useRouter();
   const setSubject = useTimerStore((s) => s.setSubject);
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -425,7 +429,13 @@ export default function SubjectsPage() {
                   </div>
                 </div>
 
-                <h2 className="font-grotesk font-bold text-[18px] text-on-surface leading-tight">{subject.name}</h2>
+                <Link href={`/subjects/view?id=${encodeURIComponent(subject.id)}`} data-testid="subject-open" className="group">
+                  <h2 className="font-grotesk font-bold text-[18px] text-on-surface leading-tight group-hover:text-primary transition-colors">{subject.name}</h2>
+                  <p className="text-xs text-on-surface-variant mt-1 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[14px]">checklist</span>
+                    {(() => { const p = topicProgress(topics, subject.id); return p.total ? `Topics ${p.done}/${p.total} · ${p.pct}%` : "Topics and exams →"; })()}
+                  </p>
+                </Link>
 
                 <span
                   className="self-start px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider"

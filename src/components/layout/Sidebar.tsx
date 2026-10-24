@@ -17,6 +17,7 @@ export const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
     items: [
       { href: "/today", label: "Today", icon: "today" },
       { href: "/tasks", label: "Tasks", icon: "task_alt" },
+      { href: "/exams", label: "Exams", icon: "event_upcoming" },
     ],
   },
   {
@@ -45,7 +46,7 @@ const bottomNavItems: NavItem[] = [
 
 function isActive(pathname: string, href: string) {
   const clean = pathname.endsWith("/") && pathname !== "/" ? pathname.slice(0, -1) : pathname;
-  return clean === href || (href === "/dashboard" && (clean === "/" || clean === ""));
+  return clean === href || clean.startsWith(href + "/") || (href === "/dashboard" && (clean === "/" || clean === ""));
 }
 
 function testId(href: string) {

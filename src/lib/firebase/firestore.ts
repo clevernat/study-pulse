@@ -250,3 +250,31 @@ export function subscribeUserPreferences(
     (snap) => cb(snap.exists() ? (snap.data() as UserPrefs) : null)
   );
 }
+
+// ── Generic helpers for the newer collections (topics, exams, classes, ...) ──
+// Every collection lives under users/{uid}/{col}. Values that are `undefined`
+// in an update are removed from the document.
+
+export function subscribeCollection<T extends { id: string }>(
+  uid: string,
+  col: string,
+  cb: (items: T[]) => void
+): () => void {
+  return onSnapshot(collection(db, "users", uid, col), (snap) =>
+    cb(snap.docs.map((d) => ({ id: d.id, ...d.data() } as T))));
+}
+
+export async function addItem<T extends { id: string }>(uid: string, col: string, data: Omit<T, "id">): Promise<string> {
+  const ref = await addDoc(collection(db, "users", uid, col), data);
+  return ref.id;
+}
+
+export async function updateItem<T>(uid: string, col: string, id: string, updates: Partial<T>): Promise<void> {
+  const payload: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(updates)) payload[k] = v === undefined ? deleteField() : v;
+  await updateDoc(doc(db, "users", uid, col, id), payload);
+}
+
+export async function deleteItem(uid: string, col: string, id: string): Promise<void> {
+  await deleteDoc(doc(db, "users", uid, col, id));
+}

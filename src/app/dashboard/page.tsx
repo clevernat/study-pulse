@@ -52,8 +52,10 @@ import { computeStreak, computeLongestStreak, hasPerfectWeek } from "@/lib/strea
 import { getColor } from "@/lib/colorPalette";
 import { localDateStr, formatSmartDuration, daysAgoStr } from "@/lib/dateUtils";
 import TasksWidget from "@/components/dashboard/TasksWidget";
+import ExamCountdownCard from "@/components/planner/ExamCountdownCard";
+import { useCollection } from "@/lib/firebase/useCollection";
 import { toCsv, downloadText } from "@/lib/csv";
-import type { HeatmapCell, Session, Subject } from "@/types";
+import type { HeatmapCell, Session, Subject, Task } from "@/types";
 
 function buildHeatmap(sessions: Session[]): HeatmapCell[] {
   const minutesByDate: Record<string, number> = {};
@@ -425,6 +427,7 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const { items: tasks } = useCollection<Task>("tasks");
   const [loading, setLoading] = useState(true);
 
   const greeting = user?.displayName ?? user?.email?.split("@")[0] ?? "Alex";
@@ -523,6 +526,9 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Exam countdown */}
+      <ExamCountdownCard subjects={subjects} tasks={tasks} />
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

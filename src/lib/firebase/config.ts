@@ -29,6 +29,8 @@ function makeDb(): Firestore {
   if (!isFirstInit || typeof window === "undefined") return getFirestore(app);
   try {
     return initializeFirestore(app, {
+      // Optional fields can be left undefined in app code; Firestore skips them.
+      ignoreUndefinedProperties: true,
       localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
     });
   } catch {

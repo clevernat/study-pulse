@@ -6,7 +6,9 @@ import { useAuth } from "@/context/AuthContext";
 import { subscribeTasks, subscribeSubjects, subscribeSessions, subscribeGoals, updateTask } from "@/lib/firebase/firestore";
 import { getColor } from "@/lib/colorPalette";
 import { localDateStr, formatSmartDuration } from "@/lib/dateUtils";
-import type { Task, Subject, Session, Goal } from "@/types";
+import type { Task, Subject, Session, Goal, Exam } from "@/types";
+import { useCollection } from "@/lib/firebase/useCollection";
+import { upcomingExams, daysUntil, countdownLabel, urgency, URGENCY_CLASSES } from "@/lib/exams";
 
 const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 };
 
@@ -29,6 +31,8 @@ export default function TodayPage() {
   }, [user]);
 
   const today = localDateStr();
+  const { items: exams } = useCollection<Exam>("exams");
+  const examsSoon = upcomingExams(exams, today).filter((e) => daysUntil(e.date, today) <= 14);
 
   // ── Derived data ────────────────────────────────────────────────────────────
   const dueTodayTasks = useMemo(() =>
@@ -111,6 +115,27 @@ export default function TodayPage() {
           </div>
         </div>
       </div>
+
+      {/* Exams in the next 14 days */}
+      {examsSoon.length > 0 && (
+        <section data-testid="today-exams" className="flex flex-col gap-2">
+          <h2 className="text-xs uppercase tracking-widest text-on-surface-variant font-bold">Exams soon</h2>
+          {examsSoon.map((e) => {
+            const days = daysUntil(e.date, today);
+            const sub = subjects.find((x) => x.id === e.subjectId);
+            return (
+              <div key={e.id} className="glass-card p-3 flex items-center gap-3">
+                <span className="w-2 h-2 rounded-full" style={{ background: getColor(sub?.color ?? "violet").dot }} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-on-surface truncate">{e.title}</p>
+                  <p className="text-[11px] text-on-surface-variant">{sub?.name}{e.startTime ? ` · ${e.startTime}` : ""}{e.room ? ` · Room ${e.room}` : ""}</p>
+                </div>
+                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full font-jetbrains ${URGENCY_CLASSES[urgency(days)]}`}>{countdownLabel(days)}</span>
+              </div>
+            );
+          })}
+        </section>
+      )}
 
       {/* Overdue tasks — show first, most urgent */}
       {overdueTasks.length > 0 && (
