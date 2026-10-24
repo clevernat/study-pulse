@@ -107,6 +107,12 @@ You chose to keep the project on the free Spark plan and add Cloudflare later. S
 
 Extra checks after this decision: a new end-to-end test proves the old features still work (log session, sessions, dashboard and badges, goals, reports, ambient sounds, tasks popover, CSV/JSON export, Pomodoro + floating timer + reflection). It found and I fixed: a new goal showed twice; goal minutes were rounded (45 min showed as 48); new deck/exam/class forms did nothing if they opened before subjects loaded.
 
+## 5c. Deployed to the live site (2026-10-24, owner's request)
+
+- Live site https://studypulse-tracker-app.web.app now runs the tested preview version (commit 61db46b), copied with `firebase hosting:clone`. The previous live version (2026-05-21) is kept in Firebase Hosting release history and can be restored from the console (Hosting → Release history → Rollback).
+- Checked after deploy: all pages and files answer 200, page title updated, made-up claims gone, service worker registers, manifest present, no console errors on the login page.
+- Free plan: no Cloud Functions deployed (live calendar link and closed-app push stay off).
+
 ## 6. Before deploying to production (needs your yes)
 
 1. Switch the Firebase project to Blaze.
