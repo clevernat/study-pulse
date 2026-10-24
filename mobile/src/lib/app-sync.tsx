@@ -2,7 +2,6 @@
 // timer sync with other devices, timer preferences, phone reminders, timer alerts.
 import { useEffect } from "react";
 import { AppState } from "react-native";
-import * as Notifications from "expo-notifications";
 import { router } from "expo-router";
 import TimerSync from "@/components/layout/TimerSync";
 import { useTimerStore } from "@/store/timerStore";
@@ -15,7 +14,7 @@ import { planReminders } from "@/lib/reminders";
 import { localDateStr } from "@/lib/dateUtils";
 import type { ClassItem, Exam, Habit, StudyBlock, Subject, Task } from "@/types";
 import { usePhoneSettings } from "~/lib/phone-settings";
-import { routeForUrl, scheduleReminders, TIMER_ALERT_ID } from "~/lib/notifications";
+import { Notifications, routeForUrl, scheduleReminders, TIMER_ALERT_ID } from "~/lib/notifications";
 
 export function AppSync() {
   useTimerLifecycle();
@@ -28,9 +27,9 @@ export function AppSync() {
 /** Tapping a reminder opens the matching screen. */
 function useNotificationTaps() {
   useEffect(() => {
-    const sub = Notifications.addNotificationResponseReceivedListener((res) =>
+    const sub = Notifications?.addNotificationResponseReceivedListener((res) =>
       router.navigate(routeForUrl(res.notification.request.content.data?.url)));
-    return () => sub.remove();
+    return () => sub?.remove();
   }, []);
 }
 
@@ -105,6 +104,7 @@ function useTimerAlert() {
   const { timerAlertsOn } = usePhoneSettings();
 
   useEffect(() => {
+    if (!Notifications) return;
     Notifications.cancelScheduledNotificationAsync(TIMER_ALERT_ID).catch(() => undefined);
     if (!timerAlertsOn || state !== "running" || startTimestamp === null) return;
     // Half a second early, so it is scheduled before the timer moves to the next phase and cancels it.

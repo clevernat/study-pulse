@@ -3,15 +3,15 @@ import "expo-sqlite/localStorage/install";
 import { useEffect } from "react";
 import { DarkTheme, Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import * as Notifications from "expo-notifications";
 import { StatusBar } from "expo-status-bar";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { AppSync } from "~/lib/app-sync";
+import { Notifications } from "~/lib/notifications";
 import { colors } from "~/theme";
 
 SplashScreen.preventAutoHideAsync();
 
-Notifications.setNotificationHandler({
+Notifications?.setNotificationHandler({
   handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: false }),
 });
 

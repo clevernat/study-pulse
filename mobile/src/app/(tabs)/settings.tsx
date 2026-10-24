@@ -1,5 +1,4 @@
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
-import * as Notifications from "expo-notifications";
 import * as WebBrowser from "expo-web-browser";
 import Constants from "expo-constants";
 import { useAuth } from "@/context/AuthContext";
@@ -8,7 +7,7 @@ import { useTimerStore } from "@/store/timerStore";
 import { Button, Card, Icon, Screen, Section } from "~/components/ui";
 import { DateTimeField, SwitchRow } from "~/components/form";
 import { usePhoneSettings } from "~/lib/phone-settings";
-import { ensurePermission } from "~/lib/notifications";
+import { ensurePermission, Notifications } from "~/lib/notifications";
 import { colors, space } from "~/theme";
 
 const WEBSITE = "https://studypulse-tracker-app.web.app";
@@ -37,6 +36,7 @@ export default function Settings() {
   };
 
   const sendTest = async () => {
+    if (!Notifications) return Alert.alert("Notifications are not available", "They do not work in this test version of the app on this phone.");
     const off = () => Alert.alert("Notifications are off", "Allow notifications for this app in your phone's Settings, then try again.");
     if (!(await ensurePermission())) return off();
     try {
