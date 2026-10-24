@@ -110,7 +110,7 @@ export default function Sidebar() {
             Start Studying
           </Link>
           {user && (
-            <div className="flex items-center gap-3 py-2 px-2 [@media(max-height:880px)]:hidden">
+            <div className="flex items-center gap-3 py-2 px-2 [@media(max-height:960px)]:hidden">
               <div className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-[13px] select-none flex-shrink-0">
                 {initials}
               </div>

@@ -173,7 +173,7 @@ html.reduced-motion *::after {
 .cloze-blank { color: #40efb7; font-weight: 700; }
 .cloze-answer { color: #40efb7; font-weight: 700; }
 
-/* Short laptop screens: keep every sidebar link visible without scrolling */
-@media (max-height: 880px) {
+/* Laptop screens up to 960px high (e.g. 1440x900): keep every sidebar link visible */
+@media (max-height: 960px) {
   .nav-item, .nav-item-active { padding-top: 5px; padding-bottom: 5px; }
 }
