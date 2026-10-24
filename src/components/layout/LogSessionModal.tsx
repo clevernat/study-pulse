@@ -84,7 +84,7 @@ export default function LogSessionModal({ onClose, onSaved }: Props) {
       >
         <div className="flex items-center justify-between mb-6">
           <h2 className="font-grotesk font-bold text-xl text-on-surface">Log study session</h2>
-          <button onClick={onClose} className="text-on-surface-variant hover:text-on-surface transition-colors">
+          <button type="button" onClick={onClose} aria-label="Close" className="text-on-surface-variant hover:text-on-surface transition-colors">
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>

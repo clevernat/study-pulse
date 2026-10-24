@@ -22,14 +22,14 @@ export default function ExamCountdownCard({ subjects, tasks }: { subjects: Subje
       {next.length === 0 ? (
         <p className="text-sm text-on-surface-variant">No exams planned. <Link href="/exams" className="text-primary underline">Add an exam</Link> to see a countdown here.</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-outline-variant -mx-2">
           {next.map((exam) => {
             const days = daysUntil(exam.date, today);
             const subject = subjects.find((s) => s.id === exam.subjectId);
             const c = getColor(subject?.color ?? "violet");
             const prog = examProgress(exam.id, topics, tasks);
             return (
-              <div key={exam.id} data-testid="exam-countdown-item" className="rounded-xl border border-outline-variant/60 p-4 flex flex-col gap-2">
+              <div key={exam.id} data-testid="exam-countdown-item" className="px-2 sm:px-5 py-3 sm:py-1 first:sm:pl-2 flex flex-col gap-2 min-w-0">
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: c.dot }} />
                   <span className="text-xs text-on-surface-variant truncate">{subject?.name ?? "Subject"}</span>
@@ -40,7 +40,7 @@ export default function ExamCountdownCard({ subjects, tasks }: { subjects: Subje
                 </span>
                 {prog.total > 0 && (
                   <div className="text-[11px] text-on-surface-variant">
-                    Revision {prog.done}/{prog.total}
+                    Revision <span className="font-jetbrains">{prog.done}/{prog.total}</span>
                     <div className="h-1.5 mt-1 rounded-full bg-[#1a1a24] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${prog.pct}%`, background: c.bar }} /></div>
                   </div>
                 )}

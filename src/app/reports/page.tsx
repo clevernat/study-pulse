@@ -14,7 +14,7 @@ const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const HEATMAP_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const HEATMAP_COLS = 7;
 
-const EmptyState = ({ msg = "No data yet — start logging sessions!" }: { msg?: string }) => (
+const EmptyState = ({ msg = "No data yet. Log a study session to see it here." }: { msg?: string }) => (
   <div className="text-center text-on-surface-variant font-inter py-8 text-sm">{msg}</div>
 );
 

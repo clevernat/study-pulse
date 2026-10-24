@@ -59,9 +59,10 @@ const config: Config = {
         "on-background": "#e5e1e6",
       },
       fontFamily: {
-        grotesk: ["Geist", "system-ui", "sans-serif"],
-        inter: ["Geist", "system-ui", "sans-serif"],
-        jetbrains: ["Geist Mono", "ui-monospace", "monospace"],
+        grotesk: ["IBM Plex Sans", "system-ui", "sans-serif"],
+        inter: ["IBM Plex Sans", "system-ui", "sans-serif"],
+        // Numbers: same family with tabular figures (see globals.css), not a monospace costume.
+        jetbrains: ["IBM Plex Sans", "system-ui", "sans-serif"],
       },
       borderRadius: {
         sm: "0.25rem",

@@ -127,7 +127,7 @@ export default function TimetablePage() {
                   const cls = classes.find((x) => x.id === o.classId);
                   return (
                     <button key={i} data-testid="tt-class" onClick={() => cls && setEditing(cls)}
-                      className="text-left rounded-lg px-2 py-1.5 text-[12px] border-l-2" style={{ background: c.bg, borderColor: c.dot }}>
+                      className="text-left rounded-lg px-2 py-1.5 text-[12px] border" style={{ background: c.bg, borderColor: `${c.dot}66` }}>
                       <span className="block font-jetbrains text-[11px] text-on-surface-variant">{o.start}–{o.end}</span>
                       <span className="block font-semibold text-on-surface truncate">{sub?.name ?? "Class"}{o.title ? ` · ${o.title}` : ""}</span>
                       {o.room && <span className="block text-on-surface-variant truncate">Room {o.room}</span>}

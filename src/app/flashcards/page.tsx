@@ -10,6 +10,7 @@ import { getColor } from "@/lib/colorPalette";
 import DeckModal from "@/components/flashcards/DeckModal";
 import { EmptyState, primaryBtnCls, secondaryBtnCls } from "@/components/ui/Field";
 import type { Subject } from "@/types";
+import StatRow from "@/components/ui/StatRow";
 
 export default function FlashcardsPage() {
   const { uid, decks, cards, logsToday, loading } = useStudyCards();
@@ -25,11 +26,11 @@ export default function FlashcardsPage() {
 
   return (
     <div className="max-w-4xl flex flex-col gap-6">
-      <div className="grid grid-cols-3 gap-3">
-        <div className="glass-card p-4"><p className="font-jetbrains text-2xl text-on-surface" data-testid="fc-due-total">{due}</p><p className="text-xs text-on-surface-variant">To study now</p></div>
-        <div className="glass-card p-4"><p className="font-jetbrains text-2xl text-on-surface">{stats.cards}</p><p className="text-xs text-on-surface-variant">Answered today</p></div>
-        <div className="glass-card p-4"><p className="font-jetbrains text-2xl text-on-surface">{stats.cards ? `${stats.correctPct}%` : "—"}</p><p className="text-xs text-on-surface-variant">Correct today</p></div>
-      </div>
+      <StatRow stats={[
+        { label: "To study now", value: due, testId: "fc-due-total" },
+        { label: "Answered today", value: stats.cards },
+        { label: "Correct today", value: stats.cards ? `${stats.correctPct}%` : "—" },
+      ]} />
 
       <div className="flex items-center gap-2 flex-wrap">
         {due > 0 && <Link href="/flashcards/review" data-testid="fc-study-all" className={primaryBtnCls}><span className="material-symbols-outlined text-[18px]">play_arrow</span>Study all ({due})</Link>}

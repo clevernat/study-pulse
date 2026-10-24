@@ -12,6 +12,7 @@ import ExamCountdownCard from "@/components/planner/ExamCountdownCard";
 import { useCollection } from "@/lib/firebase/useCollection";
 import { toCsv, downloadText } from "@/lib/csv";
 import type { HeatmapCell, Session, Subject, Task } from "@/types";
+import StatRow from "@/components/ui/StatRow";
 
 function buildHeatmap(sessions: Session[]): HeatmapCell[] {
   const minutesByDate: Record<string, number> = {};
@@ -309,7 +310,7 @@ function RecentSessions({ sessions, subjectById }: { sessions: Session[]; subjec
 
 interface BadgeDef {
   id: string;
-  emoji: string;
+  icon: string;
   label: string;
   desc: string;
   earned: boolean;
@@ -325,55 +326,50 @@ function BadgesSection({ sessions }: { sessions: Session[] }) {
   const perfectWeek = hasPerfectWeek(dates, today);
 
   const badges: BadgeDef[] = [
-    { id: "first",     emoji: "🎯", label: "First Session",    desc: "Completed your first focus session",    earned: totalSessions >= 1 },
-    { id: "streak3",   emoji: "🔥", label: "3-Day Streak",     desc: "3 days of focus in a row",              earned: streak >= 3 },
-    { id: "streak7",   emoji: "⚡", label: "Week Warrior",      desc: "7 days of focus in a row",              earned: streak >= 7 },
-    { id: "streak30",  emoji: "🏆", label: "Unstoppable",       desc: "30 days of focus in a row",             earned: streak >= 30 },
-    { id: "perfectwk", emoji: "🌟", label: "Perfect Week",      desc: "Studied every day this week",           earned: perfectWeek },
-    { id: "hours10",   emoji: "⏱️", label: "10 Hours",          desc: "Logged 10 total hours of focus",        earned: totalHours >= 10 },
-    { id: "hours50",   emoji: "💫", label: "50 Hours",          desc: "Logged 50 total hours of focus",        earned: totalHours >= 50 },
-    { id: "hours100",  emoji: "🚀", label: "100 Hours",         desc: "Logged 100 total hours of focus",       earned: totalHours >= 100 },
-    { id: "s10",       emoji: "✨", label: "10 Sessions",       desc: "Completed 10 focus sessions",           earned: totalSessions >= 10 },
-    { id: "s50",       emoji: "🎖️", label: "50 Sessions",       desc: "Completed 50 focus sessions",           earned: totalSessions >= 50 },
-    { id: "s100",      emoji: "💯", label: "Century",           desc: "100 focus sessions completed",          earned: totalSessions >= 100 },
-    { id: "longest7",  emoji: "📈", label: "Best Streak: 7d",   desc: "Longest streak of 7+ days ever",        earned: longest >= 7 },
+    { id: "first",     icon: "flag",                  label: "First session",    desc: "Finished your first focus session", earned: totalSessions >= 1 },
+    { id: "streak3",   icon: "local_fire_department", label: "3-day streak",     desc: "Studied 3 days in a row",           earned: streak >= 3 },
+    { id: "streak7",   icon: "bolt",                  label: "Week warrior",     desc: "Studied 7 days in a row",           earned: streak >= 7 },
+    { id: "streak30",  icon: "emoji_events",          label: "Unstoppable",      desc: "Studied 30 days in a row",          earned: streak >= 30 },
+    { id: "perfectwk", icon: "calendar_month",        label: "Perfect week",     desc: "Studied every day this week",       earned: perfectWeek },
+    { id: "hours10",   icon: "schedule",              label: "10 hours",         desc: "10 hours of focus in total",        earned: totalHours >= 10 },
+    { id: "hours50",   icon: "hourglass_bottom",      label: "50 hours",         desc: "50 hours of focus in total",        earned: totalHours >= 50 },
+    { id: "hours100",  icon: "rocket_launch",         label: "100 hours",        desc: "100 hours of focus in total",       earned: totalHours >= 100 },
+    { id: "s10",       icon: "task_alt",              label: "10 sessions",      desc: "Finished 10 focus sessions",        earned: totalSessions >= 10 },
+    { id: "s50",       icon: "military_tech",         label: "50 sessions",      desc: "Finished 50 focus sessions",        earned: totalSessions >= 50 },
+    { id: "s100",      icon: "workspace_premium",     label: "100 sessions",     desc: "Finished 100 focus sessions",       earned: totalSessions >= 100 },
+    { id: "longest7",  icon: "trending_up",           label: "Best streak: 7 days", desc: "A streak of 7+ days, ever",      earned: longest >= 7 },
   ];
 
-  const earned = badges.filter((b) => b.earned);
-  const locked = badges.filter((b) => !b.earned);
+  // Earned first; locked ones stay readable (no faded opacity) and say what unlocks them.
+  const ordered = [...badges.filter((b) => b.earned), ...badges.filter((b) => !b.earned)];
+  const earnedCount = badges.filter((b) => b.earned).length;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h2 className="font-grotesk font-bold text-lg text-on-surface">Badges</h2>
-        <span className="text-sm text-on-surface-variant">{earned.length}/{badges.length} earned</span>
+    <section className="flex flex-col gap-4" aria-labelledby="badges-title">
+      <div className="flex items-baseline justify-between">
+        <h2 id="badges-title" className="font-grotesk font-bold text-lg text-on-surface">Badges</h2>
+        <span className="text-sm text-on-surface-variant font-jetbrains">{earnedCount} of {badges.length} earned</span>
       </div>
-      <div className="glass-card p-5">
-        {earned.length === 0 && (
-          <p className="text-on-surface-variant text-sm text-center py-4">
-            Complete your first focus session to start earning badges!
-          </p>
-        )}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {/* Earned first */}
-          {earned.map((b) => (
-            <div key={b.id} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-primary/8 border border-primary/20 text-center">
-              <span className="text-2xl">{b.emoji}</span>
-              <span className="font-grotesk font-bold text-xs text-on-surface">{b.label}</span>
-              <span className="text-[10px] text-on-surface-variant leading-tight">{b.desc}</span>
-            </div>
-          ))}
-          {/* Locked / not yet earned */}
-          {locked.map((b) => (
-            <div key={b.id} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-surface-container border border-outline-variant/40 text-center opacity-35">
-              <span className="text-2xl grayscale">{b.emoji}</span>
-              <span className="font-grotesk font-bold text-xs text-on-surface-variant">{b.label}</span>
-              <span className="text-[10px] text-on-surface-variant leading-tight">{b.desc}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+      {earnedCount === 0 && (
+        <p className="text-on-surface-variant text-sm">Finish your first focus session to earn your first badge.</p>
+      )}
+      <ul className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-x-8 border-t border-outline-variant">
+        {ordered.map((b) => (
+          <li key={b.id} className="flex items-center gap-3 py-3 border-b border-outline-variant">
+            <span
+              className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${b.earned ? "bg-primary-container/30 text-primary" : "bg-surface-container text-on-surface-variant"}`}
+              aria-hidden="true"
+            >
+              <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: b.earned ? "'FILL' 1" : "'FILL' 0" }}>{b.earned ? b.icon : "lock"}</span>
+            </span>
+            <span className="min-w-0">
+              <span className={`block text-sm font-semibold ${b.earned ? "text-on-surface" : "text-on-surface-variant"}`}>{b.label}</span>
+              <span className="block text-xs text-on-surface-variant">{b.earned ? b.desc : `Locked · ${b.desc}`}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -433,47 +429,11 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-10">
-      {/* Stats Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
-        {/* Streak */}
-        <div className="glass-card p-6 flex items-center gap-5">
-          <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center flex-shrink-0">
-            <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>
-              local_fire_department
-            </span>
-          </div>
-          <div>
-            <div className="font-jetbrains font-semibold text-2xl text-on-surface tabular-nums">{streakDays} {streakDays === 1 ? "day" : "days"}</div>
-            <div className="text-sm text-on-surface-variant mt-0.5">Current streak</div>
-          </div>
-        </div>
-
-        {/* Weekly Hours */}
-        <div className="glass-card p-6 flex items-center gap-5">
-          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <span className="material-symbols-outlined text-primary">schedule</span>
-          </div>
-          <div>
-            <div className="font-jetbrains font-semibold text-2xl text-on-surface">
-              {formatSmartDuration(Math.round(weeklyHours * 60))}
-            </div>
-            <div className="text-sm text-on-surface-variant mt-0.5">Studied this week</div>
-          </div>
-        </div>
-
-        {/* Daily Avg */}
-        <div className="glass-card p-6 flex items-center gap-5">
-          <div className="w-12 h-12 rounded-xl bg-tertiary/10 flex items-center justify-center flex-shrink-0">
-            <span className="material-symbols-outlined text-tertiary">insights</span>
-          </div>
-          <div>
-            <div className="font-jetbrains font-semibold text-2xl text-on-surface">
-              {formatSmartDuration(Math.round(dailyAvg * 60))}
-            </div>
-            <div className="text-sm text-on-surface-variant mt-0.5">Daily average this week</div>
-          </div>
-        </div>
-      </div>
+      <StatRow stats={[
+        { label: "Current streak", value: `${streakDays} ${streakDays === 1 ? "day" : "days"}` },
+        { label: "Studied this week", value: formatSmartDuration(Math.round(weeklyHours * 60)) },
+        { label: "Daily average this week", value: formatSmartDuration(Math.round(dailyAvg * 60)) },
+      ]} />
 
       {/* Exam countdown */}
       <ExamCountdownCard subjects={subjects} tasks={tasks} />

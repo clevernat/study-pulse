@@ -51,7 +51,7 @@ function DeadlineCountdown({ deadline }: { deadline: string }) {
   return (
     <span className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-error/10 text-error border border-error/20 mr-2">
       <span className="material-symbols-outlined text-[13px]">alarm</span>
-      Due today!
+      Due today
     </span>
   );
 }
@@ -339,7 +339,7 @@ export default function GoalsPage() {
               />
             </div>
             {exceeded ? (
-              <span className="text-sm font-bold text-secondary">🎉 {formatHours(overBy)} over target — amazing!</span>
+              <span className="text-sm font-bold text-secondary">{formatHours(overBy)} over target</span>
             ) : isExpired ? (
               <span className="text-sm text-error">Goal expired — {formatHours(remaining)} short of target</span>
             ) : currentHours === 0 ? (
