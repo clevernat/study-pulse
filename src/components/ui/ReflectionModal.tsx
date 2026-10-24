@@ -46,7 +46,7 @@ export default function ReflectionModal() {
               <span className="text-xs uppercase tracking-widest font-bold text-secondary">Session Complete</span>
             </div>
             <h2 className="font-grotesk font-bold text-xl text-on-surface">Reflection</h2>
-            {subjectName && subjectName !== "Select a Focus Area" && (
+            {subjectName && subjectName !== "Select a Subject" && (
               <p className="text-sm text-on-surface-variant mt-0.5">{subjectName}</p>
             )}
           </div>

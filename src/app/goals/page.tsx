@@ -404,7 +404,7 @@ export default function GoalsPage() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search goals or focus areas…"
+            placeholder="Search goals or subjects…"
             className="w-full bg-[#12121a] border border-[#252535] rounded-xl pl-10 pr-4 py-2.5 text-on-surface text-sm font-inter placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors"
           />
           {searchQuery && (

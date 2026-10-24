@@ -202,9 +202,9 @@ export default function LoginPage() {
         {/* Stats row */}
         <div className="flex items-center justify-center gap-8 mt-6">
           {[
-            { stat: "10K+", label: "Students" },
-            { stat: "4.9★", label: "Rating" },
-            { stat: "100%", label: "Free" },
+            { stat: "Free", label: "No paid plan" },
+            { stat: "Offline", label: "Works anywhere" },
+            { stat: "Private", label: "Your data only" },
           ].map(({ stat, label }) => (
             <div key={label} className="text-center">
               <div className="font-jetbrains font-semibold text-primary text-sm">{stat}</div>

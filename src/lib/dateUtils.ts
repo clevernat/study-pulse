@@ -3,6 +3,13 @@
  * Never uses toISOString() which gives the UTC date and can be a day off
  * for users whose local time is behind UTC (e.g. US timezones after 6–8 PM).
  */
+/** Local "YYYY-MM-DD" for the day `n` days before `from` (n = 6 → the first day of a 7-day window ending today). */
+export function daysAgoStr(n: number, from: Date = new Date()): string {
+  const d = new Date(from);
+  d.setDate(d.getDate() - n);
+  return localDateStr(d);
+}
+
 export function localDateStr(d: Date = new Date()): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");

@@ -8,7 +8,7 @@ import { useTimerStore } from "@/store/timerStore";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import GoalModal from "@/components/ui/GoalModal";
 import { COLOR_PALETTE, getColor } from "@/lib/colorPalette";
-import { formatHours } from "@/lib/dateUtils";
+import { formatHours, localDateStr } from "@/lib/dateUtils";
 import type { Subject, Session, Goal } from "@/types";
 
 const ICON_OPTIONS = [
@@ -88,7 +88,7 @@ function SubjectModal({ onClose, onSave, uid, editing }: SubjectModalProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) { setError("Focus area name is required."); setNameError(true); return; }
+    if (!name.trim()) { setError("Subject name is required."); setNameError(true); return; }
     setNameError(false);
     if (category === "OTHER" && !customCategory.trim()) { setError("Please enter a custom category."); return; }
     setSaving(true);
@@ -112,7 +112,7 @@ function SubjectModal({ onClose, onSave, uid, editing }: SubjectModalProps) {
           category: effectiveCategory,
           totalMinutes: 0,
           sessionCount: 0,
-          createdAt: new Date().toISOString().slice(0, 10),
+          createdAt: localDateStr(),
         };
         const id = await addSubject(uid, newSubject);
         onSave({ id, ...newSubject });
@@ -143,7 +143,7 @@ function SubjectModal({ onClose, onSave, uid, editing }: SubjectModalProps) {
               </div>
             )}
             <h2 className="font-grotesk font-bold text-xl text-on-surface">
-              {isEdit ? `Edit "${editing!.name}"` : "Add Focus Area"}
+              {isEdit ? `Edit "${editing!.name}"` : "Add Subject"}
             </h2>
           </div>
           <button onClick={onClose} className="text-on-surface-variant hover:text-on-surface transition-colors">
@@ -169,7 +169,7 @@ function SubjectModal({ onClose, onSave, uid, editing }: SubjectModalProps) {
               }`}
               autoFocus
             />
-            {nameError && <p className="text-error text-xs font-inter mt-1">Focus area name is required.</p>}
+            {nameError && <p className="text-error text-xs font-inter mt-1">Subject name is required.</p>}
           </div>
 
           {/* Category */}
@@ -269,7 +269,7 @@ function SubjectModal({ onClose, onSave, uid, editing }: SubjectModalProps) {
               style={{ background: palette.bar, color: "#fff" }}
             >
               {saving && <span className="w-4 h-4 rounded-full border-2 border-white/60 border-t-transparent animate-spin" />}
-              {isEdit ? "Save Changes" : "Add Focus Area"}
+              {isEdit ? "Save Changes" : "Add Subject"}
             </button>
           </div>
         </form>
@@ -295,7 +295,7 @@ export default function SubjectsPage() {
   const [goalSubjectId, setGoalSubjectId] = useState<string | null>(null);
   const subjectToDelete = subjects.find((s) => s.id === confirmDeleteId);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateStr();
 
   // Active goal = subject matches + deadline hasn't passed yet
   const activeGoalsBySubject = useMemo(() => {
@@ -364,14 +364,14 @@ export default function SubjectsPage() {
       {/* Action row */}
       <div className="flex items-center justify-between">
         <p className="text-on-surface-variant text-sm font-inter">
-          {subjects.length === 0 ? "No focus areas yet" : `${subjects.length} focus area${subjects.length === 1 ? "" : "s"}`}
+          {subjects.length === 0 ? "No subjects yet" : `${subjects.length} subject${subjects.length === 1 ? "" : "s"}`}
         </p>
         <button
           onClick={() => setShowModal(true)}
           className="bg-primary-container text-on-primary-container px-5 py-2.5 rounded-full font-bold font-grotesk hover:opacity-80 transition-all text-sm flex items-center gap-2"
         >
           <span className="material-symbols-outlined text-[18px]">add</span>
-          Add Focus Area
+          Add Subject
         </button>
       </div>
 
@@ -380,8 +380,8 @@ export default function SubjectsPage() {
         <div className="glass-card p-16 flex flex-col items-center justify-center gap-4 text-center">
           <span className="material-symbols-outlined text-5xl text-on-surface-variant/40">school</span>
           <div>
-            <p className="text-on-surface font-grotesk font-bold text-lg">No focus areas yet</p>
-            <p className="text-on-surface-variant font-inter text-sm mt-1">Add your first focus area to start tracking your time.</p>
+            <p className="text-on-surface font-grotesk font-bold text-lg">No subjects yet</p>
+            <p className="text-on-surface-variant font-inter text-sm mt-1">Add your first subject to start tracking your time.</p>
           </div>
           <button
             onClick={() => setShowModal(true)}
@@ -480,7 +480,7 @@ export default function SubjectsPage() {
           <div className="flex-1 min-w-0">
             <p className="font-grotesk font-bold text-sm text-on-surface-variant">Unassigned sessions</p>
             <p className="text-xs text-on-surface-variant/60 mt-0.5">
-              {unassigned.count} session{unassigned.count === 1 ? "" : "s"} · {formatHours(unassigned.minutes / 60)} — logged without a focus area selected
+              {unassigned.count} session{unassigned.count === 1 ? "" : "s"} · {formatHours(unassigned.minutes / 60)} — logged without a subject selected
             </p>
           </div>
         </div>
@@ -517,8 +517,8 @@ export default function SubjectsPage() {
 
       <ConfirmModal
         open={!!confirmDeleteId}
-        title="Delete Focus Area"
-        description={`Delete "${subjectToDelete?.name ?? "this focus area"}"? All its session data will be removed.`}
+        title="Delete Subject"
+        description={`Delete "${subjectToDelete?.name ?? "this subject"}"? Its sessions, goals, topics, exams, classes and flashcards will be deleted. Tasks stay, without a subject.`}
         confirmLabel="Delete"
         cancelLabel="Cancel"
         destructive

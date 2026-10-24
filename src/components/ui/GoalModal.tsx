@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { addGoal, updateGoal } from "@/lib/firebase/firestore";
 import type { Goal, Subject } from "@/types";
+import { localDateStr } from "@/lib/dateUtils";
 
 export const typeColor: Record<Goal["type"], string> = {
   daily:     "#d2bbff",
@@ -19,7 +20,7 @@ export function deadlineForType(type: Goal["type"]): string {
   else if (type === "monthly")   d.setDate(d.getDate() + 30);
   else if (type === "quarterly") d.setDate(d.getDate() + 90);
   else                           d.setDate(d.getDate() + 365);
-  return d.toISOString().slice(0, 10);
+  return localDateStr(d);
 }
 
 interface GoalModalProps {
@@ -70,12 +71,12 @@ export default function GoalModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) { setError("Goal title is required."); return; }
-    if (!subjectId)    { setError("Please select a focus area for this goal."); return; }
+    if (!subjectId)    { setError("Please select a subject for this goal."); return; }
     const hrs = parseFloat(targetHours);
     if (isNaN(hrs) || hrs <= 0) { setError("Target hours must be a positive number."); return; }
     if (hrs > 200)              { setError("Target hours cannot exceed 200."); return; }
     if (!deadline)              { setError("Please set a deadline."); return; }
-    const today = new Date().toISOString().slice(0, 10);
+    const today = localDateStr();
     if (!isEdit && deadline < today) { setError("Deadline cannot be in the past."); return; }
 
     setSaving(true);
@@ -242,7 +243,7 @@ export default function GoalModal({
                 className="bg-[#0e0e11] border border-outline-variant rounded-xl px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm"
                 style={{ colorScheme: "dark" }}
               >
-                <option value="">— Select a focus area —</option>
+                <option value="">— Select a subject —</option>
                 {subjects.map((s) => (
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}

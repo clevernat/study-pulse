@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTimerStore } from "@/store/timerStore";
 import { getUserSubjects, addSession } from "@/lib/firebase/firestore";
 import type { Subject, Session } from "@/types";
+import { localDateStr } from "@/lib/dateUtils";
 
 interface Props {
   onClose: () => void;
@@ -20,7 +21,7 @@ export default function LogSessionModal({ onClose, onSaved }: Props) {
   const [hours, setHours] = useState("0");
   const [minutes, setMinutes] = useState("25");
   const [focusScore, setFocusScore] = useState("85");
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(localDateStr());
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -35,8 +36,8 @@ export default function LogSessionModal({ onClose, onSaved }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (subjects.length === 0) { setError("Add a focus area first before logging a session."); return; }
-    if (!subjectId) { setError("Please select a focus area."); return; }
+    if (subjects.length === 0) { setError("Add a subject first before logging a session."); return; }
+    if (!subjectId) { setError("Please select a subject."); return; }
     const h = parseInt(hours || "0");
     const m = parseInt(minutes || "0");
     if (isNaN(h) || h < 0 || h > 12) { setError("Hours must be between 0 and 12."); return; }
@@ -91,8 +92,8 @@ export default function LogSessionModal({ onClose, onSaved }: Props) {
           <div className="mb-4 flex items-center gap-3 bg-error/10 border border-error/20 rounded-xl px-4 py-3">
             <span className="material-symbols-outlined text-error text-[20px]">warning</span>
             <p className="text-error text-sm font-inter font-medium">
-              You need to add a focus area first before logging a session.{" "}
-              <a href="/subjects" className="underline hover:opacity-80">Go to Focus Areas →</a>
+              You need to add a subject first before logging a session.{" "}
+              <a href="/subjects" className="underline hover:opacity-80">Go to Subjects →</a>
             </p>
           </div>
         )}
@@ -100,10 +101,10 @@ export default function LogSessionModal({ onClose, onSaved }: Props) {
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           {/* Subject */}
           <div>
-            <label className="text-on-surface-variant text-sm font-inter mb-1.5 block">Focus Area *</label>
+            <label className="text-on-surface-variant text-sm font-inter mb-1.5 block">Subject *</label>
             {subjects.length === 0 ? (
               <p className="text-on-surface-variant text-sm font-inter bg-[#0e0e11] border border-outline-variant rounded-xl px-4 py-3">
-                No focus areas yet — add one in Focus Areas first
+                No subjects yet — add one in Subjects first
               </p>
             ) : (
               <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1">

@@ -60,14 +60,14 @@
   </linearGradient>
 
   <!-- Stats row -->
-  <text x="80"  y="420" font-family="'Arial', monospace" font-weight="700" font-size="32" fill="#d2bbff">10,000+</text>
-  <text x="80"  y="448" font-family="'Arial', sans-serif" font-size="16" fill="#555570" letter-spacing="3">STUDENTS</text>
+  <text x="80"  y="420" font-family="'Arial', monospace" font-weight="700" font-size="32" fill="#d2bbff">Cards</text>
+  <text x="80"  y="448" font-family="'Arial', sans-serif" font-size="16" fill="#555570" letter-spacing="3">FLASHCARDS</text>
 
-  <text x="260" y="420" font-family="'Arial', monospace" font-weight="700" font-size="32" fill="#40efb7">4.9★</text>
-  <text x="260" y="448" font-family="'Arial', sans-serif" font-size="16" fill="#555570" letter-spacing="3">RATING</text>
+  <text x="260" y="420" font-family="'Arial', monospace" font-weight="700" font-size="32" fill="#40efb7">Plan</text>
+  <text x="260" y="448" font-family="'Arial', sans-serif" font-size="16" fill="#555570" letter-spacing="3">CALENDAR</text>
 
-  <text x="400" y="420" font-family="'Arial', monospace" font-weight="700" font-size="32" fill="#ffb95f">100%</text>
-  <text x="400" y="448" font-family="'Arial', sans-serif" font-size="16" fill="#555570" letter-spacing="3">FREE</text>
+  <text x="400" y="420" font-family="'Arial', monospace" font-weight="700" font-size="32" fill="#ffb95f">Free</text>
+  <text x="400" y="448" font-family="'Arial', sans-serif" font-size="16" fill="#555570" letter-spacing="3">NO PAID PLAN</text>
 
   <!-- Right side: decorative chart bars -->
   <g opacity="0.7">

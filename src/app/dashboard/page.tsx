@@ -50,8 +50,9 @@ import { useAuth } from "@/context/AuthContext";
 import { subscribeSessions, subscribeSubjects } from "@/lib/firebase/firestore";
 import { computeStreak, computeLongestStreak, hasPerfectWeek } from "@/lib/streakLogic";
 import { getColor } from "@/lib/colorPalette";
-import { localDateStr, formatSmartDuration } from "@/lib/dateUtils";
+import { localDateStr, formatSmartDuration, daysAgoStr } from "@/lib/dateUtils";
 import TasksWidget from "@/components/dashboard/TasksWidget";
+import { toCsv, downloadText } from "@/lib/csv";
 import type { HeatmapCell, Session, Subject } from "@/types";
 
 function buildHeatmap(sessions: Session[]): HeatmapCell[] {
@@ -267,7 +268,7 @@ function ActiveSubjects({ subjects, sessions }: { subjects: Subject[]; sessions:
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-grotesk font-bold text-lg text-on-surface">Active Focus Areas</h2>
+        <h2 className="font-grotesk font-bold text-lg text-on-surface">Active Subjects</h2>
         <Link href="/subjects" className="text-sm text-primary hover:opacity-80 transition-opacity">
           View All →
         </Link>
@@ -302,18 +303,9 @@ function RecentSessions({ sessions, subjectById }: { sessions: Session[]; subjec
   const displayed = [...sessions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
 
   function handleExport() {
-    const header = "Date,Focus Area,Duration (min),Focus Score,Notes";
-    const rows = sessions.map((s) =>
-      [s.date, `"${s.subjectName}"`, s.durationMinutes, s.focusScore, `"${s.notes ?? ""}"`].join(",")
-    );
-    const csv = [header, ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "study-sessions.csv";
-    a.click();
-    URL.revokeObjectURL(url);
+    const header = ["Date", "Subject", "Duration (min)", "Focus Score", "Notes"];
+    const rows = sessions.map((s) => [s.date, s.subjectName, s.durationMinutes, s.focusScore, s.notes ?? ""]);
+    downloadText(toCsv([header, ...rows]), "study-sessions.csv", "text/csv");
   }
 
   return (
@@ -328,7 +320,7 @@ function RecentSessions({ sessions, subjectById }: { sessions: Session[]; subjec
         <table className="w-full min-w-[400px]">
           <thead>
             <tr className="border-b border-outline-variant">
-              <th className="text-left text-xs uppercase tracking-widest text-on-surface-variant px-4 py-3">Focus Area</th>
+              <th className="text-left text-xs uppercase tracking-widest text-on-surface-variant px-4 py-3">Subject</th>
               <th className="text-left text-xs uppercase tracking-widest text-on-surface-variant px-4 py-3">Duration</th>
               <th className="text-left text-xs uppercase tracking-widest text-on-surface-variant px-4 py-3">Focus Score</th>
             </tr>
@@ -450,9 +442,7 @@ export default function DashboardPage() {
 
   // Compute weekly hours from loaded sessions (compare date strings directly — no UTC shift)
   const weeklyHours = (() => {
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    const weekAgoStr = localDateStr(weekAgo);
+    const weekAgoStr = daysAgoStr(6); // 7 days including today
     return sessions
       .filter((s) => s.date >= weekAgoStr)
       .reduce((sum, s) => sum + s.durationMinutes / 60, 0);

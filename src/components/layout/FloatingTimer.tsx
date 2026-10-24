@@ -113,7 +113,7 @@ export default function FloatingTimer() {
   const colors = MODE_COLORS[mode] ?? MODE_COLORS.focus;
 
   const subjectLabel =
-    selectedSubjectName && selectedSubjectName !== "Select a Focus Area"
+    selectedSubjectName && selectedSubjectName !== "Select a Subject"
       ? selectedSubjectName
       : null;
 

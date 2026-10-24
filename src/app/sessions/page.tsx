@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { subscribeSessions, subscribeSubjects, deleteSession } from "@/lib/firebase/firestore";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { getColor } from "@/lib/colorPalette";
-import { localDateStr } from "@/lib/dateUtils";
+import { localDateStr, daysAgoStr } from "@/lib/dateUtils";
 import type { Session, Subject } from "@/types";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -211,9 +211,7 @@ export default function SessionsPage() {
   }, [subjects]);
 
   const todayStr = localDateStr();
-  const weekAgoDate = new Date();
-  weekAgoDate.setDate(weekAgoDate.getDate() - 7);
-  const weekAgoStr = localDateStr(weekAgoDate);
+  const weekAgoStr = daysAgoStr(6); // 7 days including today
   const monthStr = todayStr.slice(0, 7);
   const yesterdayDate = new Date();
   yesterdayDate.setDate(yesterdayDate.getDate() - 1);

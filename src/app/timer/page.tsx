@@ -7,9 +7,10 @@ import { getColor } from "@/lib/colorPalette";
 import { useAuth } from "@/context/AuthContext";
 import { subscribeSubjects, subscribeSessions, subscribeGoals } from "@/lib/firebase/firestore";
 import { computeStreak } from "@/lib/streakLogic";
-import { localDateStr } from "@/lib/dateUtils";
+import { localDateStr, daysAgoStr } from "@/lib/dateUtils";
 import { togglePiPTimer, isPiPSupported, isPiPOpen } from "@/lib/pipTimer";
 import type { Subject, Session, Goal } from "@/types";
+import { requestNotificationPermission } from "@/lib/sounds";
 
 const BREAK_SUGGESTIONS = [
   { icon: "directions_walk", title: "Take a short walk", desc: "Even 5 minutes outside resets your focus." },
@@ -141,11 +142,11 @@ function TimerPageInner() {
     const unsub1 = subscribeSubjects(user.uid, (data) => {
       setSubjects(data);
       if (data.length === 0) {
-        setSubject("", "Select a Focus Area");
+        setSubject("", "Select a Subject");
       } else {
         const store = useTimerStore.getState();
         if (store.selectedSubjectId && !data.find((s) => s.id === store.selectedSubjectId)) {
-          setSubject("", "Select a Focus Area");
+          setSubject("", "Select a Subject");
         }
       }
     });
@@ -183,13 +184,14 @@ function TimerPageInner() {
   const todayProgress = Math.min(todayHours / todayGoalHours, 1);
 
   // Productivity: compare this week vs last week hours
-  const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
-  const twoWeeksAgo = new Date(); twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+  // Last 7 days (today included) vs the 7 days before. Compare local date strings.
+  const weekStart = daysAgoStr(6);
+  const prevWeekStart = daysAgoStr(13);
   const thisWeekMins = sessions
-    .filter((s) => new Date(s.date) >= weekAgo)
+    .filter((s) => s.date >= weekStart)
     .reduce((sum, s) => sum + s.durationMinutes, 0);
   const lastWeekMins = sessions
-    .filter((s) => new Date(s.date) >= twoWeeksAgo && new Date(s.date) < weekAgo)
+    .filter((s) => s.date >= prevWeekStart && s.date < weekStart)
     .reduce((sum, s) => sum + s.durationMinutes, 0);
   const productivityChange = lastWeekMins === 0
     ? null
@@ -298,7 +300,7 @@ function TimerPageInner() {
         {isDropdownOpen && (
           <div className="absolute top-[calc(100%+4px)] left-0 right-0 z-50 glass-card overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)] max-h-48 overflow-y-auto">
             {displaySubjects.length === 0 ? (
-              <div className="px-5 py-4 text-on-surface-variant text-sm text-center">No focus areas yet — add one in Focus Areas</div>
+              <div className="px-5 py-4 text-on-surface-variant text-sm text-center">No subjects yet — add one in Subjects</div>
             ) : displaySubjects.map((subject) => (
               <div key={subject.id} className="flex items-center gap-3 px-5 py-3 cursor-pointer hover:bg-surface-container transition-colors" onClick={() => handleSubjectSelect(subject)}>
                 <span className="material-symbols-outlined text-[20px]" style={{ color: getColor(subject.color).text }}>{subject.icon}</span>
@@ -400,7 +402,7 @@ function TimerPageInner() {
         </button>
         <div className="flex flex-col items-center gap-1.5">
           <button
-            onClick={() => { if (state === "running") pause(); else start(); }}
+            onClick={() => { if (state === "running") pause(); else { requestNotificationPermission(); start(); } }}
             disabled={!hasSubject && state !== "running"}
             className="w-16 h-16 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95"
             style={hasSubject || state === "running" ? {
@@ -423,7 +425,7 @@ function TimerPageInner() {
             </span>
           </button>
           {!hasSubject && state !== "running" && (
-            <span className="text-[11px] text-on-surface-variant font-inter text-center">Select a focus area to start</span>
+            <span className="text-[11px] text-on-surface-variant font-inter text-center">Select a subject to start</span>
           )}
         </div>
         <button onClick={() => skip()} className="w-11 h-11 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest transition-all active:scale-95" aria-label="Skip">

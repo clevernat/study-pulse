@@ -14,7 +14,6 @@ import { useReflectionStore } from "@/store/reflectionStore";
 import {
   playCompletionChime,
   playBreakEndChime,
-  requestNotificationPermission,
   sendNotification,
 } from "@/lib/sounds";
 import { localDateStr } from "@/lib/dateUtils";
@@ -69,10 +68,6 @@ export default function TimerSync() {
   // sessions from multiple devices running the same timer simultaneously.
   const sessionOwnerDeviceIdRef = useRef<string>(DEVICE_ID);
 
-  useEffect(() => {
-    requestNotificationPermission();
-  }, []);
-
   // When the logged-in user changes, reset the timer if the stored state
   // belongs to a different account. Preserves state for the same user.
   useEffect(() => {
@@ -81,7 +76,7 @@ export default function TimerSync() {
     if (ownerUid && ownerUid !== user.uid) {
       // Different account — wipe state so the new user starts fresh.
       setPreset(pomodoroLength);
-      setSubject("", "Select a Focus Area");
+      setSubject("", "Select a Subject");
     }
     setOwnerUid(user.uid);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -288,7 +283,7 @@ export default function TimerSync() {
           sendNotification(
             "StudyPulse — Focus Complete! 🎉",
             `Great work${
-              selectedSubjectName && selectedSubjectName !== "Select a Focus Area"
+              selectedSubjectName && selectedSubjectName !== "Select a Subject"
                 ? ` on ${selectedSubjectName}`
                 : ""
             }! Break time started.`

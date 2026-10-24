@@ -161,9 +161,9 @@ export default function TasksPage() {
           />
 
           <div className="grid grid-cols-2 gap-3">
-            {/* Focus Area */}
+            {/* Subject */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-on-surface-variant uppercase tracking-wider font-bold">Focus Area</label>
+              <label className="text-xs text-on-surface-variant uppercase tracking-wider font-bold">Subject</label>
               <select
                 value={subjectId}
                 onChange={(e) => setSubjectId(e.target.value)}
@@ -296,7 +296,7 @@ export default function TasksPage() {
                 </p>
 
                 <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                  {/* Focus area */}
+                  {/* Subject */}
                   {sub && c && (
                     <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: c.chip, color: c.chipText }}>
                       <span className="material-symbols-outlined text-[11px]">{sub.icon}</span>

@@ -11,6 +11,7 @@ import {
   where,
   orderBy,
   serverTimestamp,
+  deleteField,
   onSnapshot,
 } from "firebase/firestore";
 import type { Subject, Session, Goal, Task, TimerSyncDoc } from "@/types";
@@ -80,22 +81,24 @@ export async function updateSubject(
   ]);
 }
 
+/** Collections whose documents belong to one subject (deleted with the subject). */
+export const SUBJECT_OWNED_COLLECTIONS = ["sessions", "goals", "topics", "exams", "classes", "decks", "notes", "cards"];
+
 export async function deleteSubject(
   uid: string,
   subjectId: string
 ): Promise<void> {
-  // Delete all sessions belonging to this subject
-  const sessionsSnap = await getDocs(
-    query(collection(db, "users", uid, "sessions"), where("subjectId", "==", subjectId))
-  );
-  // Delete all goals belonging to this subject
-  const goalsSnap = await getDocs(
-    query(collection(db, "users", uid, "goals"), where("subjectId", "==", subjectId))
-  );
+  const bySubject = (col: string) =>
+    getDocs(query(collection(db, "users", uid, col), where("subjectId", "==", subjectId)));
+
+  // Data that only makes sense with the subject is deleted with it.
+  const owned = await Promise.all(SUBJECT_OWNED_COLLECTIONS.map(bySubject));
+  // Tasks and study blocks stay, but lose their subject link.
+  const linked = await Promise.all(["tasks", "studyBlocks"].map(bySubject));
 
   await Promise.all([
-    ...sessionsSnap.docs.map((d) => deleteDoc(d.ref)),
-    ...goalsSnap.docs.map((d) => deleteDoc(d.ref)),
+    ...owned.flatMap((snap) => snap.docs.map((d) => deleteDoc(d.ref))),
+    ...linked.flatMap((snap) => snap.docs.map((d) => updateDoc(d.ref, { subjectId: deleteField(), subjectName: deleteField() }))),
     deleteDoc(doc(db, "users", uid, "subjects", subjectId)),
   ]);
 }
@@ -181,7 +184,10 @@ export function subscribeTasks(uid: string, cb: (tasks: Task[]) => void): () => 
 }
 
 export async function deleteAllUserData(uid: string): Promise<void> {
-  const subcollections = ["sessions", "subjects", "goals", "tasks"];
+  const subcollections = [
+    "sessions", "subjects", "goals", "tasks", "topics", "exams", "classes", "studyBlocks",
+    "habits", "decks", "notes", "cards", "reviewLogs", "reminders", "devices", "preferences", "calendarFeed",
+  ];
   await Promise.all(
     subcollections.map(async (col) => {
       const snap = await getDocs(collection(db, "users", uid, col));

@@ -4,16 +4,16 @@ import { AuthProvider } from "@/context/AuthContext";
 import ClientShell from "@/components/layout/ClientShell";
 
 export const metadata: Metadata = {
-  title: "StudyPulse — AI Study Tracker",
-  description: "Track your study sessions, monitor progress, and hit your academic goals.",
+  title: "StudyPulse — Study Planner and Flashcards",
+  description: "Flashcards with spaced repetition, a focus timer, exams, timetable and a study calendar in one app.",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
     apple: "/favicon.svg",
   },
   openGraph: {
-    title: "StudyPulse — AI Study Tracker",
-    description: "Track every session. Build unstoppable momentum. Join 10,000+ students.",
+    title: "StudyPulse — Study Planner and Flashcards",
+    description: "Flashcards, focus timer, exams, timetable and a study calendar in one app.",
     url: "https://studypulse-tracker-app.web.app",
     siteName: "StudyPulse",
     images: [
@@ -21,15 +21,15 @@ export const metadata: Metadata = {
         url: "https://studypulse-tracker-app.web.app/og.svg",
         width: 1200,
         height: 630,
-        alt: "StudyPulse — AI Study Tracker",
+        alt: "StudyPulse — Study Planner and Flashcards",
       },
     ],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "StudyPulse — AI Study Tracker",
-    description: "Track every session. Build unstoppable momentum. Join 10,000+ students.",
+    title: "StudyPulse — Study Planner and Flashcards",
+    description: "Flashcards, focus timer, exams, timetable and a study calendar in one app.",
     images: ["https://studypulse-tracker-app.web.app/og.svg"],
   },
 };

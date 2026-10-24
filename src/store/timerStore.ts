@@ -74,7 +74,7 @@ export const useTimerStore = create<TimerStore>()(
       pomodoroIndex: 0,
       totalPomodoros: 4,
       selectedSubjectId: "",
-      selectedSubjectName: "Select a Focus Area",
+      selectedSubjectName: "Select a Subject",
       sessionType: "Deep Work",
       setSessionType: (type) => set({ sessionType: type }),
       pomodoroLength: 25,
@@ -268,6 +268,8 @@ export const useTimerStore = create<TimerStore>()(
       // Called after localStorage is read and state is merged.
       // Flips _hasHydrated so components know real state is now available.
       onRehydrateStorage: () => (state) => {
+        // Old builds stored "Select a Focus Area" as the empty-subject label.
+        if (state?.selectedSubjectName === "Select a Focus Area") state.setSubject(state.selectedSubjectId, "Select a Subject");
         state?.setHasHydrated(true);
       },
       // _hasHydrated and setHasHydrated are intentionally excluded — they must

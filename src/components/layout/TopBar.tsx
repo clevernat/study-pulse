@@ -1,7 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useAmbientStore } from "@/store/ambientStore";
 import LogSessionModal from "./LogSessionModal";
@@ -14,7 +13,7 @@ const pageTitles: Record<string, string> = {
   "/dashboard": "Dashboard",
   "/today": "Today's Plan",
   "/tasks": "Task Planner",
-  "/subjects": "Focus Areas",
+  "/subjects": "Subjects",
   "/sessions": "Study Sessions",
   "/timer": "Focus Timer",
   "/goals": "Study Goals",
@@ -65,7 +64,7 @@ export default function TopBar() {
   return (
     <>
       <header className="fixed top-0 left-0 right-0 md:left-64 z-40 bg-surface/90 backdrop-blur-md border-b border-outline-variant flex justify-between items-center px-4 md:px-12 h-16 md:h-20">
-        <h2 className="font-grotesk text-[18px] md:text-[22px] font-bold text-primary truncate">{title}</h2>
+        <h2 data-testid="page-title" className="font-grotesk text-[18px] md:text-[22px] font-bold text-primary truncate min-w-0">{title}</h2>
 
         <div ref={toolbarRef} className="flex items-center gap-2 md:gap-3 relative">
           {/* Sounds */}
@@ -123,8 +122,8 @@ export default function TopBar() {
 
           <div className="w-px h-6 bg-outline-variant mx-1 hidden sm:block" />
 
-          {/* Avatar + name */}
-          <div className="flex items-center gap-2">
+          {/* Avatar + name (sign out and settings live in the "More" sheet on phones) */}
+          <div className="hidden md:flex items-center gap-2">
             <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-[13px] md:text-[16px] select-none flex-shrink-0">
               {initials}
             </div>
@@ -134,20 +133,11 @@ export default function TopBar() {
             </div>
           </div>
 
-          {/* Settings (mobile only) */}
-          <Link
-            href="/settings"
-            title="Settings"
-            className="md:hidden w-8 h-8 flex items-center justify-center rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-all"
-          >
-            <span className="material-symbols-outlined text-[18px]">settings</span>
-          </Link>
-
           {/* Sign out */}
           <button
             onClick={logOut}
             title="Sign out"
-            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full text-on-surface-variant hover:text-error hover:bg-error/10 transition-all"
+            className="hidden md:flex w-9 h-9 items-center justify-center rounded-full text-on-surface-variant hover:text-error hover:bg-error/10 transition-all"
           >
             <span className="material-symbols-outlined text-[18px] md:text-[20px]">logout</span>
           </button>

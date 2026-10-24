@@ -337,7 +337,7 @@ export default function ReportsPage() {
         <StatCard label="Total Study Time" value={loading ? "—" : formatSmartDuration(totalMinutes)} hint="All logged sessions" />
         <StatCard label="Sessions" value={loading ? "—" : String(sessionCount)} hint="This period" />
         <StatCard label="Avg Focus" value={loading ? "—" : sessions.length > 0 ? `${avgFocusScore}%` : "—"} hint={avgFocusScore >= 90 ? "Excellent" : avgFocusScore >= 75 ? "Good" : sessions.length > 0 ? "Keep going" : "No data"} accent />
-        <StatCard label="Best Focus Area" value={loading ? "—" : bestSubject ? bestSubject.name : "—"} hint={bestSubject ? `${bestSubject.label} logged` : "No sessions yet"} />
+        <StatCard label="Best Subject" value={loading ? "—" : bestSubject ? bestSubject.name : "—"} hint={bestSubject ? `${bestSubject.label} logged` : "No sessions yet"} />
       </div>
 
       {/* Insights */}
@@ -410,8 +410,8 @@ export default function ReportsPage() {
 
         {/* Donut */}
         <div className="glass-card p-6">
-          <h2 className="font-grotesk font-bold text-on-surface mb-1">Focus Area Distribution</h2>
-          <p className="text-xs text-on-surface-variant mb-4">Time per focus area · hover to inspect</p>
+          <h2 className="font-grotesk font-bold text-on-surface mb-1">Subject Distribution</h2>
+          <p className="text-xs text-on-surface-variant mb-4">Time per subject · hover to inspect</p>
           {donutSubjects.length === 0 ? <EmptyState /> : (
             <div className="flex flex-col items-center">
               <svg viewBox="0 0 160 160" className="w-36 h-36" aria-label="Subject distribution">
@@ -572,7 +572,7 @@ export default function ReportsPage() {
         {/* Subject Focus */}
         <div className="glass-card p-6">
           <h2 className="font-grotesk font-bold text-on-surface mb-1">Focus by Area</h2>
-          <p className="text-xs text-on-surface-variant mb-4">Which focus areas you concentrate best in</p>
+          <p className="text-xs text-on-surface-variant mb-4">Which subjects you concentrate best in</p>
           {!hasSubjectFocus ? <EmptyState /> : (
             <div className="space-y-3">
               {subjectFocus.map((s) => (

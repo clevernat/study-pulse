@@ -12,6 +12,7 @@ import AmbientController from "./AmbientController";
 import CompletionToast from "./CompletionToast";
 import ReflectionModal from "@/components/ui/ReflectionModal";
 import { formatTime } from "@/store/timerStore";
+import { localDateStr } from "@/lib/dateUtils";
 
 export default function ClientShell({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -41,7 +42,7 @@ export default function ClientShell({ children }: { children: React.ReactNode })
       if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
       const now = new Date();
       if (now.getHours() !== 21) return; // Only at 9 PM
-      const todayKey = `sp-reminded-${now.toISOString().slice(0, 10)}`;
+      const todayKey = `sp-reminded-${localDateStr(now)}`;
       if (localStorage.getItem(todayKey)) return; // Already sent today
       localStorage.setItem(todayKey, "true");
       new Notification("StudyPulse — Daily Reminder 📚", {
@@ -86,7 +87,7 @@ export default function ClientShell({ children }: { children: React.ReactNode })
       const ts = useTimerStore.getState();
       if (ts.state !== "idle") {
         ts.setPreset(ts.pomodoroLength);
-        ts.setSubject("", "Select a Focus Area");
+        ts.setSubject("", "Select a Subject");
       }
     });
 

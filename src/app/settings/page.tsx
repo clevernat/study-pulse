@@ -6,6 +6,8 @@ import { subscribeSessions, deleteAllUserData, saveUserPreferences, subscribeUse
 import { useTimerStore } from "@/store/timerStore";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import type { Session } from "@/types";
+import { localDateStr } from "@/lib/dateUtils";
+import { toCsv, downloadText as download } from "@/lib/csv";
 
 interface ToggleProps {
   enabled: boolean;
@@ -168,12 +170,12 @@ export default function SettingsPage() {
     const now = new Date();
     if (exportRange === "all") return sessions;
     if (exportRange === "this-month") {
-      const ym = now.toISOString().slice(0, 7);
+      const ym = localDateStr(now).slice(0, 7);
       return sessions.filter((s) => s.date.startsWith(ym));
     }
     if (exportRange === "last-month") {
       const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const ym = d.toISOString().slice(0, 7);
+      const ym = localDateStr(d).slice(0, 7);
       return sessions.filter((s) => s.date.startsWith(ym));
     }
     if (exportRange === "custom") {
@@ -182,26 +184,16 @@ export default function SettingsPage() {
     return sessions;
   }
 
-  function download(content: string, filename: string, mime: string) {
-    const blob = new Blob([content], { type: mime });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = filename; a.click();
-    URL.revokeObjectURL(url);
-  }
-
   function handleExportCSV() {
     const data = getFilteredSessions();
-    const header = "Date,Focus Area,Session Type,Duration (min),Focus Score,Start,End,Notes";
-    const rows = data.map((s) =>
-      [s.date, `"${s.subjectName}"`, `"${s.sessionType ?? "Deep Work"}"`, s.durationMinutes, s.focusScore, s.startTime, s.endTime, `"${(s.notes ?? "").replace(/"/g, '""')}"`].join(",")
-    );
-    download([header, ...rows].join("\n"), "studypulse-sessions.csv", "text/csv");
+    const header = ["Date", "Subject", "Session Type", "Duration (min)", "Focus Score", "Start", "End", "Notes"];
+    const rows = data.map((s) => [s.date, s.subjectName, s.sessionType ?? "Deep Work", s.durationMinutes, s.focusScore, s.startTime, s.endTime, s.notes ?? ""]);
+    download(toCsv([header, ...rows]), "studypulse-sessions.csv", "text/csv");
   }
 
   function handleExportExcel() {
     const data = getFilteredSessions();
-    const header = ["Date","Focus Area","Session Type","Duration (min)","Focus Score","Start","End","Notes"];
+    const header = ["Date","Subject","Session Type","Duration (min)","Focus Score","Start","End","Notes"];
     const rows = data.map((s) => [s.date, s.subjectName, s.sessionType ?? "Deep Work", s.durationMinutes, s.focusScore, s.startTime, s.endTime, s.notes ?? ""]);
     const tableHtml = `<table><tr>${header.map(h => `<th>${h}</th>`).join("")}</tr>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join("")}</tr>`).join("")}</table>`;
     download("﻿" + tableHtml, "studypulse-sessions.xls", "application/vnd.ms-excel");
@@ -220,7 +212,7 @@ export default function SettingsPage() {
       // Stop the timer, clear subject selection, and reset to idle/focus
       const ts = useTimerStore.getState();
       ts.setPreset(ts.pomodoroLength); // calls clearTick() + resets to idle
-      ts.setSubject("", "Select a Focus Area");
+      ts.setSubject("", "Select a Subject");
       setResetDone(true);
     } finally {
       setResetting(false);
@@ -233,7 +225,7 @@ export default function SettingsPage() {
       <ConfirmModal
         open={confirmReset}
         title="Reset All Data"
-        description="This will permanently delete all your sessions, focus areas, and goals. This action cannot be undone."
+        description="This will permanently delete all your sessions, subjects, and goals. This action cannot be undone."
         confirmLabel={resetting ? "Deleting…" : "Yes, Delete Everything"}
         cancelLabel="Keep My Data"
         destructive
@@ -245,7 +237,7 @@ export default function SettingsPage() {
       <ConfirmModal
         open={resetDone}
         title="Data Cleared"
-        description="All your sessions, focus areas, and goals have been deleted successfully."
+        description="All your sessions, subjects, and goals have been deleted successfully."
         confirmLabel="OK"
         cancelLabel=""
         icon="check_circle"
@@ -429,7 +421,7 @@ export default function SettingsPage() {
             <div>
               <p className="text-sm font-medium text-red-400">Reset All Data</p>
               <p className="text-xs text-[#958da1] mt-0.5">
-                Permanently delete all sessions, focus areas, and goals
+                Permanently delete all sessions, subjects, and goals
               </p>
             </div>
             <button
