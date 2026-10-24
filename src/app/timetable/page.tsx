@@ -95,9 +95,9 @@ export default function TimetablePage() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <button aria-label="Previous week" onClick={() => setWeekStart(addDays(weekStart, -7))} className={secondaryBtnCls}><span className="material-symbols-outlined text-[18px]">chevron_left</span></button>
-          <button onClick={() => setWeekStart(mondayOf(today))} className={secondaryBtnCls}>This week</button>
+          <button onClick={() => setWeekStart(mondayOf(today))} className={`${secondaryBtnCls} whitespace-nowrap`}>This week</button>
           <button aria-label="Next week" data-testid="tt-next" onClick={() => setWeekStart(addDays(weekStart, 7))} className={secondaryBtnCls}><span className="material-symbols-outlined text-[18px]">chevron_right</span></button>
-          <span data-testid="tt-week-label" className="text-sm text-on-surface-variant ml-1">
+          <span data-testid="tt-week-label" className="text-sm text-on-surface-variant ml-1 whitespace-nowrap">
             {new Date(weekStart + "T12:00:00").toLocaleDateString(undefined, { day: "numeric", month: "short" })}
             {settings.rotationWeeks > 1 && <> · <b className="text-primary">Week {WEEK_LETTERS[week - 1]}</b></>}
           </span>
@@ -115,11 +115,12 @@ export default function TimetablePage() {
             const list = occ.filter((o) => o.date === d);
             const holiday = holidayOn(d, settings.holidays);
             return (
-              <div key={d} data-testid="tt-day" className={`rounded-xl border p-2 flex flex-col gap-2 min-h-[80px] ${d === today ? "border-primary/60" : "border-outline-variant/50"}`}>
+              <div key={d} data-testid="tt-day" className={`rounded-xl border p-2 flex flex-col gap-2 md:min-h-[80px] ${d === today ? "border-primary/60" : "border-outline-variant/50"}`}>
                 <p className="text-[11px] uppercase tracking-widest text-on-surface-variant">
                   {WEEKDAYS[new Date(d + "T12:00:00").getDay()].slice(0, 3)} {Number(d.slice(8))}
                 </p>
                 {holiday && <p className="text-[11px] text-tertiary">{holiday.name}</p>}
+                {!holiday && list.length === 0 && <p className="md:hidden text-[11px] text-on-surface-variant/50">No classes</p>}
                 {list.map((o, i) => {
                   const sub = subjects.find((s) => s.id === o.subjectId);
                   const c = getColor(sub?.color ?? "violet");

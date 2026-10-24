@@ -264,14 +264,11 @@ export default function SettingsPage() {
             </span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-space font-semibold text-[#e8e8f0]">
+            <p className="font-space font-semibold text-[#e8e8f0] truncate">
               {displayName}
             </p>
             <p className="text-sm text-[#958da1] truncate">{displayEmail}</p>
           </div>
-          <button className="px-4 py-2 rounded-lg border border-[#252535] text-sm text-[#c4c4d4] hover:text-[#e8e8f0] hover:border-[#d2bbff]/30 transition-colors">
-            Edit Profile
-          </button>
         </div>
       </div>
 

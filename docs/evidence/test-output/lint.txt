@@ -1,0 +1,4 @@
+npm notice run studypulse@0.1.0 npx
+npm notice run 'next' lint --dir src --dir e2e --dir tests
+✔ No ESLint warnings or errors
+exit 0

@@ -65,3 +65,11 @@ test("Log Session uses today's local date", async ({ page }) => {
   });
   await expect(page.locator('input[type="date"]')).toHaveValue(expected);
 });
+
+test("laptop sidebar shows every link without scrolling (800px high screen)", async ({ page, isMobile }) => {
+  test.skip(!!isMobile, "laptop only");
+  await login(page, "sidebar");
+  for (const id of ["nav-dashboard", "nav-habits", "nav-flashcards", "nav-reports", "nav-settings"]) {
+    await expect(page.getByTestId(id)).toBeInViewport({ ratio: 1 });
+  }
+});
