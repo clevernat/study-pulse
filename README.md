@@ -197,7 +197,7 @@ firebase deploy --only firestore:rules,firestore:indexes,hosting
 <details>
 <summary><b>Server features (later)</b></summary>
 
-`functions/` holds two small server programs: `calendarFeed` (a live, private `.ics` link for Google/Apple/Outlook) and `sendReminders` (web push every 5 minutes, also when the app is closed). Firebase only runs them on the paid Blaze plan, so they are not deployed. They can later run on a free Cloudflare Worker. Turn the live calendar link on in the app with `NEXT_PUBLIC_CALENDAR_FEED=1`, and web push with `NEXT_PUBLIC_FIREBASE_VAPID_KEY`.
+The server parts run on a **free Cloudflare Worker** (`worker/`): a live, private `.ics` calendar link (`/cal/<secret>.ics`, for Google/Apple/Outlook) and reminder push every 5 minutes, also when the app is closed (sent through Firebase Cloud Messaging). The Worker reads Firestore over its REST API with the `studypulse-worker` service account (roles: Cloud Datastore User, Firebase Cloud Messaging API Admin); its key is the Worker secret `SERVICE_ACCOUNT`. Deploy it with `npm run worker:deploy`. The same logic (`functions/src/core.ts`) also exists as Cloud Functions in `functions/`, which need the paid Blaze plan and are not deployed; the e2e tests use them on the emulator. The app build turns the link on with `NEXT_PUBLIC_CALENDAR_FEED=1` and `NEXT_PUBLIC_CALENDAR_FEED_ORIGIN=https://studypulse-feed.studypulse-app.workers.dev`, and web push with `NEXT_PUBLIC_FIREBASE_VAPID_KEY` (all in `.env.local`).
 
 </details>
 

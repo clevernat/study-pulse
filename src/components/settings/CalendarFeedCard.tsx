@@ -12,9 +12,11 @@ import { downloadText } from "@/lib/csv";
 import { inputCls } from "@/components/ui/Field";
 import type { ClassItem, Exam, StudyBlock, Subject, Task } from "@/types";
 
-// The live link needs a small server (the calendarFeed function). It is off
-// until that server runs; set NEXT_PUBLIC_CALENDAR_FEED=1 in the build then.
+// The live link needs a small server (the Cloudflare Worker in worker/). It is off
+// until that server runs; set NEXT_PUBLIC_CALENDAR_FEED=1 in the build then, and
+// NEXT_PUBLIC_CALENDAR_FEED_ORIGIN to the Worker's address (else this site serves /cal/).
 const LIVE_FEED = process.env.NEXT_PUBLIC_CALENDAR_FEED === "1";
+const FEED_ORIGIN = process.env.NEXT_PUBLIC_CALENDAR_FEED_ORIGIN;
 
 export default function CalendarFeedCard() {
   const { user } = useAuth();
@@ -28,7 +30,7 @@ export default function CalendarFeedCard() {
   const { settings: timetable } = useTimetable();
   useEffect(() => (user ? subscribeDocument<{ token: string }>(user.uid, "calendarFeed", "current", (d) => setToken(d?.token ?? null)) : undefined), [user]);
   if (!user) return null;
-  const urls = token ? feedUrls(token, window.location.origin) : null;
+  const urls = token ? feedUrls(token, FEED_ORIGIN || window.location.origin) : null;
 
   function download() {
     const today = localDateStr();

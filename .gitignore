@@ -49,3 +49,6 @@ next-env.d.ts
 /test-fixtures/
 /firestore-debug.log
 /*-debug.log
+
+# Cloudflare Worker local cache
+/worker/.wrangler/

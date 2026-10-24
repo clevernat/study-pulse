@@ -147,6 +147,6 @@ There are no Firestore indexes (`firestore.indexes.json` is empty).
 
 ## 6. Technical facts that shape the plan
 
-- `next.config.mjs` uses `output: "export"`: the site is **static files only**. There are no API routes. Anything that must run on a server (a live `.ics` feed URL, push messages when the app is closed) needs **Firebase Cloud Functions**. Cloud Functions need the Firebase **Blaze** (pay as you go) plan. The free use quota is large for one user, but a card must be on file.
+- `next.config.mjs` uses `output: "export"`: the site is **static files only**. There are no API routes. Anything that must run on a server (a live `.ics` feed URL, push messages when the app is closed) runs on a **free Cloudflare Worker** (`worker/`, account otengabrokwah950@gmail.com, `https://studypulse-feed.studypulse-app.workers.dev`). Cloud Functions would need the paid Blaze plan, so they are not deployed.
 - Firebase SDK 12.13 supports offline storage in the browser (`persistentLocalCache`).
 - `date-fns` 4 is already installed (useful for the calendar).

@@ -1,0 +1,13 @@
+# Free Cloudflare Worker: calendar feed + reminder push. Deploy: npm run worker:deploy (app folder).
+# The script ignores old CF_API_TOKEN / CF_ACCOUNT_ID shell variables that point at another account.
+name = "studypulse-feed"
+main = "src/index.ts"
+account_id = "70833b7eb10f655e76f622ffaf411933"
+compatibility_date = "2025-09-01"
+workers_dev = true
+
+[vars]
+PROJECT_ID = "studypulse-tracker-app"
+
+[triggers]
+crons = ["*/5 * * * *"]

@@ -5,9 +5,10 @@ import { onRequest } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { logger } from "firebase-functions/v2";
 import { feedForToken, processDueReminders, type Sender } from "./core";
+import { adminStore } from "./adminStore";
 
 initializeApp();
-const db = getFirestore();
+const store = adminStore(getFirestore());
 
 /**
  * Private calendar feed: GET /cal/<secret>.ics (Hosting rewrite).
@@ -16,7 +17,7 @@ const db = getFirestore();
 export const calendarFeed = onRequest({ cors: false, memory: "256MiB", maxInstances: 10 }, async (req, res) => {
   if (req.method !== "GET" && req.method !== "HEAD") { res.status(405).send("Method not allowed"); return; }
   const token = (req.path.split("/").pop() ?? "").replace(/\.ics$/, "");
-  const ics = await feedForToken(db, token);
+  const ics = await feedForToken(store, token);
   if (!ics) { res.status(404).send("Not found"); return; }
   res.set("Content-Type", "text/calendar; charset=utf-8");
   res.set("Content-Disposition", 'inline; filename="studypulse.ics"');
@@ -38,6 +39,6 @@ const sendPush: Sender = async (tokens, msg) => {
 
 /** Every 5 minutes: send reminders that are due. */
 export const sendReminders = onSchedule({ schedule: "every 5 minutes", timeZone: "UTC", memory: "256MiB" }, async () => {
-  const r = await processDueReminders(db, sendPush);
+  const r = await processDueReminders(store, sendPush);
   logger.info("Reminders processed", r);
 });
