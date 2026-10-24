@@ -153,7 +153,7 @@ function TimerPageInner() {
     const unsub2 = subscribeSessions(user.uid, setSessions);
     const unsub3 = subscribeGoals(user.uid, setGoals);
     return () => { unsub1(); unsub2(); unsub3(); };
-  }, [user]);
+  }, [user, setSubject]);
 
   // Close dropdown on outside click
   useEffect(() => {

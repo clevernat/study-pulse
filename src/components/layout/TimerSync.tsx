@@ -41,7 +41,6 @@ export default function TimerSync() {
   const mode = useTimerStore((s) => s.mode);
   const startTimestamp = useTimerStore((s) => s.startTimestamp);
   const totalSeconds = useTimerStore((s) => s.totalSeconds);
-  const selectedSubjectId = useTimerStore((s) => s.selectedSubjectId);
   const selectedSubjectName = useTimerStore((s) => s.selectedSubjectName);
   const init = useTimerStore((s) => s.init);
   const hasHydrated = useTimerStore((s) => s._hasHydrated);
@@ -193,7 +192,7 @@ export default function TimerSync() {
     } catch (err) {
       console.error("Failed to save session:", err);
     }
-  }, [user, subjects, selectedSubjectId, selectedSubjectName]);
+  }, [user, subjects]);
 
   const saveToFirestore = useCallback(async () => {
     if (!user) return;
