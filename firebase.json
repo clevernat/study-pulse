@@ -8,6 +8,13 @@
     ],
     "rewrites": [
       {
+        "source": "/cal/**",
+        "function": {
+          "functionId": "calendarFeed",
+          "region": "us-central1"
+        }
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
@@ -77,6 +84,25 @@
     "hosting": {
       "port": 5050
     },
-    "singleProjectMode": true
-  }
+    "singleProjectMode": true,
+    "functions": {
+      "port": 5001
+    }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        "src",
+        "*.log",
+        "jest.config.js",
+        "tsconfig.json"
+      ],
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run build"
+      ]
+    }
+  ]
 }

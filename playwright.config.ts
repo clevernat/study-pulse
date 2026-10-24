@@ -21,7 +21,8 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   projects: [
-    { name: "laptop", use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } } },
-    { name: "phone", use: { ...devices["Pixel 7"], viewport: { width: 375, height: 812 } } },
+    // Full Chromium (not the headless shell): it supports notification permission.
+    { name: "laptop", use: { ...devices["Desktop Chrome"], channel: "chromium", viewport: { width: 1280, height: 800 } } },
+    { name: "phone", use: { ...devices["Pixel 7"], channel: "chromium", viewport: { width: 375, height: 812 } } },
   ],
 });

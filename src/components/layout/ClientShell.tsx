@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { usePathname, useRouter } from "next/navigation";
 import { useTimerStore } from "@/store/timerStore";
-import { subscribeTimerState, subscribeUserPreferences } from "@/lib/firebase/firestore";
+import { subscribeTimerState, subscribeUserPreferences, hasTimerPrefs } from "@/lib/firebase/firestore";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
 import FloatingTimer from "./FloatingTimer";
@@ -13,6 +13,7 @@ import CompletionToast from "./CompletionToast";
 import ReflectionModal from "@/components/ui/ReflectionModal";
 import { formatTime } from "@/store/timerStore";
 import { registerServiceWorker } from "@/lib/pwa";
+import { useReminderSync } from "@/lib/firebase/useReminderSync";
 import { localDateStr } from "@/lib/dateUtils";
 
 export default function ClientShell({ children }: { children: React.ReactNode }) {
@@ -27,6 +28,9 @@ export default function ClientShell({ children }: { children: React.ReactNode })
     initTimer();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Reminders: keep the plan in Firestore and show due ones while the app is open
+  useReminderSync();
 
   // Installable app + offline pages
   useEffect(() => { registerServiceWorker(); }, []);
@@ -98,7 +102,7 @@ export default function ClientShell({ children }: { children: React.ReactNode })
     // 2. Sync timer preferences from Firestore → Zustand store.
     //    When settings change on any device, all devices get updated values.
     const unsubPrefs = subscribeUserPreferences(user.uid, (prefs) => {
-      if (!prefs) return;
+      if (!hasTimerPrefs(prefs)) return;
       const ts = useTimerStore.getState();
       if (
         prefs.pomodoroLength === ts.pomodoroLength &&

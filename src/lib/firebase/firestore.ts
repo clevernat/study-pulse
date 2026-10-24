@@ -6,6 +6,7 @@ import {
   updateDoc,
   deleteDoc,
   getDocs,
+  getDoc,
   query,
   where,
   orderBy,
@@ -200,6 +201,14 @@ export function subscribeTasks(uid: string, cb: (tasks: Task[]) => void): () => 
 }
 
 export async function deleteAllUserData(uid: string): Promise<void> {
+  // The secret calendar link lives outside users/{uid}: remove it first.
+  try {
+    const feed = await getDoc(doc(db, "users", uid, "calendarFeed", "current"));
+    const token = feed.get("token") as string | undefined;
+    if (token) await queue(deleteDoc(doc(db, "calendarTokens", token)));
+  } catch {
+    // no link
+  }
   const subcollections = [
     "sessions", "subjects", "goals", "tasks", "topics", "exams", "classes", "studyBlocks",
     "habits", "decks", "notes", "cards", "reviewLogs", "reminders", "devices", "preferences", "calendarFeed",
@@ -247,9 +256,20 @@ export interface UserPrefs {
   pomodoroLength: number;
   shortBreak: number;
   longBreak: number;
+  /** IANA time zone of the user's device, used by the server for reminders and the calendar feed */
+  timeZone?: string;
+  /** Reminders are turned on */
+  remindersEnabled?: boolean;
+  /** "HH:MM" daily summary, or "" for none */
+  dailySummaryTime?: string;
 }
 
-export async function saveUserPreferences(uid: string, prefs: UserPrefs): Promise<void> {
+/** True when the document has usable timer lengths (it may only hold other settings). */
+export function hasTimerPrefs(p: Partial<UserPrefs> | null): p is UserPrefs {
+  return !!p && [p.pomodoroLength, p.shortBreak, p.longBreak].every((n) => typeof n === "number" && n > 0);
+}
+
+export async function saveUserPreferences(uid: string, prefs: Partial<UserPrefs>): Promise<void> {
   try {
     await setDoc(doc(db, "users", uid, "preferences", "current"), prefs, { merge: true });
   } catch (err) {

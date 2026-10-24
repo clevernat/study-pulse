@@ -131,6 +131,7 @@ export default function LoginPage() {
               </label>
               <input
                 data-testid="login-email"
+                autoComplete="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -145,6 +146,7 @@ export default function LoginPage() {
               </label>
               <input
                 data-testid="login-password"
+                autoComplete={mode === "signup" ? "new-password" : "current-password"}
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

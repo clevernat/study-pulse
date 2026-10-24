@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { subscribeSessions, deleteAllUserData, saveUserPreferences, subscribeUserPreferences } from "@/lib/firebase/firestore";
+import { subscribeSessions, deleteAllUserData, saveUserPreferences, subscribeUserPreferences, hasTimerPrefs } from "@/lib/firebase/firestore";
 import { useTimerStore } from "@/store/timerStore";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import InstallCard from "@/components/settings/InstallCard";
+import RemindersCard from "@/components/settings/RemindersCard";
+import CalendarFeedCard from "@/components/settings/CalendarFeedCard";
 import type { Session } from "@/types";
 import { localDateStr } from "@/lib/dateUtils";
 import { toCsv, downloadText as download } from "@/lib/csv";
@@ -101,7 +103,7 @@ export default function SettingsPage() {
   useEffect(() => {
     if (!user) return;
     const unsub = subscribeUserPreferences(user.uid, (prefs) => {
-      if (!prefs) return;
+      if (!hasTimerPrefs(prefs)) return;
       setPomodoroLen(prefs.pomodoroLength);
       setShortBreak(prefs.shortBreak);
       setLongBreak(prefs.longBreak);
@@ -307,6 +309,8 @@ export default function SettingsPage() {
       </div>
 
       <InstallCard />
+      <RemindersCard />
+      <CalendarFeedCard />
 
       {/* Appearance */}
       <div className="glass-card p-6">

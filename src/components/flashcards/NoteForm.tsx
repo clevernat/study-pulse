@@ -49,10 +49,12 @@ export default function NoteForm({ uid, deck, note, cards, onDone }: { uid: stri
       await updateNote(uid, note, fields(), tagList, cards);
       onDone?.();
     } else {
-      const made = await addNotes(uid, [{ deckId: deck.id, subjectId: deck.subjectId, type, fields: fields(), tags: tagList }]);
-      setFront(""); setBack("");
-      setMessage(`Added ${made} card${made === 1 ? "" : "s"}.`);
+      // Clear the form at once, so the next card can be typed while this one saves.
+      const note = { deckId: deck.id, subjectId: deck.subjectId, type, fields: fields(), tags: tagList };
+      setFront(""); setBack(""); setMessage("");
       frontRef.current?.focus();
+      const made = await addNotes(uid, [note]);
+      setMessage(`Added ${made} card${made === 1 ? "" : "s"}.`);
     }
   }
 
