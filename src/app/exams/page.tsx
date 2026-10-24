@@ -36,7 +36,7 @@ export default function ExamsPage() {
   );
 
   return (
-    <div className="max-w-3xl mx-auto flex flex-col gap-6">
+    <div className="max-w-3xl flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <p className="text-sm text-on-surface-variant">{upcoming.length} upcoming · {past.length} past</p>
         <button data-testid="exam-new" onClick={() => setEditing("new")} className={primaryBtnCls}>

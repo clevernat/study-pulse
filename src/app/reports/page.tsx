@@ -343,7 +343,7 @@ export default function ReportsPage() {
       {/* Insights */}
       {insights && (
         <div>
-          <h2 className="font-grotesk font-bold text-on-surface mb-3 text-base uppercase tracking-widest text-on-surface-variant">Insights</h2>
+          <h2 className="font-grotesk font-bold text-on-surface mb-3 text-base text-on-surface-variant">Insights</h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <InsightCard icon="calendar_today" iconClass="text-primary" label="Most productive day" value={insights.bestDow.day} sub={`${insights.bestDow.minutes} min · ${insights.bestDow.count} session${insights.bestDow.count === 1 ? "" : "s"}`} />
             <InsightCard icon="schedule" iconClass="text-secondary" label="Top time of day" value={insights.topBucket[0]} sub={`${insights.topBucket[1]} min total`} />
@@ -357,7 +357,7 @@ export default function ReportsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 glass-card p-6">
           <div className="mb-4">
-            <h2 className="font-grotesk font-bold text-on-surface">Weekly Learning Trend</h2>
+            <h2 className="font-grotesk font-bold text-on-surface">Weekly trend</h2>
             <p className="text-xs text-on-surface-variant mt-0.5">Hours per week · last 8 weeks · hover a point</p>
           </div>
           {!hasWeeklyData ? <EmptyState /> : (
@@ -410,7 +410,7 @@ export default function ReportsPage() {
 
         {/* Donut */}
         <div className="glass-card p-6">
-          <h2 className="font-grotesk font-bold text-on-surface mb-1">Subject Distribution</h2>
+          <h2 className="font-grotesk font-bold text-on-surface mb-1">Time by subject</h2>
           <p className="text-xs text-on-surface-variant mb-4">Time per subject · hover to inspect</p>
           {donutSubjects.length === 0 ? <EmptyState /> : (
             <div className="flex flex-col items-center">
@@ -506,7 +506,7 @@ export default function ReportsPage() {
 
         {/* Focus by Day */}
         <div className="glass-card p-6 relative">
-          <h2 className="font-grotesk font-bold text-on-surface mb-1">Focus Score by Day</h2>
+          <h2 className="font-grotesk font-bold text-on-surface mb-1">Focus score by day</h2>
           <p className="text-xs text-on-surface-variant mb-4">Avg focus % per weekday · hover a bar</p>
           {!hasFocusData ? <EmptyState /> : (
             <div>
@@ -594,7 +594,7 @@ export default function ReportsPage() {
 
         {/* Compact Heatmap */}
         <div className="glass-card p-6 relative">
-          <h2 className="font-grotesk font-bold text-on-surface mb-1">Daily Activity</h2>
+          <h2 className="font-grotesk font-bold text-on-surface mb-1">Daily activity</h2>
           <p className="text-xs text-on-surface-variant mb-4">Last 7 weeks · hover a cell</p>
           {!hasHeatmapData ? <EmptyState /> : (
             <>
@@ -653,7 +653,7 @@ export default function ReportsPage() {
 function StatCard({ label, value, hint, accent }: { label: string; value: string; hint: string; accent?: boolean }) {
   return (
     <div className="glass-card p-5 space-y-1.5">
-      <p className="text-xs uppercase tracking-widest text-on-surface-variant">{label}</p>
+      <p className="text-xs text-on-surface-variant">{label}</p>
       <p className={`font-jetbrains text-2xl md:text-3xl font-bold ${accent ? "text-secondary" : "text-on-surface"}`}>{value}</p>
       <p className="text-xs text-on-surface-variant">{hint}</p>
     </div>
@@ -663,7 +663,7 @@ function StatCard({ label, value, hint, accent }: { label: string; value: string
 function InsightCard({ icon, iconClass, label, value, sub }: { icon: string; iconClass: string; label: string; value: string; sub: string }) {
   return (
     <div className="glass-card p-5">
-      <div className="flex items-center gap-2 text-[11px] uppercase tracking-widest text-on-surface-variant mb-2">
+      <div className="flex items-center gap-2 text-[11px] text-on-surface-variant mb-2">
         <span className={`material-symbols-outlined text-[16px] ${iconClass}`}>{icon}</span>
         {label}
       </div>

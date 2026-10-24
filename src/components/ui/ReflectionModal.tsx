@@ -43,7 +43,7 @@ export default function ReflectionModal() {
               <span className="material-symbols-outlined text-secondary text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                 check_circle
               </span>
-              <span className="text-xs uppercase tracking-widest font-bold text-secondary">Session Complete</span>
+              <span className="text-xs font-bold text-secondary">Session complete</span>
             </div>
             <h2 className="font-grotesk font-bold text-xl text-on-surface">Reflection</h2>
             {subjectName && subjectName !== "Select a Subject" && (

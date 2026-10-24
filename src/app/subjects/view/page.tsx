@@ -38,7 +38,7 @@ function SubjectView() {
   const subjectExams = upcomingExams(exams.filter((e) => e.subjectId === id), today);
 
   return (
-    <div className="max-w-3xl mx-auto flex flex-col gap-6">
+    <div className="max-w-3xl flex flex-col gap-6">
       <div className="flex items-center gap-4">
         <Link href="/subjects" aria-label="Back to Subjects" className="text-on-surface-variant hover:text-primary">
           <span className="material-symbols-outlined">arrow_back</span>
@@ -48,7 +48,7 @@ function SubjectView() {
         </div>
         <div className="min-w-0">
           <h1 data-testid="subject-name" className="font-grotesk font-bold text-2xl text-on-surface truncate">{subject.name}</h1>
-          <p className="text-xs uppercase tracking-widest" style={{ color: c.chipText }}>{subject.category}</p>
+          <p className="text-xs" style={{ color: c.chipText }}>{subject.category}</p>
         </div>
       </div>
 

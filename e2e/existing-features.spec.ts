@@ -20,7 +20,7 @@ test("old features: log session, sessions list, dashboard, goals, reports, sound
   await expect(page.locator("main")).toContainText("History");
   await expect(page.locator("main")).toContainText("45");
   await page.goto("/dashboard/");
-  await expect(page.locator("main")).toContainText("1 Day Streak");
+  await expect(page.locator("main")).toContainText("1 dayCurrent streak");
   await expect(page.locator("main")).toContainText("45 min");
   await expect(page.locator("main")).toContainText("First Session"); // badge
 
@@ -69,7 +69,7 @@ test("old features: Pomodoro timer, floating timer on other pages, reflection af
   await page.getByText("Select a Subject").first().click();
   await page.getByText("Physics").last().click();
   await page.getByTestId("timer-start").click();
-  await page.getByTestId(isMobile ? "bottom-nav-today" : "nav-dashboard").click();
+  await page.getByTestId(isMobile ? "bottom-nav-today" : "nav-today").click();
   await expect(page.getByTestId("floating-timer")).toBeVisible();
   await evidence(page, "18-floating-timer");
   await page.clock.fastForward("25:30");

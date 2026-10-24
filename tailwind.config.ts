@@ -59,9 +59,9 @@ const config: Config = {
         "on-background": "#e5e1e6",
       },
       fontFamily: {
-        grotesk: ["Space Grotesk", "sans-serif"],
-        inter: ["Inter", "sans-serif"],
-        jetbrains: ["JetBrains Mono", "monospace"],
+        grotesk: ["Geist", "system-ui", "sans-serif"],
+        inter: ["Geist", "system-ui", "sans-serif"],
+        jetbrains: ["Geist Mono", "ui-monospace", "monospace"],
       },
       borderRadius: {
         sm: "0.25rem",

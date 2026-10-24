@@ -83,7 +83,7 @@ export default function CompletionToast() {
             </span>
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-xs uppercase tracking-widest text-on-surface-variant font-semibold">
+            <div className="text-xs text-on-surface-variant font-semibold">
               Focus complete
             </div>
             <div className="text-sm text-on-surface font-inter mt-1">

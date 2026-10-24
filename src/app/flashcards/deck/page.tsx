@@ -42,7 +42,7 @@ function DeckView() {
   const toggleSuspend = (c: Card) => updateItem<Card>(uid, "cards", c.id, { suspended: !c.suspended });
 
   return (
-    <div className="max-w-3xl mx-auto flex flex-col gap-6">
+    <div className="max-w-3xl flex flex-col gap-6">
       <div className="flex items-center gap-3 flex-wrap">
         <Link href="/flashcards" aria-label="Back to Flashcards" className="text-on-surface-variant hover:text-primary"><span className="material-symbols-outlined">arrow_back</span></Link>
         <h1 data-testid="deck-title" className="font-grotesk font-bold text-2xl text-on-surface mr-auto">{deck.name}</h1>

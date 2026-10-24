@@ -46,7 +46,7 @@ interface DurationColProps {
 function DurationCol({ label, color, presets, value, draft, setDraft, onApply }: DurationColProps) {
   return (
     <div className="p-4 flex flex-col gap-2.5">
-      <span className={`text-[11px] uppercase tracking-[0.18em] font-bold ${color}`}>{label}</span>
+      <span className={`text-xs font-semibold ${color}`}>{label}</span>
       <div className="flex flex-wrap gap-1.5">
         {presets.map((m) => (
           <button
@@ -326,7 +326,7 @@ function TimerPageInner() {
               <div key={subject.id} className="flex items-center gap-3 px-5 py-3 cursor-pointer hover:bg-surface-container transition-colors" onClick={() => handleSubjectSelect(subject)}>
                 <span className="material-symbols-outlined text-[20px]" style={{ color: getColor(subject.color).text }}>{subject.icon}</span>
                 <span className="text-on-surface text-[15px] font-medium">{subject.name}</span>
-                <span className="ml-auto text-on-surface-variant text-[11px] uppercase tracking-widest">{subject.category}</span>
+                <span className="ml-auto text-on-surface-variant text-[11px]">{subject.category}</span>
               </div>
             ))}
           </div>
@@ -348,7 +348,7 @@ function TimerPageInner() {
 
       {/* Session Type Selector */}
       <div className="w-full flex flex-col gap-2">
-        <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-on-surface-variant">Session Type</span>
+        <span className="text-xs font-semibold text-on-surface-variant">Session type</span>
         <div className="flex flex-wrap gap-1.5">
           {SESSION_TYPES.map((t) => (
             <button
@@ -492,7 +492,7 @@ function TimerPageInner() {
               </span>
             </div>
             <div className="flex flex-col min-w-0">
-              <span className={`text-[11px] uppercase tracking-[0.15em] font-bold mb-0.5 ${isLong ? "text-tertiary" : "text-secondary"}`}>
+              <span className={`text-xs font-semibold mb-0.5 ${isLong ? "text-tertiary" : "text-secondary"}`}>
                 Break suggestion
               </span>
               <span className="text-on-surface font-semibold text-sm">{s.title}</span>
@@ -511,7 +511,7 @@ function TimerPageInner() {
         </div>
         {/* Rounds before long break */}
         <div className="border-t border-[#252535] px-4 py-3 flex items-center gap-3">
-          <span className="text-[11px] uppercase tracking-[0.15em] font-bold text-on-surface-variant flex-1">
+          <span className="text-xs font-semibold text-on-surface-variant flex-1">
             Rounds before long break
           </span>
           <div className="flex gap-1.5">
@@ -539,7 +539,7 @@ function TimerPageInner() {
         {/* Today's Focus */}
         <div className="bg-surface-container-low border border-outline-variant p-2.5 sm:p-4 rounded-xl flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] uppercase tracking-widest text-on-surface-variant font-semibold leading-tight">Today&apos;s Focus</span>
+            <span className="text-[11px] text-on-surface-variant font-semibold leading-tight">Today&apos;s focus</span>
             <span className="material-symbols-outlined text-secondary text-[18px]">timer</span>
           </div>
           <div>
@@ -565,7 +565,7 @@ function TimerPageInner() {
         {/* Productivity */}
         <div className="bg-surface-container-low border border-outline-variant p-2.5 sm:p-4 rounded-xl flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] uppercase tracking-widest text-on-surface-variant font-semibold leading-tight">Productivity</span>
+            <span className="text-[11px] text-on-surface-variant font-semibold leading-tight">Productivity</span>
             <span className="material-symbols-outlined text-secondary text-[18px]">
               {(productivityChange ?? 0) >= 0 ? "trending_up" : "trending_down"}
             </span>
@@ -582,7 +582,7 @@ function TimerPageInner() {
         {/* Current Streak */}
         <div className="bg-surface-container-low border border-outline-variant p-2.5 sm:p-4 rounded-xl flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] uppercase tracking-widest text-on-surface-variant font-semibold leading-tight">Streak</span>
+            <span className="text-[11px] text-on-surface-variant font-semibold leading-tight">Streak</span>
             <span className="material-symbols-outlined text-tertiary text-[18px]">local_fire_department</span>
           </div>
           <div className="flex items-end gap-1">

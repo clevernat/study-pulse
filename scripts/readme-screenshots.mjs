@@ -7,7 +7,8 @@ import { mkdirSync } from "fs";
 const BASE = "http://localhost:5050";
 const P = "demo-studypulse";
 const FS = `http://127.0.0.1:8080/v1/projects/${P}/databases/(default)/documents`;
-const OUT = "docs/images";
+// SHOT_OUT=dir changes the folder; SHOT_ALL=1 shoots every page (full height) for design review.
+const OUT = process.env.SHOT_OUT || "docs/images";
 mkdirSync(OUT, { recursive: true });
 
 // ── Sample data (made up, clearly a demo) ────────────────────────────────────
@@ -122,16 +123,25 @@ async function shoot(viewport, scale, list) {
   await page.getByTestId("login-email").fill("sam@studypulse.test");
   await page.getByTestId("login-password").fill("Demo1234!");
   await page.getByTestId("login-submit").click();
-  await page.waitForURL(/dashboard/);
+  await page.waitForURL(/dashboard|today/);
   for (const [name, path, prepare] of list) {
     await page.goto(`${BASE}${path}`);
     await page.waitForLoadState("networkidle").catch(() => undefined);
     await page.waitForTimeout(1500);
     if (prepare) await prepare(page);
-    await page.screenshot({ path: `${OUT}/${name}.png` });
+    await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: !!process.env.SHOT_ALL });
     console.log("saved", name);
   }
   await ctx.close();
+}
+if (process.env.SHOT_ALL) {
+  const pages = ["/today/", "/dashboard/", "/calendar/", "/tasks/", "/exams/", "/timetable/", "/habits/", "/flashcards/",
+    "/timer/", "/subjects/", "/sessions/", "/goals/", "/reports/", "/settings/"];
+  const list = (prefix) => pages.map((p) => [`${prefix}${p.replace(/\//g, "-").replace(/-$/, "")}`, p]);
+  await shoot({ width: 1440, height: 900 }, 1, list("laptop"));
+  await shoot({ width: 390, height: 844 }, 1, list("phone"));
+  await browser.close();
+  process.exit(0);
 }
 const showAnswer = async (page) => { await page.getByTestId("review-show").click(); await page.waitForTimeout(400); };
 await shoot({ width: 1440, height: 900 }, 1, [

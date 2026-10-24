@@ -46,7 +46,7 @@ function TermSettings({ settings, save }: { settings: TimetableSettings; save: (
       </div>
 
       <div className="flex flex-col gap-2">
-        <span className="text-xs text-on-surface-variant uppercase tracking-wider font-bold">Holidays (no classes)</span>
+        <span className="text-xs text-on-surface-variant font-bold">Holidays (no classes)</span>
         {draft.holidays.map((h, i) => (
           <div key={i} className="flex items-center gap-2 text-sm text-on-surface">
             <span className="material-symbols-outlined text-[16px] text-tertiary">beach_access</span>
@@ -91,7 +91,7 @@ export default function TimetablePage() {
   const today = localDateStr();
 
   return (
-    <div className="max-w-5xl mx-auto flex flex-col gap-6">
+    <div className="max-w-5xl flex flex-col gap-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <button aria-label="Previous week" onClick={() => setWeekStart(addDays(weekStart, -7))} className={secondaryBtnCls}><span className="material-symbols-outlined text-[18px]">chevron_left</span></button>
@@ -116,7 +116,7 @@ export default function TimetablePage() {
             const holiday = holidayOn(d, settings.holidays);
             return (
               <div key={d} data-testid="tt-day" className={`rounded-xl border p-2 flex flex-col gap-2 md:min-h-[80px] ${d === today ? "border-primary/60" : "border-outline-variant/50"}`}>
-                <p className="text-[11px] uppercase tracking-widest text-on-surface-variant">
+                <p className="text-[11px] text-on-surface-variant">
                   {WEEKDAYS[new Date(d + "T12:00:00").getDay()].slice(0, 3)} {Number(d.slice(8))}
                 </p>
                 {holiday && <p className="text-[11px] text-tertiary">{holiday.name}</p>}

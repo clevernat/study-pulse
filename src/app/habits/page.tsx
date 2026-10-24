@@ -18,7 +18,7 @@ export default function HabitsPage() {
   const archived = habits.filter((h) => h.archived);
 
   return (
-    <div className="max-w-2xl mx-auto flex flex-col gap-4">
+    <div className="max-w-2xl flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-on-surface-variant">{active.length} habit{active.length === 1 ? "" : "s"}</p>
         <button data-testid="habit-new" onClick={() => setEditing("new")} className={primaryBtnCls}><span className="material-symbols-outlined text-[18px]">add</span>New habit</button>

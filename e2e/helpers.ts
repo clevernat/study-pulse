@@ -18,14 +18,14 @@ export async function createUser(prefix = "e2e") {
   return { email, password, uid: json.localId };
 }
 
-/** Signs in through the real login form and waits for the dashboard. */
+/** Signs in through the real login form and waits for the Today page (home). */
 export async function login(page: Page, prefix?: string) {
   const user = await createUser(prefix);
   await page.goto("/login/");
   await page.getByTestId("login-email").fill(user.email);
   await page.getByTestId("login-password").fill(user.password);
   await page.getByTestId("login-submit").click();
-  await expect(page).toHaveURL(/\/dashboard\/?$/);
+  await expect(page).toHaveURL(/\/today\/?$/);
   return user;
 }
 

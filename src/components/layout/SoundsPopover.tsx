@@ -7,6 +7,8 @@ export default function SoundsPopover({ onClose }: { onClose: () => void }) {
   const toggleTrack = useAmbientStore((s) => s.toggleTrack);
   const setTrackVolume = useAmbientStore((s) => s.setTrackVolume);
   const stopAll = useAmbientStore((s) => s.stopAll);
+  const masterVolume = useAmbientStore((s) => s.masterVolume);
+  const setMasterVolume = useAmbientStore((s) => s.setMasterVolume);
 
   const anyPlaying = Object.values(tracks).some((t) => t.playing);
 
@@ -79,9 +81,26 @@ export default function SoundsPopover({ onClose }: { onClose: () => void }) {
         })}
       </div>
 
-      <p className="text-[11px] text-on-surface-variant mt-3 leading-relaxed">
-        Mix multiple sounds together. Settings persist across page reloads.
-      </p>
+      {/* Master volume: sounds and the timer chime */}
+      <div className="flex items-center gap-3 mt-4 pt-3 border-t border-outline-variant">
+        <button
+          type="button"
+          onClick={() => setMasterVolume(masterVolume === 0 ? 0.7 : 0)}
+          className="text-on-surface-variant hover:text-primary transition-colors flex-shrink-0"
+          aria-label={masterVolume === 0 ? "Unmute" : "Mute"}
+        >
+          <span className="material-symbols-outlined text-[20px]">
+            {masterVolume === 0 ? "volume_off" : masterVolume < 0.5 ? "volume_down" : "volume_up"}
+          </span>
+        </button>
+        <input
+          type="range" min={0} max={1} step={0.01} value={masterVolume}
+          onChange={(e) => setMasterVolume(parseFloat(e.target.value))}
+          className="flex-1 accent-primary"
+          aria-label="Master volume (sounds and timer chime)"
+        />
+        <span className="font-jetbrains text-xs text-on-surface-variant w-9 text-right tabular-nums">{Math.round(masterVolume * 100)}%</span>
+      </div>
     </div>
   );
 }

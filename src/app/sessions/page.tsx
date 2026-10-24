@@ -263,17 +263,17 @@ export default function SessionsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6">
         <div className="glass-card p-6 flex flex-col gap-1">
           <div className="font-jetbrains font-semibold text-2xl text-on-surface">{totalSessions}</div>
-          <div className="text-xs uppercase tracking-widest text-on-surface-variant">Total Sessions</div>
+          <div className="text-xs text-on-surface-variant">Total sessions</div>
         </div>
         <div className="glass-card p-6 flex flex-col gap-1">
           <div className="font-jetbrains font-semibold text-2xl text-on-surface">{formatDuration(totalMinutes)}</div>
-          <div className="text-xs uppercase tracking-widest text-on-surface-variant">Total Time</div>
+          <div className="text-xs text-on-surface-variant">Total time</div>
         </div>
         <div className="glass-card p-6 flex flex-col gap-1">
           <div className={`font-jetbrains font-semibold text-2xl ${focusColorClass(avgFocus).split(" ")[0]}`}>
             {avgFocus}%
           </div>
-          <div className="text-xs uppercase tracking-widest text-on-surface-variant">Avg Focus Score</div>
+          <div className="text-xs text-on-surface-variant">Average focus</div>
         </div>
       </div>
 

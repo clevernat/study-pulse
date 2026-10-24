@@ -132,7 +132,7 @@ function MonthView({ anchor, events, subjects, today, onOpen, onDay }: {
   const month = anchor.slice(0, 7);
   return (
     <div className="glass-card p-2" data-testid="cal-month">
-      <div className="grid grid-cols-7 text-[11px] uppercase tracking-widest text-on-surface-variant text-center pb-1">
+      <div className="grid grid-cols-7 text-[11px] text-on-surface-variant text-center pb-1">
         {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => <span key={d}>{d}</span>)}
       </div>
       <div className="grid grid-cols-7 gap-px bg-outline-variant/20">
@@ -212,7 +212,7 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4 max-w-6xl mx-auto">
+    <div className="flex flex-col gap-4 max-w-6xl">
       <div className="flex items-center gap-2 flex-wrap">
         <button aria-label="Previous" data-testid="cal-prev" onClick={() => step(-1)} className={secondaryBtnCls}><span className="material-symbols-outlined text-[18px]">chevron_left</span></button>
         <button data-testid="cal-today" onClick={() => setAnchor(today)} className={secondaryBtnCls}>Today</button>
