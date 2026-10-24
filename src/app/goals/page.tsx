@@ -133,7 +133,7 @@ export default function GoalsPage() {
           s.date <= goal.deadline
         )
         .reduce((sum, s) => sum + s.durationMinutes, 0);
-      map[goal.id] = Math.round((mins / 60) * 10) / 10;
+      map[goal.id] = mins / 60; // exact; formatHours() rounds for display
     }
     return map;
   }, [goals, sessions]);
@@ -142,7 +142,8 @@ export default function GoalsPage() {
   const openCreate = () => { setEditingGoal(undefined); setShowModal(true); };
   const openEdit = (goal: Goal) => { setEditingGoal(goal); setShowModal(true); };
   const closeModal = () => { setShowModal(false); setEditingGoal(undefined); };
-  const handleSave = (goal: Goal) => setGoals((prev) => [...prev, goal]);
+  // The live subscription adds the new goal; adding it here too showed it twice.
+  const handleSave = () => {};
   const handleUpdate = (updated: Goal) =>
     setGoals((prev) => prev.map((g) => (g.id === updated.id ? updated : g)));
 

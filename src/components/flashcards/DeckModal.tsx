@@ -10,7 +10,9 @@ import type { Deck, Subject } from "@/types";
 export default function DeckModal({ uid, subjects, deck, onClose, defaultSubjectId }: { uid: string; subjects: Subject[]; deck?: Deck; onClose: () => void; defaultSubjectId?: string }) {
   const router = useRouter();
   const [name, setName] = useState(deck?.name ?? "");
-  const [subjectId, setSubjectId] = useState(deck?.subjectId ?? defaultSubjectId ?? subjects[0]?.id ?? "");
+  const [pickedSubjectId, setSubjectId] = useState(deck?.subjectId ?? defaultSubjectId ?? "");
+  // Subjects may load after the form opens: fall back to the first one (the select shows it).
+  const subjectId = pickedSubjectId || subjects[0]?.id || "";
   const [newPerDay, setNewPerDay] = useState(deck?.newPerDay ?? DEFAULT_DECK.newPerDay);
   const [reviewsPerDay, setReviewsPerDay] = useState(deck?.reviewsPerDay ?? DEFAULT_DECK.reviewsPerDay);
   const [retention, setRetention] = useState(Math.round((deck?.retention ?? DEFAULT_DECK.retention) * 100));

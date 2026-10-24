@@ -45,7 +45,7 @@ export default function RemindersCard() {
   return (
     <section className="glass-card p-6 flex flex-col gap-3" data-testid="reminders-card">
       <h2 className="font-space font-semibold text-[#e8e8f0]">Reminders</h2>
-      <p className="text-sm text-on-surface-variant">Get a notification before tasks, exams, classes and study blocks (choose the time on each item), for habits, and a daily summary.</p>
+      <p className="text-sm text-on-surface-variant">Get a notification before tasks, exams, classes and study blocks (choose the time on each item), for habits, and a daily summary.{!process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY && " Reminders appear while StudyPulse is open (in a tab or as the installed app)."}</p>
       {!on ? (
         <button data-testid="reminders-on" disabled={busy} onClick={turnOn} className="self-start flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary-container text-on-primary-container font-bold text-sm disabled:opacity-50">
           <span className="material-symbols-outlined text-[18px]">notifications_active</span>Turn on reminders

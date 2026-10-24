@@ -28,8 +28,8 @@
 - **Timetable** — weekly classes, A/B (up to 4) week rotation, term dates and holidays.
 - **Tasks** — tasks, homework and revision with due date and time, priority, and "repeat N days after I finish".
 - **Habits** — every day or N days a week, amounts (for example 20 cards), automatic habits, streaks.
-- **Reminders** — before tasks, exams, classes and study blocks, for habits, and a daily summary.
-- **Calendar sync** — a private link for Google, Apple or Outlook Calendar.
+- **Reminders** — before tasks, exams, classes and study blocks, for habits, and a daily summary (shown while the app is open; push when closed comes with a server later).
+- **Calendar sync** — download a .ics file for Google, Apple or Outlook Calendar (a live link comes later).
 
 **Everywhere**
 - Installable app (PWA) for laptop and phone, works offline, data synced through Firebase.
@@ -50,7 +50,7 @@ StudyPulse is a web app you can install. It then opens in its own window, has it
 3. Tap **Add to Home Screen**, then **Add**.
 4. Open StudyPulse **from the new icon**.
 5. In the app: **Settings → Reminders → Turn on reminders** and allow notifications.
-   (On iPhone, reminders only work when the app was opened from the Home Screen icon. iOS 16.4 or newer.)
+   (Today reminders appear while the app is open. Reminders when the app is closed need the push server, planned for later.)
 
 ### Android
 Open the site in Chrome, then menu **⋮ → Install app**. Turn on reminders in **Settings → Reminders**.
@@ -60,7 +60,16 @@ After you open the app once, it works without internet. Changes you make offline
 
 ---
 
-## Add the calendar feed (Google, Apple, Outlook)
+## Add your plan to Google, Apple or Outlook Calendar
+
+**Now (free Firebase plan):** open **Settings → Calendar sync → Download calendar file (.ics)**, then import the file:
+- **Google Calendar** (computer): ⚙ Settings → Import & export → Import → choose the file.
+- **Apple Calendar** (Mac): File → Import → choose the file.
+- **Outlook:** Add calendar → Upload from file.
+
+The file is a copy: download and import it again after you change your plan.
+
+**Later (live link, needs a small server, for example a free Cloudflare Worker):** the steps below. The app shows them when the build has `NEXT_PUBLIC_CALENDAR_FEED=1`.
 
 1. In StudyPulse, open **Settings → Calendar sync**.
 2. Click **Create my private calendar link**.
@@ -121,12 +130,12 @@ npm run seed:local    # creates the test login (see LOCAL_CREDENTIALS.md)
 
 Test results and screenshots: `TEST_REPORT.md` and `docs/evidence/`.
 
-### Deploy
-The live feed and push reminders use Cloud Functions, which need the Firebase **Blaze** plan.
+### Deploy (free Spark plan)
 ```bash
 npm run build        # uses .env.local (never deploy the output of build:e2e)
-firebase deploy --only firestore:rules,firestore:indexes,functions,hosting
+firebase deploy --only firestore:rules,firestore:indexes,hosting
 ```
+The `functions/` folder (live calendar feed, push reminders) needs the Blaze plan on Firebase, so it is not deployed. The same code can later run on a free Cloudflare Worker.
 
 ---
 

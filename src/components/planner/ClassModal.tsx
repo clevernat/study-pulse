@@ -9,7 +9,9 @@ import type { ClassItem, ClassSlot, Subject } from "@/types";
 interface Props { uid: string; subjects: Subject[]; rotationWeeks: number; item?: ClassItem; onClose: () => void }
 
 export default function ClassModal({ uid, subjects, rotationWeeks, item, onClose }: Props) {
-  const [subjectId, setSubjectId] = useState(item?.subjectId ?? subjects[0]?.id ?? "");
+  const [pickedSubjectId, setSubjectId] = useState(item?.subjectId ?? "");
+  // Subjects may load after the form opens: fall back to the first one (the select shows it).
+  const subjectId = pickedSubjectId || subjects[0]?.id || "";
   const [title, setTitle] = useState(item?.title ?? "");
   const [room, setRoom] = useState(item?.room ?? "");
   const [teacher, setTeacher] = useState(item?.teacher ?? "");

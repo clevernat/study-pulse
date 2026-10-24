@@ -3,6 +3,6 @@ npm notice run 'jest' --verbose
 Test Suites: 11 passed, 11 total
 Tests:       98 passed, 98 total
 Snapshots:   0 total
-Time:        0.567 s, estimated 1 s
+Time:        0.801 s, estimated 1 s
 Ran all test suites.
 exit 0

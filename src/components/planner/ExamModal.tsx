@@ -15,7 +15,9 @@ interface Props {
 }
 
 export default function ExamModal({ uid, subjects, exam, defaultSubjectId, onClose }: Props) {
-  const [subjectId, setSubjectId] = useState(exam?.subjectId ?? defaultSubjectId ?? subjects[0]?.id ?? "");
+  const [pickedSubjectId, setSubjectId] = useState(exam?.subjectId ?? defaultSubjectId ?? "");
+  // Subjects may load after the form opens: fall back to the first one (the select shows it).
+  const subjectId = pickedSubjectId || subjects[0]?.id || "";
   const [title, setTitle] = useState(exam?.title ?? "");
   const [date, setDate] = useState(exam?.date ?? "");
   const [startTime, setStartTime] = useState(exam?.startTime ?? "");

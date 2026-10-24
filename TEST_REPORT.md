@@ -9,7 +9,7 @@ Date: 2026-10-24. Branch: `feature/study-upgrade`. Written in simple English.
 | Unit tests (Jest) | **98 passed**, 11 files | `docs/evidence/test-output/unit-tests.txt` |
 | Firestore rules tests (emulator) | **37 passed** | `docs/evidence/test-output/rules-tests.txt` |
 | Cloud Functions tests (emulator) | **3 passed** | `docs/evidence/test-output/functions-tests.txt` |
-| End-to-end tests (Playwright, emulators, laptop 1280×800 + phone 375×812) | **54 passed**, 2 skipped on purpose (one phone-only and one laptop-only test) | `docs/evidence/test-output/e2e-tests.txt` |
+| End-to-end tests (Playwright, emulators, laptop 1280×800 + phone 375×812) | **58 passed**, 2 skipped on purpose (one phone-only and one laptop-only test) | `docs/evidence/test-output/e2e-tests.txt` |
 | `npm run build` | OK, 25 static pages | `docs/evidence/test-output/build.txt` |
 | `npm run lint` | **0 warnings, 0 errors** (before: 2 warnings) | `docs/evidence/test-output/lint.txt` |
 | Calendar feed checked with an independent parser (Mozilla ical.js) | OK, 64 events, times correct | `docs/evidence/test-output/ics-feed-parse.txt` |
@@ -97,6 +97,15 @@ I also used the running app by hand in the browser with a demo account: Today sh
 - The app loads all your cards at once. This is fine for a few thousand cards.
 - The calendar link is secret: anyone with the link can see those calendar items. Use "Make a new link" if it leaks.
 - Your project folder is in iCloud. If git or npm freeze again, iCloud has moved files to the cloud (see CURRENT_STATE.md).
+
+## 5b. Free plan decision (2026-10-24)
+
+You chose to keep the project on the free Spark plan and add Cloudflare later. So:
+- The live calendar link is hidden in the app (turn it on with `NEXT_PUBLIC_CALENDAR_FEED=1` when a server exists). The "Download calendar file (.ics)" button works now.
+- Reminders show while the app is open. Push when the app is closed waits for the server.
+- Already deployed to `studypulse-tracker-app`: Firestore rules and the reminders index (both free), and the website on a preview link. The live site is unchanged.
+
+Extra checks after this decision: a new end-to-end test proves the old features still work (log session, sessions, dashboard and badges, goals, reports, ambient sounds, tasks popover, CSV/JSON export, Pomodoro + floating timer + reflection). It found and I fixed: a new goal showed twice; goal minutes were rounded (45 min showed as 48); new deck/exam/class forms did nothing if they opened before subjects loaded.
 
 ## 6. Before deploying to production (needs your yes)
 

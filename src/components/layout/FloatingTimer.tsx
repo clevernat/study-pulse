@@ -124,6 +124,7 @@ export default function FloatingTimer() {
 
   return (
     <div
+      data-testid="floating-timer"
       ref={widgetRef}
       className={pos ? "" : "fixed bottom-20 md:bottom-6 right-4 md:right-6 z-[100]"}
       style={style}
