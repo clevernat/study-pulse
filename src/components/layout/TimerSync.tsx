@@ -8,6 +8,7 @@ import {
   addSession,
   saveTimerState,
   subscribeTimerState,
+  linkSessionToBlock,
 } from "@/lib/firebase/firestore";
 import { usePromptStore } from "@/store/promptStore";
 import { useReflectionStore } from "@/store/reflectionStore";
@@ -181,9 +182,14 @@ export default function TimerSync() {
       startTime,
       endTime: now.toTimeString().slice(0, 5),
       notes: "",
+      blockId: storeState.activeBlockId || undefined,
     };
     try {
       const sessionId = await addSession(user.uid, session);
+      if (session.blockId) {
+        linkSessionToBlock(user.uid, session.blockId, sessionId, durationMinutes).catch((err) =>
+          console.error("Failed to link session to block:", err));
+      }
       if (currentSubject?.id) {
         usePromptStore.getState().setPending(currentSubject.id);
       }

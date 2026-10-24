@@ -10,6 +10,9 @@ import type { Task, Subject, Session, Goal, Exam } from "@/types";
 import { useCollection } from "@/lib/firebase/useCollection";
 import { useTimetable } from "@/lib/firebase/useTimetable";
 import { classOccurrences, holidayOn } from "@/lib/timetable";
+import { blockMinutes, blockDone } from "@/lib/calendar";
+import { startBlockTimer } from "@/components/planner/BlockModal";
+import type { StudyBlock } from "@/types";
 import type { ClassItem } from "@/types";
 import { upcomingExams, daysUntil, countdownLabel, urgency, URGENCY_CLASSES } from "@/lib/exams";
 
@@ -39,6 +42,8 @@ export default function TodayPage() {
   const { settings: timetable } = useTimetable();
   const classesToday = classOccurrences(classes, timetable, today, today);
   const holidayToday = holidayOn(today, timetable.holidays);
+  const { items: blocks } = useCollection<StudyBlock>("studyBlocks");
+  const blocksToday = blocks.filter((b) => b.date === today).sort((a, b) => a.start.localeCompare(b.start));
   const examsSoon = upcomingExams(exams, today).filter((e) => daysUntil(e.date, today) <= 14);
 
   // ── Derived data ────────────────────────────────────────────────────────────
@@ -136,6 +141,35 @@ export default function TodayPage() {
                 <span className="w-2 h-2 rounded-full" style={{ background: getColor(sub?.color ?? "violet").dot }} />
                 <span className="text-sm text-on-surface flex-1 truncate">{sub?.name ?? "Class"}{o.title ? ` · ${o.title}` : ""}</span>
                 {o.room && <span className="text-[11px] text-on-surface-variant">Room {o.room}</span>}
+              </div>
+            );
+          })}
+        </section>
+      )}
+
+      {/* Planned study blocks for today */}
+      {blocksToday.length > 0 && (
+        <section data-testid="today-blocks" className="flex flex-col gap-2">
+          <h2 className="text-xs uppercase tracking-widest text-on-surface-variant font-bold">Planned study</h2>
+          {blocksToday.map((b) => {
+            const sub = subjects.find((x) => x.id === b.subjectId);
+            const done = blockDone(b);
+            return (
+              <div key={b.id} className={`glass-card p-3 flex items-center gap-3 ${done ? "opacity-60" : ""}`}>
+                <span className="font-jetbrains text-xs text-on-surface-variant w-[88px]">{b.start}–{b.end}</span>
+                <span className="w-2 h-2 rounded-full" style={{ background: getColor(sub?.color ?? "violet").dot }} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-on-surface truncate">{b.title}</p>
+                  <p className="text-[11px] text-on-surface-variant">{b.minutesDone ?? 0}/{blockMinutes(b)} min</p>
+                </div>
+                {done ? (
+                  <span className="material-symbols-outlined text-secondary">check_circle</span>
+                ) : sub && (
+                  <button data-testid="today-block-start" onClick={() => { startBlockTimer(b, subjects); router.push("/timer"); }}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-container text-on-primary-container text-xs font-bold">
+                    <span className="material-symbols-outlined text-[16px]">play_arrow</span>Start
+                  </button>
+                )}
               </div>
             );
           })}

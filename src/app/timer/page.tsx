@@ -11,6 +11,9 @@ import { localDateStr, daysAgoStr } from "@/lib/dateUtils";
 import { togglePiPTimer, isPiPSupported, isPiPOpen } from "@/lib/pipTimer";
 import type { Subject, Session, Goal } from "@/types";
 import { requestNotificationPermission } from "@/lib/sounds";
+import { useCollection } from "@/lib/firebase/useCollection";
+import { blockMinutes } from "@/lib/calendar";
+import type { StudyBlock } from "@/types";
 
 const BREAK_SUGGESTIONS = [
   { icon: "directions_walk", title: "Take a short walk", desc: "Even 5 minutes outside resets your focus." },
@@ -113,6 +116,9 @@ function TimerPageInner() {
   const SESSION_TYPES = ["Deep Work","Reading","Writing","Coding","Research","Review","Planning","Admin","Practice","Job Search"];
 
   const { user } = useAuth();
+  const activeBlockId = useTimerStore((s) => s.activeBlockId);
+  const setActiveBlock = useTimerStore((s) => s.setActiveBlock);
+  const { items: blocks } = useCollection<StudyBlock>("studyBlocks");
   const searchParams = useSearchParams();
 
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -274,9 +280,24 @@ function TimerPageInner() {
     },
   } as const;
   const theme = modeTheme[mode] ?? modeTheme.focus;
+  const activeBlock = blocks.find((b) => b.id === activeBlockId);
 
   return (
     <div className="flex flex-col items-center gap-3 max-w-xl mx-auto w-full">
+
+      {/* Planned study block this timer belongs to */}
+      {activeBlock && (
+        <div data-testid="timer-active-block" className="glass-card w-full px-4 py-3 flex items-center gap-3 border-primary/40">
+          <span className="material-symbols-outlined text-primary">edit_calendar</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-on-surface truncate">{activeBlock.title}</p>
+            <p className="text-[11px] text-on-surface-variant">Planned {activeBlock.start}–{activeBlock.end} · {activeBlock.minutesDone ?? 0} of {blockMinutes(activeBlock)} min done</p>
+          </div>
+          <button onClick={() => setActiveBlock("")} aria-label="Stop linking to this block" className="text-on-surface-variant hover:text-on-surface p-1">
+            <span className="material-symbols-outlined text-[18px]">link_off</span>
+          </button>
+        </div>
+      )}
 
       {/* Subject Selector */}
       <div className="relative w-full" ref={dropdownRef}>
@@ -402,6 +423,7 @@ function TimerPageInner() {
         </button>
         <div className="flex flex-col items-center gap-1.5">
           <button
+            data-testid="timer-start"
             onClick={() => { if (state === "running") pause(); else { requestNotificationPermission(); start(); } }}
             disabled={!hasSubject && state !== "running"}
             className="w-16 h-16 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95"

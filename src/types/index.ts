@@ -43,6 +43,11 @@ export interface Session {
   pomodoroCount: number;
   notes?: string;
   sessionType?: string;
+  /** Planned study block this session belongs to */
+  blockId?: string;
+  /** Flashcard review sessions: deck and number of answers */
+  deckId?: string;
+  reviewCount?: number;
   date: string;
   startTime: string;
   endTime: string;
@@ -202,4 +207,23 @@ export interface TimetableSettings {
   /** A day in the week that counts as week 1 (A) */
   rotationStartDate?: string;
   holidays: Holiday[];
+}
+
+/** A planned piece of study time on the calendar. */
+export interface StudyBlock {
+  id: string;
+  title: string;
+  subjectId?: string;
+  taskId?: string;
+  deckId?: string;
+  date: string;  // "YYYY-MM-DD"
+  start: string; // "HH:MM"
+  end: string;   // "HH:MM"
+  /** Marked done by hand */
+  done?: boolean;
+  /** Sessions saved while this block was active, and their minutes */
+  sessionIds?: string[];
+  minutesDone?: number;
+  reminderMinutesBefore?: number;
+  createdAt: number;
 }

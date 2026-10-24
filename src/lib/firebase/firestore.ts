@@ -2,7 +2,6 @@ import { db } from "./config";
 import {
   collection,
   doc,
-  addDoc,
   setDoc,
   updateDoc,
   deleteDoc,
@@ -12,9 +11,22 @@ import {
   orderBy,
   serverTimestamp,
   deleteField,
+  arrayUnion,
+  increment,
   onSnapshot,
 } from "firebase/firestore";
 import type { Subject, Session, Goal, Task, TimerSyncDoc } from "@/types";
+
+/**
+ * Waits for a write, but at most 1.5 s. Online, the server confirms quickly.
+ * Offline, Firestore keeps the change (and shows it at once) and sends it later,
+ * so forms must not wait for the server forever.
+ */
+const OFFLINE_WAIT_MS = 1500;
+async function queue(write: Promise<unknown>): Promise<void> {
+  write.catch((err) => console.error("Firestore write failed:", err));
+  await Promise.race([write.catch(() => undefined), new Promise((r) => setTimeout(r, OFFLINE_WAIT_MS))]);
+}
 
 export async function getUserSessions(uid: string): Promise<Session[]> {
   const q = query(
@@ -29,10 +41,11 @@ export async function addSession(
   uid: string,
   session: Omit<Session, "id">
 ): Promise<string> {
-  const ref = await addDoc(collection(db, "users", uid, "sessions"), {
+  const ref = doc(collection(db, "users", uid, "sessions"));
+  await queue(setDoc(ref, {
     ...session,
     createdAt: serverTimestamp(),
-  });
+  }));
   return ref.id;
 }
 
@@ -45,7 +58,8 @@ export async function addSubject(
   uid: string,
   subject: Omit<Subject, "id">
 ): Promise<string> {
-  const ref = await addDoc(collection(db, "users", uid, "subjects"), subject);
+  const ref = doc(collection(db, "users", uid, "subjects"));
+  await queue(setDoc(ref, subject));
   return ref.id;
 }
 
@@ -54,7 +68,7 @@ export async function updateSubject(
   subjectId: string,
   updates: Partial<Subject>
 ): Promise<void> {
-  await updateDoc(doc(db, "users", uid, "subjects", subjectId), updates);
+  await queue(updateDoc(doc(db, "users", uid, "subjects", subjectId), updates));
 
   // Cascade name + color into the denormalized copies on sessions, goals, and tasks.
   // Without this, renaming a subject leaves stale labels on historical records.
@@ -112,7 +126,8 @@ export async function addGoal(
   uid: string,
   goal: Omit<Goal, "id">
 ): Promise<string> {
-  const ref = await addDoc(collection(db, "users", uid, "goals"), goal);
+  const ref = doc(collection(db, "users", uid, "goals"));
+  await queue(setDoc(ref, goal));
   return ref.id;
 }
 
@@ -121,7 +136,7 @@ export async function updateGoalProgress(
   goalId: string,
   currentHours: number
 ): Promise<void> {
-  await updateDoc(doc(db, "users", uid, "goals", goalId), { currentHours });
+  await queue(updateDoc(doc(db, "users", uid, "goals", goalId), { currentHours }));
 }
 
 export async function updateGoal(
@@ -129,11 +144,11 @@ export async function updateGoal(
   goalId: string,
   updates: Partial<Omit<Goal, "id" | "uid">>
 ): Promise<void> {
-  await updateDoc(doc(db, "users", uid, "goals", goalId), updates);
+  await queue(updateDoc(doc(db, "users", uid, "goals", goalId), updates));
 }
 
 export async function deleteGoal(uid: string, goalId: string): Promise<void> {
-  await deleteDoc(doc(db, "users", uid, "goals", goalId));
+  await queue(deleteDoc(doc(db, "users", uid, "goals", goalId)));
 }
 
 export async function updateSession(
@@ -141,11 +156,11 @@ export async function updateSession(
   sessionId: string,
   updates: Partial<Omit<Session, "id" | "uid">>
 ): Promise<void> {
-  await updateDoc(doc(db, "users", uid, "sessions", sessionId), updates);
+  await queue(updateDoc(doc(db, "users", uid, "sessions", sessionId), updates));
 }
 
 export async function deleteSession(uid: string, sessionId: string): Promise<void> {
-  await deleteDoc(doc(db, "users", uid, "sessions", sessionId));
+  await queue(deleteDoc(doc(db, "users", uid, "sessions", sessionId)));
 }
 
 export function subscribeSessions(uid: string, cb: (sessions: Session[]) => void): () => void {
@@ -166,16 +181,17 @@ export function subscribeGoals(uid: string, cb: (goals: Goal[]) => void): () => 
 // ── Tasks ────────────────────────────────────────────────────────────────────
 
 export async function addTask(uid: string, task: Omit<Task, "id">): Promise<string> {
-  const ref = await addDoc(collection(db, "users", uid, "tasks"), task);
+  const ref = doc(collection(db, "users", uid, "tasks"));
+  await queue(setDoc(ref, task));
   return ref.id;
 }
 
 export async function updateTask(uid: string, taskId: string, updates: Partial<Omit<Task, "id" | "uid">>): Promise<void> {
-  await updateDoc(doc(db, "users", uid, "tasks", taskId), updates);
+  await queue(updateDoc(doc(db, "users", uid, "tasks", taskId), updates));
 }
 
 export async function deleteTask(uid: string, taskId: string): Promise<void> {
-  await deleteDoc(doc(db, "users", uid, "tasks", taskId));
+  await queue(deleteDoc(doc(db, "users", uid, "tasks", taskId)));
 }
 
 export function subscribeTasks(uid: string, cb: (tasks: Task[]) => void): () => void {
@@ -265,18 +281,19 @@ export function subscribeCollection<T extends { id: string }>(
 }
 
 export async function addItem<T extends { id: string }>(uid: string, col: string, data: Omit<T, "id">): Promise<string> {
-  const ref = await addDoc(collection(db, "users", uid, col), data);
+  const ref = doc(collection(db, "users", uid, col));
+  await queue(setDoc(ref, data));
   return ref.id;
 }
 
 export async function updateItem<T>(uid: string, col: string, id: string, updates: Partial<T>): Promise<void> {
   const payload: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(updates)) payload[k] = v === undefined ? deleteField() : v;
-  await updateDoc(doc(db, "users", uid, col, id), payload);
+  await queue(updateDoc(doc(db, "users", uid, col, id), payload));
 }
 
 export async function deleteItem(uid: string, col: string, id: string): Promise<void> {
-  await deleteDoc(doc(db, "users", uid, col, id));
+  await queue(deleteDoc(doc(db, "users", uid, col, id)));
 }
 
 /** Live single document users/{uid}/{col}/{id} (null when missing). */
@@ -285,5 +302,13 @@ export function subscribeDocument<T>(uid: string, col: string, id: string, cb: (
 }
 
 export async function saveDocument<T extends object>(uid: string, col: string, id: string, data: T): Promise<void> {
-  await setDoc(doc(db, "users", uid, col, id), data);
+  await queue(setDoc(doc(db, "users", uid, col, id), data));
+}
+
+/** Records a finished focus session on its planned study block. */
+export async function linkSessionToBlock(uid: string, blockId: string, sessionId: string, minutes: number): Promise<void> {
+  await updateDoc(doc(db, "users", uid, "studyBlocks", blockId), {
+    sessionIds: arrayUnion(sessionId),
+    minutesDone: increment(minutes),
+  });
 }

@@ -39,6 +39,10 @@ interface TimerStore {
   selectedSubjectName: string;
   sessionType: string;
   setSessionType: (type: string) => void;
+
+  /** Planned study block the running timer belongs to ("" = none). Cleared when the subject changes. */
+  activeBlockId: string;
+  setActiveBlock: (id: string) => void;
   pomodoroLength: number;
   shortBreak: number;
   longBreak: number;
@@ -132,7 +136,9 @@ export const useTimerStore = create<TimerStore>()(
         _interval = setInterval(() => get().tick(), 500);
       },
 
-      setSubject: (id, name) => set({ selectedSubjectId: id, selectedSubjectName: name }),
+      setSubject: (id, name) => set((s) => ({ selectedSubjectId: id, selectedSubjectName: name, ...(id !== s.selectedSubjectId ? { activeBlockId: "" } : {}) })),
+      activeBlockId: "",
+      setActiveBlock: (id) => set({ activeBlockId: id }),
 
       setDurations: (focus, shortB, longB) => {
         clearTick();
@@ -280,6 +286,7 @@ export const useTimerStore = create<TimerStore>()(
         pomodoroIndex: s.pomodoroIndex, totalPomodoros: s.totalPomodoros,
         selectedSubjectId: s.selectedSubjectId, selectedSubjectName: s.selectedSubjectName,
         sessionType: s.sessionType,
+        activeBlockId: s.activeBlockId,
         pomodoroLength: s.pomodoroLength, shortBreak: s.shortBreak, longBreak: s.longBreak,
         startTimestamp: s.startTimestamp, remainingWhenStarted: s.remainingWhenStarted,
       }),

@@ -16,6 +16,7 @@ export const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
     title: "Plan",
     items: [
       { href: "/today", label: "Today", icon: "today" },
+      { href: "/calendar", label: "Calendar", icon: "calendar_month" },
       { href: "/tasks", label: "Tasks", icon: "task_alt" },
       { href: "/exams", label: "Exams", icon: "event_upcoming" },
       { href: "/timetable", label: "Timetable", icon: "calendar_view_week" },
@@ -42,7 +43,7 @@ const bottomNavItems: NavItem[] = [
   { href: "/dashboard", label: "Home", icon: "dashboard" },
   { href: "/today", label: "Today", icon: "today" },
   { href: "/timer", label: "Timer", icon: "timer" },
-  { href: "/tasks", label: "Tasks", icon: "task_alt" },
+  { href: "/calendar", label: "Calendar", icon: "calendar_month" },
 ];
 
 function isActive(pathname: string, href: string) {
