@@ -23,6 +23,7 @@ const pageTitles: Record<string, string> = {
   "/flashcards/deck": "Deck",
   "/flashcards/review": "Review",
   "/flashcards/stats": "Flashcard Stats",
+  "/flashcards/import": "Import Cards",
   "/sessions": "Study Sessions",
   "/timer": "Focus Timer",
   "/goals": "Study Goals",

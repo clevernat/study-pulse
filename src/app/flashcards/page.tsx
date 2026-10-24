@@ -32,6 +32,7 @@ export default function FlashcardsPage() {
       <div className="flex items-center gap-2 flex-wrap">
         {due > 0 && <Link href="/flashcards/review" data-testid="fc-study-all" className={primaryBtnCls}><span className="material-symbols-outlined text-[18px]">play_arrow</span>Study all ({due})</Link>}
         <button data-testid="deck-new" onClick={() => setCreating(true)} className={secondaryBtnCls}><span className="material-symbols-outlined text-[18px]">add</span>New deck</button>
+        <Link href="/flashcards/import" data-testid="fc-import" className={secondaryBtnCls}><span className="material-symbols-outlined text-[18px]">upload_file</span>Import</Link>
         <Link href="/flashcards/stats" data-testid="fc-stats" className={secondaryBtnCls}><span className="material-symbols-outlined text-[18px]">monitoring</span>Stats</Link>
       </div>
 
