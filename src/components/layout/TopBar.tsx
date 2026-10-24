@@ -18,6 +18,7 @@ const pageTitles: Record<string, string> = {
   "/exams": "Exams",
   "/timetable": "Timetable",
   "/calendar": "Calendar",
+  "/habits": "Habits",
   "/sessions": "Study Sessions",
   "/timer": "Focus Timer",
   "/goals": "Study Goals",

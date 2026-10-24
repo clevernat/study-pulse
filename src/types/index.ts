@@ -227,3 +227,24 @@ export interface StudyBlock {
   reminderMinutesBefore?: number;
   createdAt: number;
 }
+
+export type HabitSchedule = { type: "daily" } | { type: "weekly"; timesPerWeek: number };
+
+export interface Habit {
+  id: string;
+  title: string;
+  icon: string;
+  color: string;
+  schedule: HabitSchedule;
+  /** Amount needed per day, e.g. 1 (just do it), 20 (cards), 60 (minutes) */
+  target: number;
+  unit?: string;
+  /** Checked automatically from app data instead of by hand */
+  autoSource?: "studyMinutes" | "cardsReviewed";
+  /** "HH:MM" daily reminder */
+  reminderTime?: string;
+  archived?: boolean;
+  /** "YYYY-MM-DD" → amount done that day (manual habits) */
+  log: Record<string, number>;
+  createdAt: number;
+}

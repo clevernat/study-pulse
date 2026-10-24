@@ -20,6 +20,7 @@ export const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
       { href: "/tasks", label: "Tasks", icon: "task_alt" },
       { href: "/exams", label: "Exams", icon: "event_upcoming" },
       { href: "/timetable", label: "Timetable", icon: "calendar_view_week" },
+      { href: "/habits", label: "Habits", icon: "local_fire_department" },
     ],
   },
   {

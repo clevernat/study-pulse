@@ -40,3 +40,24 @@ export async function evidence(page: Page, name: string) {
   const tag = project && project < 500 ? "phone" : "laptop";
   await page.screenshot({ path: `docs/evidence/screenshots/${name}-${tag}.png`, fullPage: true });
 }
+
+type FsValue = Record<string, unknown>;
+function toFs(v: unknown): FsValue {
+  if (v === null || v === undefined) return { nullValue: null };
+  if (typeof v === "boolean") return { booleanValue: v };
+  if (typeof v === "number") return Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
+  if (typeof v === "string") return { stringValue: v };
+  if (Array.isArray(v)) return { arrayValue: { values: v.map(toFs) } };
+  return { mapValue: { fields: Object.fromEntries(Object.entries(v as object).map(([k, x]) => [k, toFs(x)])) } };
+}
+
+/** Test setup only: writes a document straight into the emulator (admin access, skips rules). */
+export async function seedDoc(uid: string, col: string, data: Record<string, unknown>, id?: string) {
+  const base = `${FS}/v1/projects/${PROJECT}/databases/(default)/documents/users/${uid}/${col}`;
+  const res = await fetch(id ? `${base}/${id}` : base, {
+    method: id ? "PATCH" : "POST",
+    headers: { "Content-Type": "application/json", Authorization: "Bearer owner" },
+    body: JSON.stringify({ fields: (toFs(data).mapValue as { fields: unknown }).fields }),
+  });
+  if (!res.ok) throw new Error(`seedDoc failed: ${res.status} ${await res.text()}`);
+}

@@ -38,7 +38,7 @@ test("calendar views show exams, tasks, classes and planned blocks", async ({ pa
     const top = (e: Element | null) => e!.getBoundingClientRect().top;
     const slot = top(col.querySelector('[data-testid="cal-slot"][data-hour="14"]'));
     const block = top(col.querySelector('[data-testid="cal-event-block"]'));
-    const label = [...document.querySelectorAll("[data-testid=cal-timegrid] div")].find((d) => d.textContent === "14:00")!;
+    const label = Array.from(document.querySelectorAll("[data-testid=cal-timegrid] div")).find((d) => d.textContent === "14:00")!;
     return Math.max(Math.abs(block - slot), Math.abs(top(label) + 6 - slot));
   });
   await expect.poll(offsets).toBeLessThan(4);

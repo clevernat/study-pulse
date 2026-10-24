@@ -12,7 +12,9 @@ import { useTimetable } from "@/lib/firebase/useTimetable";
 import { classOccurrences, holidayOn } from "@/lib/timetable";
 import { blockMinutes, blockDone } from "@/lib/calendar";
 import { startBlockTimer } from "@/components/planner/BlockModal";
-import type { StudyBlock } from "@/types";
+import type { StudyBlock, Habit } from "@/types";
+import HabitRow from "@/components/planner/HabitRow";
+import { useHabitContext } from "@/lib/firebase/useHabitContext";
 import type { ClassItem } from "@/types";
 import { upcomingExams, daysUntil, countdownLabel, urgency, URGENCY_CLASSES } from "@/lib/exams";
 
@@ -43,6 +45,9 @@ export default function TodayPage() {
   const classesToday = classOccurrences(classes, timetable, today, today);
   const holidayToday = holidayOn(today, timetable.holidays);
   const { items: blocks } = useCollection<StudyBlock>("studyBlocks");
+  const { items: habits } = useCollection<Habit>("habits");
+  const habitCtx = useHabitContext();
+  const activeHabits = habits.filter((h) => !h.archived);
   const blocksToday = blocks.filter((b) => b.date === today).sort((a, b) => a.start.localeCompare(b.start));
   const examsSoon = upcomingExams(exams, today).filter((e) => daysUntil(e.date, today) <= 14);
 
@@ -173,6 +178,14 @@ export default function TodayPage() {
               </div>
             );
           })}
+        </section>
+      )}
+
+      {/* Habits */}
+      {activeHabits.length > 0 && user && (
+        <section data-testid="today-habits" className="flex flex-col gap-2">
+          <h2 className="text-xs uppercase tracking-widest text-on-surface-variant font-bold">Habits</h2>
+          {activeHabits.map((h) => <HabitRow key={h.id} uid={user.uid} habit={h} today={today} ctx={habitCtx} />)}
         </section>
       )}
 
