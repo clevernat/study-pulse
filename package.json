@@ -16,7 +16,8 @@
     "test:all": "npm test && npm run test:rules && npm run test:functions && npm run test:e2e",
     "build:e2e": "NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-studypulse NEXT_PUBLIC_FIREBASE_API_KEY=demo-api-key NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=demo-studypulse.firebaseapp.com NEXT_PUBLIC_USE_EMULATORS=1 NEXT_PUBLIC_CALENDAR_FEED=1 next build",
     "test:e2e:only": "firebase emulators:exec --project demo-studypulse --only auth,firestore,hosting,functions \"playwright test\"",
-    "test:functions": "cd functions && npx tsc -p . && npm run build && cd .. && firebase emulators:exec --project demo-studypulse --only firestore \"cd functions && npx jest\""
+    "test:functions": "cd functions && npx tsc -p . && npm run build && cd .. && firebase emulators:exec --project demo-studypulse --only firestore \"cd functions && npx jest\"",
+    "docs:screenshots": "npm run build:e2e && firebase emulators:exec --project demo-studypulse --only auth,firestore,hosting \"node scripts/readme-screenshots.mjs\""
   },
   "dependencies": {
     "date-fns": "^4.1.0",

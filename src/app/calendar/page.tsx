@@ -28,7 +28,10 @@ function dayLabel(date: string, opts: Intl.DateTimeFormatOptions) {
 }
 
 function EventChip({ e, subjects, onOpen, compact }: { e: CalEvent; subjects: Subject[]; onOpen: (e: CalEvent) => void; compact?: boolean }) {
-  const c = getColor(subjects.find((s) => s.id === e.subjectId)?.color ?? "violet");
+  const subject = subjects.find((s) => s.id === e.subjectId);
+  const c = getColor(subject?.color ?? "violet");
+  // Classes are named by their subject ("Biology · Lecture"), not just "Class".
+  const label = e.kind === "class" ? [subject?.name, e.title !== "Class" ? e.title : ""].filter(Boolean).join(" · ") || e.title : e.title;
   const style = e.kind === "exam"
     ? { background: "rgba(255,180,171,0.12)", borderColor: "#ffb4ab" }
     : e.kind === "block" ? { background: "rgba(124,58,237,0.18)", borderColor: c.dot }
@@ -37,13 +40,13 @@ function EventChip({ e, subjects, onOpen, compact }: { e: CalEvent; subjects: Su
     <button
       data-testid={`cal-event-${e.kind}`}
       onClick={(ev) => { ev.stopPropagation(); onOpen(e); }}
-      title={`${e.title}${e.start ? ` ${e.start}–${e.end}` : ""}`}
+      title={`${label}${e.start ? ` ${e.start}–${e.end}` : ""}`}
       className={`w-full text-left rounded-md border-l-2 px-1.5 ${compact ? "py-0.5" : "py-1"} text-[11px] leading-tight overflow-hidden ${e.done ? "opacity-50" : ""} ${e.kind === "task" ? "border-dashed" : ""}`}
       style={style}
     >
       <span className="flex items-center gap-1 text-on-surface">
         <span className="material-symbols-outlined text-[12px]">{e.done && e.kind !== "session" ? "check_circle" : KIND_ICON[e.kind]}</span>
-        <span className="truncate font-semibold">{e.title}</span>
+        <span className="truncate font-semibold">{label}</span>
       </span>
       {!compact && e.start && <span className="block font-jetbrains text-on-surface-variant">{e.start}–{e.end}</span>}
     </button>

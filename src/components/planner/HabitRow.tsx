@@ -24,7 +24,9 @@ export default function HabitRow({ uid, habit, today, ctx, onEdit }: { uid: stri
       <div className="flex-1 min-w-0">
         <button onClick={onEdit} className="text-left font-grotesk font-bold text-on-surface truncate block max-w-full hover:text-primary">{habit.title}</button>
         <p className="text-[11px] text-on-surface-variant">
-          {scheduleLabel(habit)}{habit.autoSource ? " · automatic" : ""} · {habit.schedule.type === "weekly" ? `${prog.done}/${prog.needed} this week` : habit.target > 1 ? `${prog.done}/${prog.needed} today` : ""}
+          {[scheduleLabel(habit), habit.autoSource && "automatic",
+            habit.schedule.type === "weekly" ? `${prog.done}/${prog.needed} this week` : habit.target > 1 ? `${prog.done}/${prog.needed} today` : ""]
+            .filter(Boolean).join(" · ")}
         </p>
         <div className="flex items-center gap-1 mt-1.5" aria-label="Last 7 days">
           {week.map((d) => (

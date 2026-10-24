@@ -1,97 +1,147 @@
-# StudyPulse — Study Planner and Flashcards
-
 <div align="center">
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-studypulse--tracker--app.web.app-7c3aed?style=for-the-badge&logo=firebase&logoColor=white)](https://studypulse-tracker-app.web.app)
-[![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)](https://nextjs.org)
-[![Firebase](https://img.shields.io/badge/Firebase-Firestore%20%2B%20Auth-orange?style=for-the-badge&logo=firebase)](https://firebase.google.com)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+<img src="public/icons/icon-192.png" width="72" alt="StudyPulse logo" />
 
-**One app to study and plan, on your laptop and your phone.**
+# StudyPulse
+
+**Flashcards, focus timer and study planner in one app — on your laptop and your phone.**
+
+[![Open the app](https://img.shields.io/badge/Open%20the%20app-studypulse--tracker--app.web.app-7c3aed?style=for-the-badge&logo=firebase&logoColor=white)](https://studypulse-tracker-app.web.app)
+&nbsp;
+[![Free](https://img.shields.io/badge/Price-free-40efb7?style=for-the-badge)](#install-it)
+&nbsp;
+[![Works offline](https://img.shields.io/badge/Works-offline-ffb95f?style=for-the-badge)](#install-it)
+
+<img src="docs/images/hero.png" alt="StudyPulse dashboard on a laptop and flashcard review on a phone" width="100%" />
+
+[Features](#what-you-can-do) · [Install](#install-it) · [Calendar](#put-your-plan-in-your-calendar) · [Development](#for-developers)
 
 </div>
 
----
-
-## Features
-
-**Study**
-- **Flashcards** — decks per subject; Basic, Basic + reverse and Cloze (`{{c1::answer::hint}}`) cards; spaced repetition with FSRS ([ts-fsrs](https://github.com/open-spaced-repetition/ts-fsrs)); Again / Hard / Good / Easy with the next interval on each button; keyboard keys; undo; daily limits; stats and a 30-day forecast.
-- **Import** — Anki `.apkg` files (old and current formats) and CSV/TSV files.
-- **Focus timer** — Pomodoro with breaks, ambient sounds, picture-in-picture, synced across devices. Every focus period (and every flashcard review) is saved as a study session.
-- **Subjects, topics and goals** — topics to check off per subject, goals that fill up from real sessions, reports, streaks, badges and a 90-day heat map.
-
-**Plan**
-- **Today** — classes, planned study, cards to review, habits, exams soon, tasks due.
-- **Calendar** — day, week and month views with classes, exams, tasks, planned study blocks and finished sessions. Click an empty hour to plan study time, then start the timer from the block.
-- **Exams** — countdown on the dashboard, room and seat, revision progress, warning when an exam clashes with a class.
-- **Timetable** — weekly classes, A/B (up to 4) week rotation, term dates and holidays.
-- **Tasks** — tasks, homework and revision with due date and time, priority, and "repeat N days after I finish".
-- **Habits** — every day or N days a week, amounts (for example 20 cards), automatic habits, streaks.
-- **Reminders** — before tasks, exams, classes and study blocks, for habits, and a daily summary (shown while the app is open; push when closed comes with a server later).
-- **Calendar sync** — download a .ics file for Google, Apple or Outlook Calendar (a live link comes later).
-
-**Everywhere**
-- Installable app (PWA) for laptop and phone, works offline, data synced through Firebase.
+> The screenshots use sample data.
 
 ---
 
-## Install the app on your laptop and phone
+## What you can do
 
-StudyPulse is a web app you can install. It then opens in its own window, has its own icon, and works offline.
+### 🧠 Remember more with flashcards
 
-### Laptop (Windows, Mac, Linux)
-- **Chrome or Edge:** open https://studypulse-tracker-app.web.app, sign in, then click the **install icon** at the right end of the address bar (or go to **Settings → Install the app → Install StudyPulse**).
-- **Safari on Mac:** open the site, then **File → Add to Dock**.
+<table>
+<tr>
+<td width="62%"><img src="docs/images/laptop-review.png" alt="Flashcard review with Again, Hard, Good and Easy buttons" /></td>
+<td width="38%">
 
-### iPhone and iPad
-1. Open the site in **Safari**.
-2. Tap the **Share** button (square with an arrow).
-3. Tap **Add to Home Screen**, then **Add**.
-4. Open StudyPulse **from the new icon**.
-5. In the app: **Settings → Reminders → Turn on reminders** and allow notifications.
-   (Today reminders appear while the app is open. Reminders when the app is closed need the push server, planned for later.)
+- **Decks for each subject**: Basic, reverse and cloze cards (`{{c1::answer::hint}}`).
+- **Spaced repetition (FSRS)** shows each card again just before you would forget it.
+- **Again / Hard / Good / Easy** with the next interval on each button. Keys `Space`, `1`–`4`, `Z` to undo.
+- **Import from Anki** (`.apkg`, old and new formats) or **CSV**.
+- Review time counts as a study session.
 
-### Android
-Open the site in Chrome, then menu **⋮ → Install app**. Turn on reminders in **Settings → Reminders**.
+</td>
+</tr>
+</table>
 
-### Offline
-After you open the app once, it works without internet. Changes you make offline are saved on the device and sent when you are online again. An "Offline" badge shows in the top bar.
+<table>
+<tr>
+<td width="50%"><img src="docs/images/laptop-stats.png" alt="Flashcard stats: today, 30-day forecast, card counts, review days" /><br/><sub><b>Stats:</b> today, 30-day forecast, how much you remember, review days.</sub></td>
+<td width="50%"><img src="docs/images/laptop-flashcards.png" alt="Deck list with cards to learn, due and new" /><br/><sub><b>Decks:</b> what is due today in each deck.</sub></td>
+</tr>
+</table>
+
+### 📅 Plan your week
+
+<table>
+<tr>
+<td width="62%"><img src="docs/images/laptop-calendar.png" alt="Week calendar with classes, study blocks, homework and finished sessions" /></td>
+<td width="38%">
+
+- **Calendar** — day, week and month: classes, exams, homework, planned study and finished sessions.
+- **Click an empty hour** to plan study time, then press **Start** to run the timer for it.
+- **Timetable** with A/B weeks, term dates and holidays.
+- **Exams** with a countdown, room and seat, and a warning when an exam clashes with a class.
+
+</td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td width="50%"><img src="docs/images/laptop-timetable.png" alt="Weekly class timetable" /><br/><sub><b>Timetable:</b> your classes, every week or A/B weeks.</sub></td>
+<td width="50%"><img src="docs/images/laptop-exams.png" alt="Exams list with countdown and revision progress" /><br/><sub><b>Exams:</b> days left and revision progress.</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/images/laptop-subject.png" alt="Subject page with topics to check off" /><br/><sub><b>Subjects:</b> topics to check off, exams and decks in one place.</sub></td>
+<td width="50%"><img src="docs/images/laptop-dashboard.png" alt="Dashboard with streak, weekly hours, exam countdown and heat map" /><br/><sub><b>Dashboard:</b> streak, weekly hours, exam countdown, 90-day heat map, badges.</sub></td>
+</tr>
+</table>
+
+### 📱 On your phone
+
+<table>
+<tr>
+<td align="center" width="25%"><img src="docs/images/phone-today.png" alt="Today on a phone" /><br/><sub><b>Today</b><br/>classes, cards, plan, habits</sub></td>
+<td align="center" width="25%"><img src="docs/images/phone-review.png" alt="Flashcard review on a phone" /><br/><sub><b>Review</b><br/>study cards anywhere</sub></td>
+<td align="center" width="25%"><img src="docs/images/phone-timer.png" alt="Pomodoro focus timer on a phone" /><br/><sub><b>Focus timer</b><br/>Pomodoro + sounds</sub></td>
+<td align="center" width="25%"><img src="docs/images/phone-habits.png" alt="Habits with streaks on a phone" /><br/><sub><b>Habits</b><br/>streaks, daily or weekly</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="docs/images/phone-month.png" alt="Month calendar on a phone" /><br/><sub><b>Month view</b></sub></td>
+<td align="center"><img src="docs/images/phone-calendar.png" alt="Day calendar on a phone" /><br/><sub><b>Day view</b></sub></td>
+<td colspan="2" valign="top">
+
+**Also in the app**
+
+- ⏱️ Pomodoro timer with breaks, ambient sounds, a floating mini timer and picture-in-picture
+- ✅ Tasks, homework and revision with due date, time and priority
+- 🔥 Habits that can check themselves (minutes studied, cards reviewed)
+- 🎯 Goals that fill up from your real study time
+- 📊 Reports, streaks, badges, CSV/JSON export
+- 🔔 Reminders and a daily summary (while the app is open)
+- ☁️ Works offline, syncs when you are back online
+
+</td>
+</tr>
+</table>
 
 ---
 
-## Add your plan to Google, Apple or Outlook Calendar
+## Install it
 
-**Now (free Firebase plan):** open **Settings → Calendar sync → Download calendar file (.ics)**, then import the file:
-- **Google Calendar** (computer): ⚙ Settings → Import & export → Import → choose the file.
-- **Apple Calendar** (Mac): File → Import → choose the file.
-- **Outlook:** Add calendar → Upload from file.
+StudyPulse is a free web app that installs like a normal app: its own icon, its own window, and it works offline.
 
-The file is a copy: download and import it again after you change your plan.
+| Device | How |
+|---|---|
+| 💻 **Laptop — Chrome or Edge** | Open [studypulse-tracker-app.web.app](https://studypulse-tracker-app.web.app), sign in, click the **install icon** at the right of the address bar (or **Settings → Install the app**). |
+| 💻 **Mac — Safari** | Open the site, then **File → Add to Dock**. |
+| 📱 **iPhone / iPad** | Open the site in **Safari** → **Share** button → **Add to Home Screen** → **Add**. Open StudyPulse from the new icon. |
+| 📱 **Android** | Open the site in Chrome → menu **⋮** → **Install app**. |
 
-**Later (live link, needs a small server, for example a free Cloudflare Worker):** the steps below. The app shows them when the build has `NEXT_PUBLIC_CALENDAR_FEED=1`.
-
-1. In StudyPulse, open **Settings → Calendar sync**.
-2. Click **Create my private calendar link**.
-3. Add it to your calendar app:
-   - **Google Calendar:** click **Add to Google Calendar**, or in Google Calendar on a computer: **Other calendars → + → From URL**, paste the link, **Add calendar**.
-   - **Apple Calendar (Mac, iPhone):** click **Add to Apple Calendar**, or on Mac: **File → New Calendar Subscription**, paste the link. On iPhone: **Settings → Calendar → Accounts → Add Account → Other → Add Subscribed Calendar**.
-   - **Outlook:** click **Add to Outlook**, or **Add calendar → Subscribe from web**, paste the link.
-
-What you see: exams, homework and tasks with a due date, planned study blocks and your classes (30 days back, 180 days ahead).
-The calendar app checks for changes every few hours (Google can take up to a day). The feed is read-only: changes made in the calendar app do not come back to StudyPulse.
-**Keep the link private.** If it leaks, click **Make a new link** — the old one stops working.
-No subscription wanted? Use **Download a .ics file instead** for a one-time copy.
+Then turn on reminders in **Settings → Reminders**. After the first visit the app opens without internet; changes made offline are sent when you are online again.
 
 ---
 
-## Development
+## Put your plan in your calendar
 
-### Requirements
-- Node.js 20+ and npm
-- Firebase CLI (`npm i -g firebase-tools`) and Java (for the emulators)
+**Settings → Calendar sync → Download calendar file (.ics)**, then import it:
 
-### Set up
+| Calendar | Import |
+|---|---|
+| Google Calendar (computer) | ⚙ Settings → Import & export → Import |
+| Apple Calendar (Mac) | File → Import |
+| Outlook | Add calendar → Upload from file |
+
+The file is a copy of your exams, homework, study blocks and classes. Download it again after changes.
+A live link that updates by itself, and reminders when the app is closed, need a small server and will come later (see **Server features** under [For developers](#for-developers)).
+
+---
+
+## For developers
+
+<details>
+<summary><b>Set up and run locally</b></summary>
+
+Requirements: Node.js 20+, npm, Firebase CLI (`npm i -g firebase-tools`) and Java (for the emulators).
+
 ```bash
 git clone https://github.com/clevernat/study-pulse.git
 cd study-pulse
@@ -108,58 +158,70 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
 NEXT_PUBLIC_FIREBASE_APP_ID=...
-# Web push key: Firebase console → Project settings → Cloud Messaging → Web Push certificates
-NEXT_PUBLIC_FIREBASE_VAPID_KEY=...
 ```
 
-### Run locally (emulators)
 ```bash
 npm run dev:local     # emulators + next dev on http://localhost:3000
 npm run seed:local    # creates the test login (see LOCAL_CREDENTIALS.md)
 ```
 
-### Tests
+</details>
+
+<details>
+<summary><b>Tests</b></summary>
+
 | Command | What it runs |
 |---|---|
 | `npm test` | Unit tests (Jest) |
 | `npm run test:rules` | Firestore security rules on the emulator |
-| `npm run test:functions` | Cloud Functions logic on the emulator |
-| `npm run test:e2e` | Builds the app and runs Playwright on the Hosting/Auth/Firestore/Functions emulators (laptop + phone sizes) |
+| `npm run test:functions` | Server code on the emulator |
+| `npm run test:e2e` | Builds the app and runs Playwright on the Firebase emulators (laptop + phone sizes) |
 | `npm run test:all` | All of the above |
 | `npm run lint` / `npm run build` | Lint / production build |
+| `npm run docs:screenshots` | Re-makes the README pictures with sample data (emulators only) |
 
-Test results and screenshots: `TEST_REPORT.md` and `docs/evidence/`.
+Results and screenshots: [`TEST_REPORT.md`](TEST_REPORT.md) and `docs/evidence/`.
 
-### Deploy (free Spark plan)
+</details>
+
+<details>
+<summary><b>Deploy (free Spark plan)</b></summary>
+
 ```bash
 npm run build        # uses .env.local (never deploy the output of build:e2e)
 firebase deploy --only firestore:rules,firestore:indexes,hosting
 ```
-The `functions/` folder (live calendar feed, push reminders) needs the Blaze plan on Firebase, so it is not deployed. The same code can later run on a free Cloudflare Worker.
 
----
+</details>
 
-## Architecture
+<details>
+<summary><b>Server features (later)</b></summary>
+
+`functions/` holds two small server programs: `calendarFeed` (a live, private `.ics` link for Google/Apple/Outlook) and `sendReminders` (web push every 5 minutes, also when the app is closed). Firebase only runs them on the paid Blaze plan, so they are not deployed. They can later run on a free Cloudflare Worker. Turn the live calendar link on in the app with `NEXT_PUBLIC_CALENDAR_FEED=1`, and web push with `NEXT_PUBLIC_FIREBASE_VAPID_KEY`.
+
+</details>
+
+<details>
+<summary><b>Architecture</b></summary>
 
 | Part | Technology |
 |---|---|
 | App | Next.js 14 (App Router, static export), TypeScript, Tailwind CSS, Zustand |
-| Data | Firestore with offline cache; everything under `users/{uid}/…` |
+| Data | Firestore with offline cache; everything under `users/{uid}/…`, each user can only read and write their own data |
 | Auth | Firebase Auth (email/password, Google) |
-| Server | Cloud Functions: `calendarFeed` (`/cal/<token>.ics`), `sendReminders` (every 5 minutes, FCM web push) |
 | Offline / install | Web app manifest + service worker (`public/sw.js`) |
-| Flashcards | ts-fsrs (scheduling), sql.js + fflate + fzstd (Anki import, in a Web Worker), DOMPurify (safe card HTML) |
+| Flashcards | ts-fsrs (scheduling), sql.js + fflate + fzstd (Anki import in a Web Worker), DOMPurify (safe card HTML) |
+| Free-plan friendly | Screens read only what they need: cards due today, a few new cards per deck, a small summary per study day, count queries for totals |
 | Tests | Jest, Playwright, @firebase/rules-unit-testing |
 
-### Firestore collections (`users/{uid}/…`)
-`subjects`, `sessions`, `tasks`, `goals`, `topics`, `exams`, `classes`, `studyBlocks`, `habits`, `decks`, `notes`, `cards`, `reviewLogs`, `reminders`, `devices`, `preferences/current`, `preferences/timetable`, `timerState/current`, `calendarFeed/current`.
-Top level: `calendarTokens/{token}` (owner of a calendar link).
-Security rules: each user can only read and write their own data (`firestore.rules`, tested in `tests/rules`).
+Collections: `subjects`, `sessions`, `tasks`, `goals`, `topics`, `exams`, `classes`, `studyBlocks`, `habits`, `decks`, `notes`, `cards`, `reviewLogs`, `reviewDays`, `reminders`, `devices`, `preferences`, `timerState`, `calendarFeed`; top level `calendarTokens`.
+
+</details>
 
 ---
 
 ## Credits and license
 
-Scheduling uses [ts-fsrs](https://github.com/open-spaced-repetition/ts-fsrs) (MIT). Anki file import uses [sql.js](https://github.com/sql-js/sql.js), [fflate](https://github.com/101arrowz/fflate) and [fzstd](https://github.com/101arrowz/fzstd) (MIT). No code was copied from other apps.
+Scheduling uses [ts-fsrs](https://github.com/open-spaced-repetition/ts-fsrs) (MIT). Anki import uses [sql.js](https://github.com/sql-js/sql.js), [fflate](https://github.com/101arrowz/fflate) and [fzstd](https://github.com/101arrowz/fzstd) (MIT). No code was copied from other apps.
 
 MIT © Oteng A. Nathaniel
