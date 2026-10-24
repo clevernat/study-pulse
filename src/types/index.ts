@@ -42,6 +42,7 @@ export interface Session {
   focusScore: number;
   pomodoroCount: number;
   notes?: string;
+  sessionType?: string;
   date: string;
   startTime: string;
   endTime: string;
@@ -54,6 +55,9 @@ export interface Task {
   completed: boolean;
   subjectId?: string;
   subjectName?: string;
+  dueDate?: string;
+  priority?: "low" | "medium" | "high";
+  estimatedMinutes?: number;
   createdAt: string;
 }
 
@@ -61,7 +65,7 @@ export interface Goal {
   id: string;
   uid: string;
   title: string;
-  type: "daily" | "weekly" | "monthly";
+  type: "daily" | "weekly" | "monthly" | "quarterly" | "yearly";
   targetHours: number;
   currentHours: number;
   subjectId?: string;
@@ -90,6 +94,8 @@ export interface TimerSyncDoc {
   updatedAt: number;
   /** Which browser tab/device last wrote — used to skip echoed-back writes */
   deviceId: string;
+  /** Which device owns the current focus session and is responsible for saving it */
+  sessionOwnerDeviceId?: string;
 }
 
 export interface TimerSession {

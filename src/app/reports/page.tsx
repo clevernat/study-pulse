@@ -96,13 +96,14 @@ export default function ReportsPage() {
   const subjectAgg = useMemo(() => {
     const m: Record<string, { id: string; minutes: number; focusSum: number; count: number }> = {};
     for (const s of sessions) {
+      if (!s.subjectId) continue;
       if (!m[s.subjectId]) m[s.subjectId] = { id: s.subjectId, minutes: 0, focusSum: 0, count: 0 };
       m[s.subjectId].minutes += s.durationMinutes;
       m[s.subjectId].focusSum += s.focusScore;
       m[s.subjectId].count += 1;
     }
-    return Object.values(m).sort((a, b) => b.minutes - a.minutes);
-  }, [sessions]);
+    return Object.values(m).filter((e) => subjectById.has(e.id)).sort((a, b) => b.minutes - a.minutes);
+  }, [sessions, subjectById]);
 
   const bestSubjectEntry = subjectAgg[0];
   const bestSubject = bestSubjectEntry ? {
@@ -311,12 +312,9 @@ export default function ReportsPage() {
 
   return (
     <div className="p-6 md:p-8 space-y-8">
-      {/* Header */}
+      {/* Period filter */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="font-grotesk text-3xl font-bold text-on-surface">Reports &amp; Analytics</h1>
-          <p className="text-sm text-on-surface-variant mt-1">Track your learning performance over time</p>
-        </div>
+        <p className="text-sm text-on-surface-variant font-inter">Track your learning performance over time</p>
         <div className="flex gap-2">
           {PERIODS.map((period) => (
             <button
@@ -339,7 +337,7 @@ export default function ReportsPage() {
         <StatCard label="Total Study Time" value={loading ? "—" : formatSmartDuration(totalMinutes)} hint="All logged sessions" />
         <StatCard label="Sessions" value={loading ? "—" : String(sessionCount)} hint="This period" />
         <StatCard label="Avg Focus" value={loading ? "—" : sessions.length > 0 ? `${avgFocusScore}%` : "—"} hint={avgFocusScore >= 90 ? "Excellent" : avgFocusScore >= 75 ? "Good" : sessions.length > 0 ? "Keep going" : "No data"} accent />
-        <StatCard label="Best Subject" value={loading ? "—" : bestSubject ? bestSubject.name : "—"} hint={bestSubject ? `${bestSubject.label} logged` : "No sessions yet"} />
+        <StatCard label="Best Focus Area" value={loading ? "—" : bestSubject ? bestSubject.name : "—"} hint={bestSubject ? `${bestSubject.label} logged` : "No sessions yet"} />
       </div>
 
       {/* Insights */}
@@ -412,8 +410,8 @@ export default function ReportsPage() {
 
         {/* Donut */}
         <div className="glass-card p-6">
-          <h2 className="font-grotesk font-bold text-on-surface mb-1">Subject Distribution</h2>
-          <p className="text-xs text-on-surface-variant mb-4">Time per subject · hover to inspect</p>
+          <h2 className="font-grotesk font-bold text-on-surface mb-1">Focus Area Distribution</h2>
+          <p className="text-xs text-on-surface-variant mb-4">Time per focus area · hover to inspect</p>
           {donutSubjects.length === 0 ? <EmptyState /> : (
             <div className="flex flex-col items-center">
               <svg viewBox="0 0 160 160" className="w-36 h-36" aria-label="Subject distribution">
@@ -435,7 +433,7 @@ export default function ReportsPage() {
                   {donutHover !== null ? `${donutSubjects[donutHover].percentage}%` : donutSubjects.length}
                 </text>
                 <text x="80" y="92" textAnchor="middle" fontSize="9" fill="#958da1" fontFamily="monospace">
-                  {donutHover !== null ? donutSubjects[donutHover].name : donutSubjects.length === 1 ? "Subject" : "Subjects"}
+                  {donutHover !== null ? donutSubjects[donutHover].name : donutSubjects.length === 1 ? "Area" : "Areas"}
                 </text>
               </svg>
               <div className="mt-4 space-y-1.5 w-full">
@@ -573,8 +571,8 @@ export default function ReportsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Subject Focus */}
         <div className="glass-card p-6">
-          <h2 className="font-grotesk font-bold text-on-surface mb-1">Focus by Subject</h2>
-          <p className="text-xs text-on-surface-variant mb-4">Which subjects you focus best on</p>
+          <h2 className="font-grotesk font-bold text-on-surface mb-1">Focus by Area</h2>
+          <p className="text-xs text-on-surface-variant mb-4">Which focus areas you concentrate best in</p>
           {!hasSubjectFocus ? <EmptyState /> : (
             <div className="space-y-3">
               {subjectFocus.map((s) => (

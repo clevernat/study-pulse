@@ -114,7 +114,7 @@ export default function TasksPopover({ onClose }: { onClose: () => void }) {
               onChange={(e) => setDraftSubjectId(e.target.value)}
               className="flex-1 bg-[#0e0e11] border border-outline-variant rounded-lg px-2 py-1.5 text-on-surface text-xs focus:outline-none focus:border-primary transition-colors"
             >
-              <option value="">No subject</option>
+              <option value="">No focus area</option>
               {subjects.map((s) => (
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}

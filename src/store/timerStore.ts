@@ -25,6 +25,10 @@ interface TimerStore {
   _hasHydrated: boolean;
   setHasHydrated: (val: boolean) => void;
 
+  /** UID of the account this timer state belongs to. Used to detect account switches. */
+  ownerUid: string;
+  setOwnerUid: (uid: string) => void;
+
   state: TimerState;
   mode: "focus" | "short-break" | "long-break";
   secondsRemaining: number;
@@ -33,6 +37,8 @@ interface TimerStore {
   totalPomodoros: number;
   selectedSubjectId: string;
   selectedSubjectName: string;
+  sessionType: string;
+  setSessionType: (type: string) => void;
   pomodoroLength: number;
   shortBreak: number;
   longBreak: number;
@@ -58,6 +64,9 @@ export const useTimerStore = create<TimerStore>()(
       _hasHydrated: false,
       setHasHydrated: (val) => set({ _hasHydrated: val }),
 
+      ownerUid: "",
+      setOwnerUid: (uid) => set({ ownerUid: uid }),
+
       state: "idle",
       mode: "focus",
       secondsRemaining: 25 * 60,
@@ -65,7 +74,9 @@ export const useTimerStore = create<TimerStore>()(
       pomodoroIndex: 0,
       totalPomodoros: 4,
       selectedSubjectId: "",
-      selectedSubjectName: "Select a Subject",
+      selectedSubjectName: "Select a Focus Area",
+      sessionType: "Deep Work",
+      setSessionType: (type) => set({ sessionType: type }),
       pomodoroLength: 25,
       shortBreak: 5,
       longBreak: 15,
@@ -262,9 +273,11 @@ export const useTimerStore = create<TimerStore>()(
       // _hasHydrated and setHasHydrated are intentionally excluded — they must
       // always start as false/undefined on a fresh page load.
       partialize: (s) => ({
+        ownerUid: s.ownerUid,
         state: s.state, mode: s.mode, secondsRemaining: s.secondsRemaining, totalSeconds: s.totalSeconds,
         pomodoroIndex: s.pomodoroIndex, totalPomodoros: s.totalPomodoros,
         selectedSubjectId: s.selectedSubjectId, selectedSubjectName: s.selectedSubjectName,
+        sessionType: s.sessionType,
         pomodoroLength: s.pomodoroLength, shortBreak: s.shortBreak, longBreak: s.longBreak,
         startTimestamp: s.startTimestamp, remainingWhenStarted: s.remainingWhenStarted,
       }),

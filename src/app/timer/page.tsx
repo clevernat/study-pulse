@@ -5,10 +5,21 @@ import { useSearchParams } from "next/navigation";
 import { useTimerStore, formatTime } from "@/store/timerStore";
 import { getColor } from "@/lib/colorPalette";
 import { useAuth } from "@/context/AuthContext";
-import { subscribeSubjects, subscribeSessions } from "@/lib/firebase/firestore";
+import { subscribeSubjects, subscribeSessions, subscribeGoals } from "@/lib/firebase/firestore";
 import { computeStreak } from "@/lib/streakLogic";
 import { localDateStr } from "@/lib/dateUtils";
-import type { Subject, Session } from "@/types";
+import { togglePiPTimer, isPiPSupported, isPiPOpen } from "@/lib/pipTimer";
+import type { Subject, Session, Goal } from "@/types";
+
+const BREAK_SUGGESTIONS = [
+  { icon: "directions_walk", title: "Take a short walk", desc: "Even 5 minutes outside resets your focus." },
+  { icon: "self_improvement", title: "Do some stretches", desc: "Release tension in your neck and shoulders." },
+  { icon: "water_drop", title: "Drink some water", desc: "Staying hydrated improves concentration." },
+  { icon: "air", title: "Try box breathing", desc: "In 4s → hold 4s → out 4s → hold 4s." },
+  { icon: "visibility_off", title: "Rest your eyes", desc: "Look 20 feet away for 20 seconds (20-20-20 rule)." },
+  { icon: "restaurant", title: "Have a light snack", desc: "Fuel your brain for the next session." },
+  { icon: "phone_disabled", title: "Stay off your phone", desc: "Give your brain a true screen break." },
+];
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const MODE_LABELS: Record<string, string> = {
@@ -94,14 +105,20 @@ function TimerPageInner() {
     setTotalPomodoros,
     shortBreak,
     longBreak,
+    sessionType,
+    setSessionType,
   } = useTimerStore();
+
+  const SESSION_TYPES = ["Deep Work","Reading","Writing","Coding","Research","Review","Planning","Admin","Practice","Job Search"];
 
   const { user } = useAuth();
   const searchParams = useSearchParams();
 
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [pipOpen, setPipOpen] = useState(false);
   const [draftFocus, setDraftFocus] = useState(String(pomodoroLength));
   const [draftShort, setDraftShort] = useState(String(shortBreak));
   const [draftLong, setDraftLong] = useState(String(longBreak));
@@ -124,16 +141,17 @@ function TimerPageInner() {
     const unsub1 = subscribeSubjects(user.uid, (data) => {
       setSubjects(data);
       if (data.length === 0) {
-        setSubject("", "Select a Subject");
+        setSubject("", "Select a Focus Area");
       } else {
         const store = useTimerStore.getState();
         if (store.selectedSubjectId && !data.find((s) => s.id === store.selectedSubjectId)) {
-          setSubject("", "Select a Subject");
+          setSubject("", "Select a Focus Area");
         }
       }
     });
     const unsub2 = subscribeSessions(user.uid, setSessions);
-    return () => { unsub1(); unsub2(); };
+    const unsub3 = subscribeGoals(user.uid, setGoals);
+    return () => { unsub1(); unsub2(); unsub3(); };
   }, [user]);
 
   // Close dropdown on outside click
@@ -145,6 +163,12 @@ function TimerPageInner() {
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Keep PiP button in sync with actual window state
+  useEffect(() => {
+    const id = setInterval(() => setPipOpen(isPiPOpen()), 800);
+    return () => clearInterval(id);
   }, []);
 
 
@@ -190,6 +214,11 @@ function TimerPageInner() {
   const completedPomodoros = pomodoroIndex % totalPomodoros;
   const currentSubject = subjects.find((s) => s.id === selectedSubjectId);
   const hasSubject = !!selectedSubjectId;
+
+  const today = localDateStr();
+  const hasActiveGoal = !selectedSubjectId || goals.some(
+    (g) => g.subjectId === selectedSubjectId && g.deadline >= today
+  );
 
   // Determine display list: real subjects if loaded, else empty (no mock fallback)
   const displaySubjects = subjects;
@@ -269,7 +298,7 @@ function TimerPageInner() {
         {isDropdownOpen && (
           <div className="absolute top-[calc(100%+4px)] left-0 right-0 z-50 glass-card overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)] max-h-48 overflow-y-auto">
             {displaySubjects.length === 0 ? (
-              <div className="px-5 py-4 text-on-surface-variant text-sm text-center">No subjects yet — add one in Subjects</div>
+              <div className="px-5 py-4 text-on-surface-variant text-sm text-center">No focus areas yet — add one in Focus Areas</div>
             ) : displaySubjects.map((subject) => (
               <div key={subject.id} className="flex items-center gap-3 px-5 py-3 cursor-pointer hover:bg-surface-container transition-colors" onClick={() => handleSubjectSelect(subject)}>
                 <span className="material-symbols-outlined text-[20px]" style={{ color: getColor(subject.color).text }}>{subject.icon}</span>
@@ -279,6 +308,40 @@ function TimerPageInner() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* No active goal banner */}
+      {hasSubject && !hasActiveGoal && (
+        <div className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-tertiary/10 border border-tertiary/30">
+          <span className="material-symbols-outlined text-tertiary text-[18px] flex-shrink-0">flag</span>
+          <p className="text-xs text-tertiary flex-1">
+            No active goal for <span className="font-semibold">{currentSubject?.name}</span> — set one to track your progress.
+          </p>
+          <a href="/goals" className="text-xs font-bold text-tertiary underline underline-offset-2 flex-shrink-0">
+            Create goal
+          </a>
+        </div>
+      )}
+
+      {/* Session Type Selector */}
+      <div className="w-full flex flex-col gap-2">
+        <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-on-surface-variant">Session Type</span>
+        <div className="flex flex-wrap gap-1.5">
+          {SESSION_TYPES.map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setSessionType(t)}
+              className={`px-3 py-1 rounded-full text-[12px] font-inter font-medium border transition-all ${
+                sessionType === t
+                  ? "bg-primary/20 text-primary border-primary/50"
+                  : "border-outline-variant text-on-surface-variant hover:border-primary/40 hover:text-on-surface"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* SVG Ring */}
@@ -360,13 +423,60 @@ function TimerPageInner() {
             </span>
           </button>
           {!hasSubject && state !== "running" && (
-            <span className="text-[11px] text-on-surface-variant font-inter text-center">Select a subject to start</span>
+            <span className="text-[11px] text-on-surface-variant font-inter text-center">Select a focus area to start</span>
           )}
         </div>
         <button onClick={() => skip()} className="w-11 h-11 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest transition-all active:scale-95" aria-label="Skip">
           <span className="material-symbols-outlined text-[20px]">skip_next</span>
         </button>
+
+        {/* Picture-in-Picture — float the timer above all other apps */}
+        {isPiPSupported() && (
+          <button
+            onClick={() => { togglePiPTimer(); setTimeout(() => setPipOpen(isPiPOpen()), 300); }}
+            className={`w-11 h-11 rounded-full border flex items-center justify-center transition-all active:scale-95 ${
+              pipOpen
+                ? "border-primary/60 text-primary bg-primary/10"
+                : "border-outline-variant text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest"
+            }`}
+            aria-label={pipOpen ? "Close picture-in-picture" : "Open picture-in-picture"}
+            title={pipOpen ? "Close floating window" : "Float timer above all windows (Chrome only)"}
+          >
+            <span className="material-symbols-outlined text-[20px]">picture_in_picture</span>
+          </button>
+        )}
       </div>
+
+      {/* Smart Break Suggestion — shown during any break mode */}
+      {(mode === "short-break" || mode === "long-break") && (() => {
+        const s = BREAK_SUGGESTIONS[pomodoroIndex % BREAK_SUGGESTIONS.length];
+        const isLong = mode === "long-break";
+        return (
+          <div className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl border ${
+            isLong
+              ? "bg-tertiary/8 border-tertiary/25"
+              : "bg-secondary/8 border-secondary/25"
+          }`}>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+              isLong ? "bg-tertiary/15" : "bg-secondary/15"
+            }`}>
+              <span
+                className={`material-symbols-outlined text-[22px] ${isLong ? "text-tertiary" : "text-secondary"}`}
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                {s.icon}
+              </span>
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className={`text-[11px] uppercase tracking-[0.15em] font-bold mb-0.5 ${isLong ? "text-tertiary" : "text-secondary"}`}>
+                Break suggestion
+              </span>
+              <span className="text-on-surface font-semibold text-sm">{s.title}</span>
+              <span className="text-on-surface-variant text-xs mt-0.5">{s.desc}</span>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Duration Controls */}
       <div className="w-full bg-[#12121a] border border-[#252535] rounded-2xl overflow-hidden">

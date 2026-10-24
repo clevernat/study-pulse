@@ -4,6 +4,7 @@ import { useRef, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTimerStore, formatTime } from "@/store/timerStore";
+import { togglePiPTimer, isPiPSupported, isPiPOpen } from "@/lib/pipTimer";
 
 const MODE_LABELS: Record<string, string> = {
   focus: "FOCUS",
@@ -30,6 +31,13 @@ export default function FloatingTimer() {
 
   const pathname = usePathname();
   const cleanPath = pathname?.endsWith("/") && pathname !== "/" ? pathname.slice(0, -1) : pathname;
+  const [pipOpen, setPipOpen] = useState(false);
+
+  // Keep PiP button state in sync with actual window state
+  useEffect(() => {
+    const id = setInterval(() => setPipOpen(isPiPOpen()), 800);
+    return () => clearInterval(id);
+  }, []);
 
   // Drag state
   const widgetRef = useRef<HTMLDivElement>(null);
@@ -105,7 +113,7 @@ export default function FloatingTimer() {
   const colors = MODE_COLORS[mode] ?? MODE_COLORS.focus;
 
   const subjectLabel =
-    selectedSubjectName && selectedSubjectName !== "Select a Subject"
+    selectedSubjectName && selectedSubjectName !== "Select a Focus Area"
       ? selectedSubjectName
       : null;
 
@@ -209,6 +217,26 @@ export default function FloatingTimer() {
             open_in_full
           </span>
         </Link>
+
+        {/* Picture-in-Picture toggle (Chrome 116+ only) */}
+        {isPiPSupported() && (
+          <button
+            onClick={() => { togglePiPTimer(); setTimeout(() => setPipOpen(isPiPOpen()), 300); }}
+            className={`w-9 h-9 rounded-full border flex items-center justify-center transition-all flex-shrink-0 ${
+              pipOpen
+                ? "border-primary/60 text-primary bg-primary-container/20"
+                : "border-[#252535] text-on-surface-variant hover:text-primary hover:border-primary"
+            }`}
+            title={pipOpen ? "Close floating overlay" : "Float timer above all windows"}
+          >
+            <span
+              className="material-symbols-outlined text-[18px]"
+              style={{ fontFamily: "'Material Symbols Outlined'" }}
+            >
+              picture_in_picture
+            </span>
+          </button>
+        )}
       </div>
     </div>
   );

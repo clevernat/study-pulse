@@ -133,6 +133,18 @@ export async function deleteGoal(uid: string, goalId: string): Promise<void> {
   await deleteDoc(doc(db, "users", uid, "goals", goalId));
 }
 
+export async function updateSession(
+  uid: string,
+  sessionId: string,
+  updates: Partial<Omit<Session, "id" | "uid">>
+): Promise<void> {
+  await updateDoc(doc(db, "users", uid, "sessions", sessionId), updates);
+}
+
+export async function deleteSession(uid: string, sessionId: string): Promise<void> {
+  await deleteDoc(doc(db, "users", uid, "sessions", sessionId));
+}
+
 export function subscribeSessions(uid: string, cb: (sessions: Session[]) => void): () => void {
   const q = query(collection(db, "users", uid, "sessions"), orderBy("date", "desc"));
   return onSnapshot(q, (snap) => cb(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Session))));

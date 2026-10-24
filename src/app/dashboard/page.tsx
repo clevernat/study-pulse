@@ -48,7 +48,7 @@ function LiveClock() {
 }
 import { useAuth } from "@/context/AuthContext";
 import { subscribeSessions, subscribeSubjects } from "@/lib/firebase/firestore";
-import { computeStreak } from "@/lib/streakLogic";
+import { computeStreak, computeLongestStreak, hasPerfectWeek } from "@/lib/streakLogic";
 import { getColor } from "@/lib/colorPalette";
 import { localDateStr, formatSmartDuration } from "@/lib/dateUtils";
 import TasksWidget from "@/components/dashboard/TasksWidget";
@@ -251,12 +251,23 @@ function Heatmap({ sessions }: { sessions: Session[] }) {
 
 // ── Active Subjects ───────────────────────────────────────────────────────────
 
-function ActiveSubjects({ subjects }: { subjects: Subject[] }) {
-  const displayed = subjects.slice(0, 3);
+function ActiveSubjects({ subjects, sessions }: { subjects: Subject[]; sessions: Session[] }) {
+  const minutesBySubject = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const s of sessions) {
+      if (s.subjectId) m[s.subjectId] = (m[s.subjectId] ?? 0) + s.durationMinutes;
+    }
+    return m;
+  }, [sessions]);
+
+  const displayed = [...subjects]
+    .sort((a, b) => (minutesBySubject[b.id] ?? 0) - (minutesBySubject[a.id] ?? 0))
+    .slice(0, 3);
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-grotesk font-bold text-lg text-on-surface">Active Subjects</h2>
+        <h2 className="font-grotesk font-bold text-lg text-on-surface">Active Focus Areas</h2>
         <Link href="/subjects" className="text-sm text-primary hover:opacity-80 transition-opacity">
           View All →
         </Link>
@@ -264,7 +275,7 @@ function ActiveSubjects({ subjects }: { subjects: Subject[] }) {
       <div className="flex flex-col gap-3">
         {displayed.map((s) => {
           const c = getColor(s.color);
-          const hoursThisMonth = formatSmartDuration(s.totalMinutes);
+          const totalMins = minutesBySubject[s.id] ?? 0;
           return (
             <div key={s.id} className="glass-card p-4 flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: c.bg }}>
@@ -275,7 +286,7 @@ function ActiveSubjects({ subjects }: { subjects: Subject[] }) {
                   <span className="font-grotesk font-bold text-sm text-on-surface truncate">{s.name}</span>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ background: c.chip, color: c.chipText }}>{s.category}</span>
                 </div>
-                <span className="text-xs text-on-surface-variant">{hoursThisMonth} total</span>
+                <span className="text-xs text-on-surface-variant">{formatSmartDuration(totalMins)} total</span>
               </div>
             </div>
           );
@@ -291,7 +302,7 @@ function RecentSessions({ sessions, subjectById }: { sessions: Session[]; subjec
   const displayed = [...sessions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
 
   function handleExport() {
-    const header = "Date,Subject,Duration (min),Focus Score,Notes";
+    const header = "Date,Focus Area,Duration (min),Focus Score,Notes";
     const rows = sessions.map((s) =>
       [s.date, `"${s.subjectName}"`, s.durationMinutes, s.focusScore, `"${s.notes ?? ""}"`].join(",")
     );
@@ -317,7 +328,7 @@ function RecentSessions({ sessions, subjectById }: { sessions: Session[]; subjec
         <table className="w-full min-w-[400px]">
           <thead>
             <tr className="border-b border-outline-variant">
-              <th className="text-left text-xs uppercase tracking-widest text-on-surface-variant px-4 py-3">Subject</th>
+              <th className="text-left text-xs uppercase tracking-widest text-on-surface-variant px-4 py-3">Focus Area</th>
               <th className="text-left text-xs uppercase tracking-widest text-on-surface-variant px-4 py-3">Duration</th>
               <th className="text-left text-xs uppercase tracking-widest text-on-surface-variant px-4 py-3">Focus Score</th>
             </tr>
@@ -339,6 +350,78 @@ function RecentSessions({ sessions, subjectById }: { sessions: Session[]; subjec
             })}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+// ── Badges ────────────────────────────────────────────────────────────────────
+
+interface BadgeDef {
+  id: string;
+  emoji: string;
+  label: string;
+  desc: string;
+  earned: boolean;
+}
+
+function BadgesSection({ sessions }: { sessions: Session[] }) {
+  const today = localDateStr();
+  const dates = sessions.map((s) => s.date);
+  const streak = computeStreak(dates, today);
+  const longest = computeLongestStreak(dates);
+  const totalHours = sessions.reduce((sum, s) => sum + s.durationMinutes, 0) / 60;
+  const totalSessions = sessions.length;
+  const perfectWeek = hasPerfectWeek(dates, today);
+
+  const badges: BadgeDef[] = [
+    { id: "first",     emoji: "🎯", label: "First Session",    desc: "Completed your first focus session",    earned: totalSessions >= 1 },
+    { id: "streak3",   emoji: "🔥", label: "3-Day Streak",     desc: "3 days of focus in a row",              earned: streak >= 3 },
+    { id: "streak7",   emoji: "⚡", label: "Week Warrior",      desc: "7 days of focus in a row",              earned: streak >= 7 },
+    { id: "streak30",  emoji: "🏆", label: "Unstoppable",       desc: "30 days of focus in a row",             earned: streak >= 30 },
+    { id: "perfectwk", emoji: "🌟", label: "Perfect Week",      desc: "Studied every day this week",           earned: perfectWeek },
+    { id: "hours10",   emoji: "⏱️", label: "10 Hours",          desc: "Logged 10 total hours of focus",        earned: totalHours >= 10 },
+    { id: "hours50",   emoji: "💫", label: "50 Hours",          desc: "Logged 50 total hours of focus",        earned: totalHours >= 50 },
+    { id: "hours100",  emoji: "🚀", label: "100 Hours",         desc: "Logged 100 total hours of focus",       earned: totalHours >= 100 },
+    { id: "s10",       emoji: "✨", label: "10 Sessions",       desc: "Completed 10 focus sessions",           earned: totalSessions >= 10 },
+    { id: "s50",       emoji: "🎖️", label: "50 Sessions",       desc: "Completed 50 focus sessions",           earned: totalSessions >= 50 },
+    { id: "s100",      emoji: "💯", label: "Century",           desc: "100 focus sessions completed",          earned: totalSessions >= 100 },
+    { id: "longest7",  emoji: "📈", label: "Best Streak: 7d",   desc: "Longest streak of 7+ days ever",        earned: longest >= 7 },
+  ];
+
+  const earned = badges.filter((b) => b.earned);
+  const locked = badges.filter((b) => !b.earned);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <h2 className="font-grotesk font-bold text-lg text-on-surface">Badges</h2>
+        <span className="text-sm text-on-surface-variant">{earned.length}/{badges.length} earned</span>
+      </div>
+      <div className="glass-card p-5">
+        {earned.length === 0 && (
+          <p className="text-on-surface-variant text-sm text-center py-4">
+            Complete your first focus session to start earning badges!
+          </p>
+        )}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          {/* Earned first */}
+          {earned.map((b) => (
+            <div key={b.id} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-primary/8 border border-primary/20 text-center">
+              <span className="text-2xl">{b.emoji}</span>
+              <span className="font-grotesk font-bold text-xs text-on-surface">{b.label}</span>
+              <span className="text-[10px] text-on-surface-variant leading-tight">{b.desc}</span>
+            </div>
+          ))}
+          {/* Locked / not yet earned */}
+          {locked.map((b) => (
+            <div key={b.id} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-surface-container border border-outline-variant/40 text-center opacity-35">
+              <span className="text-2xl grayscale">{b.emoji}</span>
+              <span className="font-grotesk font-bold text-xs text-on-surface-variant">{b.label}</span>
+              <span className="text-[10px] text-on-surface-variant leading-tight">{b.desc}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -466,9 +549,12 @@ export default function DashboardPage() {
 
       {/* Bottom Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-        <ActiveSubjects subjects={subjects} />
+        <ActiveSubjects subjects={subjects} sessions={sessions} />
         <RecentSessions sessions={sessions} subjectById={subjectById} />
       </div>
+
+      {/* Badges */}
+      <BadgesSection sessions={sessions} />
     </div>
   );
 }

@@ -106,13 +106,39 @@ export default function SettingsPage() {
     return () => unsub();
   }, [user]);
 
-  // Appearance toggles
-  const [darkMode, setDarkMode] = useState(true);
+  // Appearance — load from localStorage after mount to avoid SSR mismatch
   const [reducedMotion, setReducedMotion] = useState(false);
 
   // Notification toggles
   const [sessionComplete, setSessionComplete] = useState(true);
   const [dailyReminder, setDailyReminder] = useState(true);
+
+  // Hydrate prefs from localStorage on the client
+  useEffect(() => {
+    setReducedMotion(localStorage.getItem("sp-reduced-motion") === "true");
+    setSessionComplete(localStorage.getItem("sp-notif-session") !== "false");
+    setDailyReminder(localStorage.getItem("sp-notif-daily") !== "false");
+  }, []);
+
+  function handleReducedMotion(val: boolean) {
+    setReducedMotion(val);
+    localStorage.setItem("sp-reduced-motion", String(val));
+    document.documentElement.classList.toggle("reduced-motion", val);
+  }
+
+  function handleSessionComplete(val: boolean) {
+    setSessionComplete(val);
+    localStorage.setItem("sp-notif-session", String(val));
+  }
+
+  function handleDailyReminder(val: boolean) {
+    setDailyReminder(val);
+    localStorage.setItem("sp-notif-daily", String(val));
+    // Request notification permission when enabling
+    if (val && typeof Notification !== "undefined" && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }
 
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetDone, setResetDone] = useState(false);
@@ -132,16 +158,58 @@ export default function SettingsPage() {
   const displayEmail = user?.email ?? "";
   const initials = displayName.slice(0, 2).toUpperCase();
 
-  function handleExportSessions() {
-    const blob = new Blob([JSON.stringify(sessions, null, 2)], {
-      type: "application/json",
-    });
+  // ── Export helpers ────────────────────────────────────────────────────────
+  type ExportRange = "all" | "this-month" | "last-month" | "custom";
+  const [exportRange, setExportRange] = useState<ExportRange>("all");
+  const [exportFrom, setExportFrom] = useState("");
+  const [exportTo, setExportTo] = useState("");
+
+  function getFilteredSessions(): typeof sessions {
+    const now = new Date();
+    if (exportRange === "all") return sessions;
+    if (exportRange === "this-month") {
+      const ym = now.toISOString().slice(0, 7);
+      return sessions.filter((s) => s.date.startsWith(ym));
+    }
+    if (exportRange === "last-month") {
+      const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const ym = d.toISOString().slice(0, 7);
+      return sessions.filter((s) => s.date.startsWith(ym));
+    }
+    if (exportRange === "custom") {
+      return sessions.filter((s) => (!exportFrom || s.date >= exportFrom) && (!exportTo || s.date <= exportTo));
+    }
+    return sessions;
+  }
+
+  function download(content: string, filename: string, mime: string) {
+    const blob = new Blob([content], { type: mime });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
-    a.download = "studypulse-sessions.json";
-    a.click();
+    a.href = url; a.download = filename; a.click();
     URL.revokeObjectURL(url);
+  }
+
+  function handleExportCSV() {
+    const data = getFilteredSessions();
+    const header = "Date,Focus Area,Session Type,Duration (min),Focus Score,Start,End,Notes";
+    const rows = data.map((s) =>
+      [s.date, `"${s.subjectName}"`, `"${s.sessionType ?? "Deep Work"}"`, s.durationMinutes, s.focusScore, s.startTime, s.endTime, `"${(s.notes ?? "").replace(/"/g, '""')}"`].join(",")
+    );
+    download([header, ...rows].join("\n"), "studypulse-sessions.csv", "text/csv");
+  }
+
+  function handleExportExcel() {
+    const data = getFilteredSessions();
+    const header = ["Date","Focus Area","Session Type","Duration (min)","Focus Score","Start","End","Notes"];
+    const rows = data.map((s) => [s.date, s.subjectName, s.sessionType ?? "Deep Work", s.durationMinutes, s.focusScore, s.startTime, s.endTime, s.notes ?? ""]);
+    const tableHtml = `<table><tr>${header.map(h => `<th>${h}</th>`).join("")}</tr>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join("")}</tr>`).join("")}</table>`;
+    download("﻿" + tableHtml, "studypulse-sessions.xls", "application/vnd.ms-excel");
+  }
+
+  function handleExportJSON() {
+    const data = getFilteredSessions();
+    download(JSON.stringify(data, null, 2), "studypulse-sessions.json", "application/json");
   }
 
   async function handleResetConfirmed() {
@@ -152,7 +220,7 @@ export default function SettingsPage() {
       // Stop the timer, clear subject selection, and reset to idle/focus
       const ts = useTimerStore.getState();
       ts.setPreset(ts.pomodoroLength); // calls clearTick() + resets to idle
-      ts.setSubject("", "Select a Subject");
+      ts.setSubject("", "Select a Focus Area");
       setResetDone(true);
     } finally {
       setResetting(false);
@@ -165,7 +233,7 @@ export default function SettingsPage() {
       <ConfirmModal
         open={confirmReset}
         title="Reset All Data"
-        description="This will permanently delete all your sessions, subjects, and goals. This action cannot be undone."
+        description="This will permanently delete all your sessions, focus areas, and goals. This action cannot be undone."
         confirmLabel={resetting ? "Deleting…" : "Yes, Delete Everything"}
         cancelLabel="Keep My Data"
         destructive
@@ -177,22 +245,17 @@ export default function SettingsPage() {
       <ConfirmModal
         open={resetDone}
         title="Data Cleared"
-        description="All your sessions, subjects, and goals have been deleted successfully."
+        description="All your sessions, focus areas, and goals have been deleted successfully."
         confirmLabel="OK"
         cancelLabel=""
         icon="check_circle"
         onConfirm={() => setResetDone(false)}
         onCancel={() => setResetDone(false)}
       />
-      {/* Header */}
-      <div>
-        <h1 className="font-space text-2xl font-bold text-[#e8e8f0]">
-          Settings
-        </h1>
-        <p className="text-sm text-[#958da1] mt-1">
-          Manage your preferences and account
-        </p>
-      </div>
+      {/* Subtitle */}
+      <p className="text-sm text-[#958da1]">
+        Manage your preferences and account
+      </p>
 
       {/* Profile */}
       <div className="glass-card p-6">
@@ -252,42 +315,52 @@ export default function SettingsPage() {
 
       {/* Appearance */}
       <div className="glass-card p-6">
-        <h2 className="font-space font-semibold text-[#e8e8f0] mb-2">
-          Appearance
-        </h2>
+        <h2 className="font-space font-semibold text-[#e8e8f0] mb-2">Appearance</h2>
         <div className="divide-y divide-[#252535]">
-          <Toggle
-            enabled={darkMode}
-            onToggle={() => setDarkMode((v) => !v)}
-            label="Dark Mode"
-            description="Use a dark color scheme across the app"
-          />
+          {/* Dark Mode — locked until light theme is built */}
+          <div className="flex items-center justify-between py-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-[#e8e8f0] font-medium">Dark Mode</p>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/30 font-bold uppercase tracking-wide">
+                  Always On
+                </span>
+              </div>
+              <p className="text-xs text-[#958da1] mt-0.5">Light mode coming soon</p>
+            </div>
+            <button
+              disabled
+              className="relative w-11 h-6 rounded-full bg-secondary cursor-not-allowed opacity-60"
+              aria-label="Dark mode (always on)"
+            >
+              <span className="absolute top-1 left-1 w-4 h-4 rounded-full bg-[#0e0e11] translate-x-5" />
+            </button>
+          </div>
+
           <Toggle
             enabled={reducedMotion}
-            onToggle={() => setReducedMotion((v) => !v)}
+            onToggle={() => handleReducedMotion(!reducedMotion)}
             label="Reduced Motion"
-            description="Minimize animations and transitions"
+            description="Minimize animations and transitions across the app"
           />
         </div>
       </div>
 
       {/* Notifications */}
       <div className="glass-card p-6">
-        <h2 className="font-space font-semibold text-[#e8e8f0] mb-2">
-          Notifications
-        </h2>
+        <h2 className="font-space font-semibold text-[#e8e8f0] mb-2">Notifications</h2>
         <div className="divide-y divide-[#252535]">
           <Toggle
             enabled={sessionComplete}
-            onToggle={() => setSessionComplete((v) => !v)}
+            onToggle={() => handleSessionComplete(!sessionComplete)}
             label="Session Complete"
             description="Get notified when a Pomodoro session ends"
           />
           <Toggle
             enabled={dailyReminder}
-            onToggle={() => setDailyReminder((v) => !v)}
+            onToggle={() => handleDailyReminder(!dailyReminder)}
             label="Daily Goal Reminder"
-            description="Receive a reminder to hit your daily study goal"
+            description="Sends a reminder at 9 PM if you haven't studied today"
           />
         </div>
       </div>
@@ -295,29 +368,68 @@ export default function SettingsPage() {
       {/* Data */}
       <div className="glass-card p-6">
         <h2 className="font-space font-semibold text-[#e8e8f0] mb-4">Data</h2>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
+        <div className="space-y-4">
+
+          {/* Export */}
+          <div className="flex flex-col gap-3">
             <div>
-              <p className="text-sm text-[#e8e8f0] font-medium">
-                Export Sessions
-              </p>
+              <p className="text-sm text-[#e8e8f0] font-medium">Export Sessions</p>
               <p className="text-xs text-[#958da1] mt-0.5">
-                Download all your sessions as a JSON file
+                {getFilteredSessions().length} session{getFilteredSessions().length !== 1 ? "s" : ""} will be exported
               </p>
             </div>
-            <button
-              onClick={handleExportSessions}
-              className="px-4 py-2 rounded-lg border border-[#252535] text-sm text-[#c4c4d4] hover:text-[#e8e8f0] hover:border-[#d2bbff]/30 transition-colors"
-            >
-              Export JSON
-            </button>
+
+            {/* Date range */}
+            <div className="flex flex-wrap gap-2">
+              {(["all","this-month","last-month","custom"] as ExportRange[]).map((r) => (
+                <button
+                  key={r}
+                  onClick={() => setExportRange(r)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${
+                    exportRange === r
+                      ? "bg-primary/20 text-[#d2bbff] border-primary/50"
+                      : "border-[#252535] text-[#958da1] hover:border-[#d2bbff]/30 hover:text-[#c4c4d4]"
+                  }`}
+                >
+                  {r === "all" ? "All Time" : r === "this-month" ? "This Month" : r === "last-month" ? "Last Month" : "Custom"}
+                </button>
+              ))}
+            </div>
+
+            {exportRange === "custom" && (
+              <div className="flex items-center gap-2">
+                <input type="date" value={exportFrom} onChange={(e) => setExportFrom(e.target.value)}
+                  className="flex-1 bg-[#0e0e11] border border-[#252535] rounded-lg px-3 py-1.5 text-xs text-[#e8e8f0] focus:outline-none focus:border-[#d2bbff]/40"
+                  style={{ colorScheme: "dark" }} />
+                <span className="text-[#958da1] text-xs">→</span>
+                <input type="date" value={exportTo} onChange={(e) => setExportTo(e.target.value)}
+                  className="flex-1 bg-[#0e0e11] border border-[#252535] rounded-lg px-3 py-1.5 text-xs text-[#e8e8f0] focus:outline-none focus:border-[#d2bbff]/40"
+                  style={{ colorScheme: "dark" }} />
+              </div>
+            )}
+
+            {/* Download buttons */}
+            <div className="flex flex-wrap gap-2">
+              <button onClick={handleExportCSV}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-[#252535] text-sm text-[#c4c4d4] hover:text-[#e8e8f0] hover:border-[#d2bbff]/30 transition-colors">
+                <span className="material-symbols-outlined text-[16px]">download</span> CSV
+              </button>
+              <button onClick={handleExportExcel}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-[#252535] text-sm text-[#c4c4d4] hover:text-[#e8e8f0] hover:border-[#d2bbff]/30 transition-colors">
+                <span className="material-symbols-outlined text-[16px]">table_view</span> Excel
+              </button>
+              <button onClick={handleExportJSON}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-[#252535] text-sm text-[#c4c4d4] hover:text-[#e8e8f0] hover:border-[#d2bbff]/30 transition-colors">
+                <span className="material-symbols-outlined text-[16px]">data_object</span> JSON
+              </button>
+            </div>
           </div>
 
           <div className="border-t border-[#252535] pt-3 flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-red-400">Reset All Data</p>
               <p className="text-xs text-[#958da1] mt-0.5">
-                Permanently delete all sessions, subjects, and goals
+                Permanently delete all sessions, focus areas, and goals
               </p>
             </div>
             <button

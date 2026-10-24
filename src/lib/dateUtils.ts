@@ -21,3 +21,15 @@ export function formatSmartDuration(minutes: number): string {
   const h = minutes / 60;
   return `${h % 1 === 0 ? h.toFixed(0) : h.toFixed(1)} hrs`;
 }
+
+/**
+ * Format a decimal-hours value for display.
+ * < 1 h  → "X min"  (e.g. 0.1 → "6 min")
+ * ≥ 1 h  → "Xh" or "X.Xh"  (e.g. 1.5 → "1.5h", 2.0 → "2h")
+ */
+export function formatHours(hours: number): string {
+  if (hours <= 0) return "0 min";
+  if (hours < 1) return `${Math.round(hours * 60)} min`;
+  const rounded = Math.round(hours * 10) / 10;
+  return rounded % 1 === 0 ? `${rounded}h` : `${rounded}h`;
+}

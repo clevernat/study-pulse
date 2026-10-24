@@ -10,6 +10,7 @@ import {
   subscribeTimerState,
 } from "@/lib/firebase/firestore";
 import { usePromptStore } from "@/store/promptStore";
+import { useReflectionStore } from "@/store/reflectionStore";
 import {
   playCompletionChime,
   playBreakEndChime,
@@ -19,9 +20,8 @@ import {
 import { localDateStr } from "@/lib/dateUtils";
 import type { Subject, Session } from "@/types";
 
-// Per-tab device id used to filter out our own Firestore writes from the
-// subscribeTimerState callback. Persisted to sessionStorage so a navigation
-// within the same tab keeps the same id.
+// Per-tab device id — persisted to sessionStorage so navigation within the
+// same tab keeps the same id, but a new phone tab gets a fresh one.
 const DEVICE_ID = (() => {
   if (typeof sessionStorage === "undefined") {
     return Math.random().toString(36).slice(2);
@@ -36,8 +36,6 @@ const DEVICE_ID = (() => {
   return id;
 })();
 
-// Always-mounted (lives inside ClientShell) so session saving + cross-device
-// sync continue to work even when the user is not on the /timer page.
 export default function TimerSync() {
   const { user } = useAuth();
   const state = useTimerStore((s) => s.state);
@@ -48,6 +46,11 @@ export default function TimerSync() {
   const selectedSubjectName = useTimerStore((s) => s.selectedSubjectName);
   const init = useTimerStore((s) => s.init);
   const hasHydrated = useTimerStore((s) => s._hasHydrated);
+  const ownerUid = useTimerStore((s) => s.ownerUid);
+  const setOwnerUid = useTimerStore((s) => s.setOwnerUid);
+  const setPreset = useTimerStore((s) => s.setPreset);
+  const setSubject = useTimerStore((s) => s.setSubject);
+  const pomodoroLength = useTimerStore((s) => s.pomodoroLength);
 
   const [subjects, setSubjects] = useState<Subject[]>([]);
 
@@ -61,9 +64,28 @@ export default function TimerSync() {
   const applyingRemoteRef = useRef<boolean>(false);
   const hasInitializedRef = useRef<boolean>(false);
 
+  // Tracks which device owns the current focus session.
+  // Only the owner calls saveSession() when focus ends, preventing duplicate
+  // sessions from multiple devices running the same timer simultaneously.
+  const sessionOwnerDeviceIdRef = useRef<string>(DEVICE_ID);
+
   useEffect(() => {
     requestNotificationPermission();
   }, []);
+
+  // When the logged-in user changes, reset the timer if the stored state
+  // belongs to a different account. Preserves state for the same user.
+  useEffect(() => {
+    if (!hasHydrated) return;
+    if (!user) return;
+    if (ownerUid && ownerUid !== user.uid) {
+      // Different account — wipe state so the new user starts fresh.
+      setPreset(pomodoroLength);
+      setSubject("", "Select a Focus Area");
+    }
+    setOwnerUid(user.uid);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid, hasHydrated]);
 
   useEffect(() => {
     if (!user) return;
@@ -71,8 +93,8 @@ export default function TimerSync() {
     return () => unsub();
   }, [user]);
 
-  // After Zustand hydrates from localStorage, sync the tracking refs to the
-  // real current state so the transition effects don't misfire on first render.
+  // After Zustand hydrates from localStorage, sync tracking refs to real state.
+  // Devices that own their localStorage state (e.g. page reload) keep ownership.
   useEffect(() => {
     if (!hasHydrated || hasInitializedRef.current) return;
     const s = useTimerStore.getState();
@@ -83,6 +105,9 @@ export default function TimerSync() {
       focusPausedMsRef.current = 0;
       sessionTotalSecondsRef.current = s.totalSeconds;
     }
+    // Assume we own the session from our own persisted state until Firestore
+    // tells us otherwise via subscribeTimerState below.
+    sessionOwnerDeviceIdRef.current = DEVICE_ID;
     hasInitializedRef.current = true;
   }, [hasHydrated]);
 
@@ -100,6 +125,8 @@ export default function TimerSync() {
         focusStartMsRef.current = Date.now();
         focusPausedMsRef.current = 0;
         focusPauseStartMsRef.current = null;
+        // This device started focus locally — it owns the session.
+        sessionOwnerDeviceIdRef.current = DEVICE_ID;
       } else if (state === "paused" && prevStateRef.current === "running") {
         focusPauseStartMsRef.current = Date.now();
       }
@@ -110,13 +137,23 @@ export default function TimerSync() {
 
   const saveSession = useCallback(async () => {
     if (!user) return;
-    const currentSubject = subjects.find((s) => s.id === selectedSubjectId);
+    // Only the device that started the focus session saves it.
+    // This prevents duplicate sessions when multiple devices run the same timer.
+    if (sessionOwnerDeviceIdRef.current !== DEVICE_ID) return;
+
+    // Use selectedSubjectId directly from the store rather than looking up
+    // subjects[], which may not have loaded yet on a secondary device.
+    const storeState = useTimerStore.getState();
+    const subjectId = storeState.selectedSubjectId;
+    const subjectName = storeState.selectedSubjectName;
+    const currentSubject = subjects.find((s) => s.id === subjectId);
+
     const now = new Date();
     const plannedSecs = sessionTotalSecondsRef.current;
+    const pausedMs = focusPausedMsRef.current;
     const totalElapsedMs = focusStartMsRef.current
       ? Date.now() - focusStartMsRef.current
       : plannedSecs * 1000;
-    const pausedMs = focusPausedMsRef.current;
     const studiedSecs = Math.min(
       Math.max(0, (totalElapsedMs - pausedMs) / 1000),
       plannedSecs
@@ -127,26 +164,37 @@ export default function TimerSync() {
         ? Math.min(100, Math.round((studiedSecs / plannedSecs) * 100))
         : 100;
 
+    // Derive start time from effective wall-clock moment the user actually
+    // started studying: original start timestamp + all time spent paused.
+    // This prevents a stale "17:40" start appearing when a session was paused
+    // overnight and completed the next morning.
+    const effectiveStartMs =
+      focusStartMsRef.current !== null ? focusStartMsRef.current + pausedMs : null;
+    const startTime = effectiveStartMs
+      ? new Date(effectiveStartMs).toTimeString().slice(0, 5)
+      : now.toTimeString().slice(0, 5);
+
     const session: Omit<Session, "id"> = {
       uid: user.uid,
-      subjectId: currentSubject?.id ?? "unknown",
-      subjectName: currentSubject?.name ?? selectedSubjectName,
+      subjectId: subjectId || "unknown",
+      subjectName: currentSubject?.name ?? subjectName,
       subjectColor: currentSubject?.color ?? "violet",
       durationMinutes,
       focusScore,
       pomodoroCount: 1,
+      sessionType: storeState.sessionType ?? "Deep Work",
       date: localDateStr(now),
-      startTime: startTimeRef.current ?? now.toTimeString().slice(0, 5),
+      startTime,
       endTime: now.toTimeString().slice(0, 5),
       notes: "",
     };
     try {
-      await addSession(user.uid, session);
-      // Signal the completion toast — only meaningful when a real subject
-      // was attached, otherwise there are no matching tasks to suggest.
+      const sessionId = await addSession(user.uid, session);
       if (currentSubject?.id) {
         usePromptStore.getState().setPending(currentSubject.id);
       }
+      // Trigger reflection journal (only on the device that owns the session)
+      useReflectionStore.getState().open(sessionId, session.subjectName);
     } catch (err) {
       console.error("Failed to save session:", err);
     }
@@ -171,6 +219,7 @@ export default function TimerSync() {
       selectedSubjectName: s.selectedSubjectName,
       updatedAt: Date.now(),
       deviceId: DEVICE_ID,
+      sessionOwnerDeviceId: sessionOwnerDeviceIdRef.current,
     });
   }, [user]);
 
@@ -187,6 +236,13 @@ export default function TimerSync() {
         return;
       }
       if (remote.deviceId === DEVICE_ID) return;
+
+      // Restore session ownership from Firestore so we know whether this
+      // device should save sessions for the current focus period.
+      if (remote.sessionOwnerDeviceId) {
+        sessionOwnerDeviceIdRef.current = remote.sessionOwnerDeviceId;
+      }
+
       applyingRemoteRef.current = true;
       useTimerStore.setState({
         state: remote.timerState,
@@ -208,8 +264,6 @@ export default function TimerSync() {
   }, [user, init]);
 
   // Auto-save to Firestore on any user-meaningful state change.
-  // Declared BEFORE the mode-transition effect so it runs first and can skip
-  // when applyingRemoteRef is still true (it gets reset by the next effect).
   useEffect(() => {
     if (!hasInitializedRef.current) return;
     if (applyingRemoteRef.current) return;
@@ -221,24 +275,33 @@ export default function TimerSync() {
   useEffect(() => {
     const prevMode = prevModeRef.current;
 
+    // Read notification prefs from localStorage (set in Settings page)
+    const sessionNotifOn = typeof window !== "undefined"
+      ? localStorage.getItem("sp-notif-session") !== "false"
+      : true;
+
     if (prevMode === "focus" && (mode === "short-break" || mode === "long-break")) {
       if (!applyingRemoteRef.current) {
         saveSession();
         playCompletionChime();
-        sendNotification(
-          "StudyPulse — Focus Complete! 🎉",
-          `Great work${
-            selectedSubjectName && selectedSubjectName !== "Select a Subject"
-              ? ` on ${selectedSubjectName}`
-              : ""
-          }! Break time started.`
-        );
+        if (sessionNotifOn) {
+          sendNotification(
+            "StudyPulse — Focus Complete! 🎉",
+            `Great work${
+              selectedSubjectName && selectedSubjectName !== "Select a Focus Area"
+                ? ` on ${selectedSubjectName}`
+                : ""
+            }! Break time started.`
+          );
+        }
       }
     } else if (
       (prevMode === "short-break" || prevMode === "long-break") &&
       mode === "focus"
     ) {
       if (!applyingRemoteRef.current) {
+        // This device auto-cycled break→focus locally — it owns the next session too.
+        sessionOwnerDeviceIdRef.current = DEVICE_ID;
         startTimeRef.current = new Date().toTimeString().slice(0, 5);
         sessionTotalSecondsRef.current = totalSeconds;
         focusStartMsRef.current = Date.now();

@@ -12,7 +12,9 @@ import TasksPopover from "./TasksPopover";
 const pageTitles: Record<string, string> = {
   "/": "Dashboard",
   "/dashboard": "Dashboard",
-  "/subjects": "Subjects",
+  "/today": "Today's Plan",
+  "/tasks": "Task Planner",
+  "/subjects": "Focus Areas",
   "/sessions": "Study Sessions",
   "/timer": "Focus Timer",
   "/goals": "Study Goals",

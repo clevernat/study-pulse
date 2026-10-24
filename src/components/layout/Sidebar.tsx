@@ -5,7 +5,9 @@ import { useAuth } from "@/context/AuthContext";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: "dashboard" },
-  { href: "/subjects",  label: "Subjects",  icon: "subject" },
+  { href: "/today",     label: "Today",     icon: "today" },
+  { href: "/tasks",     label: "Tasks",     icon: "task_alt" },
+  { href: "/subjects",  label: "Focus Areas",  icon: "category" },
   { href: "/sessions",  label: "Sessions",  icon: "history" },
   { href: "/timer",     label: "Timer",     icon: "timer" },
   { href: "/goals",     label: "Goals",     icon: "track_changes" },
@@ -16,7 +18,7 @@ const navItems = [
 // Bottom nav — 5 primary items. Settings reachable via desktop sidebar.
 const bottomNavItems = [
   { href: "/dashboard", label: "Home",     icon: "dashboard" },
-  { href: "/subjects",  label: "Subjects", icon: "subject" },
+  { href: "/subjects",  label: "Focus Areas", icon: "category" },
   { href: "/timer",     label: "Timer",    icon: "timer" },
   { href: "/sessions",  label: "Sessions", icon: "history" },
   { href: "/goals",     label: "Goals",    icon: "track_changes" },

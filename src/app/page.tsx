@@ -475,14 +475,14 @@ const features = [
   {
     icon: "insights",
     title: "Smart Analytics",
-    desc: "Deep-dive reports on your study patterns. Know which subjects need more attention.",
+    desc: "Deep-dive reports on your focus patterns. Know which areas need more attention.",
     color: "#d2bbff",
     bg: "rgba(210,187,255,0.1)",
   },
   {
     icon: "subject",
-    title: "Subject Management",
-    desc: "Organize your coursework by subject. Track hours logged and focus scores per topic.",
+    title: "Focus Area Management",
+    desc: "Organize your work by focus area. Track hours logged and focus scores per topic.",
     color: "#40efb7",
     bg: "rgba(64,239,183,0.1)",
   },
@@ -581,8 +581,8 @@ const steps = [
   {
     num: "01",
     icon: "add_circle",
-    title: "Create Your Subjects",
-    desc: "Add your courses and subjects. Assign colors and categories to organize your academic world.",
+    title: "Create Your Focus Areas",
+    desc: "Add your projects and focus areas. Assign colors and categories to keep everything organized.",
   },
   {
     num: "02",
