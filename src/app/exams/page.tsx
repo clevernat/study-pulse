@@ -6,7 +6,9 @@ import { examProgress, upcomingExams } from "@/lib/exams";
 import ExamModal from "@/components/planner/ExamModal";
 import ExamCard from "@/components/planner/ExamCard";
 import { EmptyState, primaryBtnCls } from "@/components/ui/Field";
-import type { Exam, Subject, Task, Topic } from "@/types";
+import type { ClassItem, Exam, Subject, Task, Topic } from "@/types";
+import { useTimetable } from "@/lib/firebase/useTimetable";
+import { findClashes } from "@/lib/timetable";
 
 export default function ExamsPage() {
   const { items: exams, uid } = useCollection<Exam>("exams");
@@ -16,12 +18,21 @@ export default function ExamsPage() {
   const [editing, setEditing] = useState<Exam | "new" | null>(null);
   const [showPast, setShowPast] = useState(false);
   const today = localDateStr();
+  const { items: classes } = useCollection<ClassItem>("classes");
+  const { settings } = useTimetable();
+  const clashes = findClashes(exams.filter((e) => e.date >= today), classes, settings);
+  const clashText = (e: Exam) => {
+    const c = clashes.find((x) => x.exam.id === e.id);
+    if (!c) return undefined;
+    const sub = subjects.find((s) => s.id === c.occurrence.subjectId);
+    return `Clashes with ${sub?.name ?? "a class"} ${c.occurrence.start}–${c.occurrence.end}`;
+  };
 
   const upcoming = upcomingExams(exams, today);
   const past = exams.filter((e) => e.date < today).sort((a, b) => b.date.localeCompare(a.date));
   const card = (e: Exam) => (
     <ExamCard key={e.id} exam={e} subject={subjects.find((s) => s.id === e.subjectId)} today={today}
-      progress={examProgress(e.id, topics, tasks)} onEdit={() => setEditing(e)} />
+      progress={examProgress(e.id, topics, tasks)} onEdit={() => setEditing(e)} warning={clashText(e)} />
   );
 
   return (

@@ -165,3 +165,41 @@ export interface SubjectDistribution {
   percentage: number;
   hours: number;
 }
+
+/** One weekly time slot of a class. `week` limits it to one week of an A/B (1–4 week) rotation. */
+export interface ClassSlot {
+  /** 0 = Sunday … 6 = Saturday */
+  weekday: number;
+  start: string; // "HH:MM"
+  end: string;   // "HH:MM"
+  week?: number;
+}
+
+export interface ClassItem {
+  id: string;
+  subjectId: string;
+  /** Optional extra name, e.g. "Lab" or "Lecture" */
+  title?: string;
+  room?: string;
+  teacher?: string;
+  slots: ClassSlot[];
+  reminderMinutesBefore?: number;
+  createdAt: number;
+}
+
+export interface Holiday {
+  name: string;
+  start: string; // "YYYY-MM-DD"
+  end: string;   // inclusive
+}
+
+/** Stored at users/{uid}/preferences/timetable */
+export interface TimetableSettings {
+  termStart?: string;
+  termEnd?: string;
+  /** 1 = every week the same; 2 = A/B weeks; up to 4 */
+  rotationWeeks: number;
+  /** A day in the week that counts as week 1 (A) */
+  rotationStartDate?: string;
+  holidays: Holiday[];
+}

@@ -18,6 +18,7 @@ export const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
       { href: "/today", label: "Today", icon: "today" },
       { href: "/tasks", label: "Tasks", icon: "task_alt" },
       { href: "/exams", label: "Exams", icon: "event_upcoming" },
+      { href: "/timetable", label: "Timetable", icon: "calendar_view_week" },
     ],
   },
   {

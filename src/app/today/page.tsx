@@ -8,6 +8,9 @@ import { getColor } from "@/lib/colorPalette";
 import { localDateStr, formatSmartDuration } from "@/lib/dateUtils";
 import type { Task, Subject, Session, Goal, Exam } from "@/types";
 import { useCollection } from "@/lib/firebase/useCollection";
+import { useTimetable } from "@/lib/firebase/useTimetable";
+import { classOccurrences, holidayOn } from "@/lib/timetable";
+import type { ClassItem } from "@/types";
 import { upcomingExams, daysUntil, countdownLabel, urgency, URGENCY_CLASSES } from "@/lib/exams";
 
 const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 };
@@ -32,6 +35,10 @@ export default function TodayPage() {
 
   const today = localDateStr();
   const { items: exams } = useCollection<Exam>("exams");
+  const { items: classes } = useCollection<ClassItem>("classes");
+  const { settings: timetable } = useTimetable();
+  const classesToday = classOccurrences(classes, timetable, today, today);
+  const holidayToday = holidayOn(today, timetable.holidays);
   const examsSoon = upcomingExams(exams, today).filter((e) => daysUntil(e.date, today) <= 14);
 
   // ── Derived data ────────────────────────────────────────────────────────────
@@ -115,6 +122,25 @@ export default function TodayPage() {
           </div>
         </div>
       </div>
+
+      {/* Classes today (from the timetable) */}
+      {(classesToday.length > 0 || holidayToday) && (
+        <section data-testid="today-classes" className="flex flex-col gap-2">
+          <h2 className="text-xs uppercase tracking-widest text-on-surface-variant font-bold">Classes today</h2>
+          {holidayToday && <p className="text-sm text-tertiary">{holidayToday.name}: no classes.</p>}
+          {classesToday.map((o, i) => {
+            const sub = subjects.find((x) => x.id === o.subjectId);
+            return (
+              <div key={i} className="glass-card p-3 flex items-center gap-3">
+                <span className="font-jetbrains text-xs text-on-surface-variant w-[88px]">{o.start}–{o.end}</span>
+                <span className="w-2 h-2 rounded-full" style={{ background: getColor(sub?.color ?? "violet").dot }} />
+                <span className="text-sm text-on-surface flex-1 truncate">{sub?.name ?? "Class"}{o.title ? ` · ${o.title}` : ""}</span>
+                {o.room && <span className="text-[11px] text-on-surface-variant">Room {o.room}</span>}
+              </div>
+            );
+          })}
+        </section>
+      )}
 
       {/* Exams in the next 14 days */}
       {examsSoon.length > 0 && (

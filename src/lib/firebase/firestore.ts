@@ -278,3 +278,12 @@ export async function updateItem<T>(uid: string, col: string, id: string, update
 export async function deleteItem(uid: string, col: string, id: string): Promise<void> {
   await deleteDoc(doc(db, "users", uid, col, id));
 }
+
+/** Live single document users/{uid}/{col}/{id} (null when missing). */
+export function subscribeDocument<T>(uid: string, col: string, id: string, cb: (data: T | null) => void): () => void {
+  return onSnapshot(doc(db, "users", uid, col, id), (snap) => cb(snap.exists() ? (snap.data() as T) : null));
+}
+
+export async function saveDocument<T extends object>(uid: string, col: string, id: string, data: T): Promise<void> {
+  await setDoc(doc(db, "users", uid, col, id), data);
+}
