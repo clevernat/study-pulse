@@ -30,7 +30,7 @@ export default function TopicList({ uid, subjectId, topics, exams, barColor }: P
         <h2 className="font-grotesk font-bold text-lg text-on-surface">Topics</h2>
         <span data-testid="topic-progress" className="text-sm font-jetbrains text-on-surface-variant">{prog.done}/{prog.total} · {prog.pct}%</span>
       </div>
-      <div className="h-2 rounded-full bg-[#1a1a24] overflow-hidden"><div className="h-full rounded-full transition-all" style={{ width: `${prog.pct}%`, background: barColor }} /></div>
+      <div className="h-2 rounded-full bg-surface-container overflow-hidden"><div className="h-full rounded-full transition-all" style={{ width: `${prog.pct}%`, background: barColor }} /></div>
 
       <form onSubmit={add} className="flex gap-2">
         <input data-testid="topic-input" className={inputCls} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Add a topic, e.g. Cell division" maxLength={200} />

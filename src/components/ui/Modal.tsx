@@ -26,7 +26,7 @@ export default function Modal({ title, onClose, children, testId, wide }: ModalP
         aria-label={title}
         data-testid={testId}
         onClick={(e) => e.stopPropagation()}
-        className={`relative bg-[#12121a] border border-[#252535] rounded-t-2xl sm:rounded-2xl w-full ${wide ? "sm:max-w-2xl" : "sm:max-w-md"} max-h-[92vh] flex flex-col shadow-2xl`}
+        className={`relative bg-card border border-outline-variant rounded-t-2xl sm:rounded-2xl w-full ${wide ? "sm:max-w-2xl" : "sm:max-w-md"} max-h-[92vh] flex flex-col shadow-2xl`}
       >
         <div className="flex items-center justify-between px-6 pt-5 pb-3">
           <h2 className="font-grotesk font-bold text-xl text-on-surface">{title}</h2>

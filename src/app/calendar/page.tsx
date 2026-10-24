@@ -34,7 +34,7 @@ function EventChip({ e, subjects, onOpen, compact }: { e: CalEvent; subjects: Su
   const label = e.kind === "class" ? [subject?.name, e.title !== "Class" ? e.title : ""].filter(Boolean).join(" · ") || e.title : e.title;
   const style = e.kind === "exam"
     ? { background: "rgba(255,180,171,0.12)", borderColor: "#ffb4ab66" }
-    : e.kind === "block" ? { background: "rgba(124,58,237,0.18)", borderColor: `${c.dot}66` }
+    : e.kind === "block" ? { background: "rgba(94, 106, 210,0.18)", borderColor: `${c.dot}66` }
     : { background: c.bg, borderColor: `${c.dot}66` };
   return (
     <button
@@ -141,7 +141,7 @@ function MonthView({ anchor, events, subjects, today, onOpen, onDay }: {
           return (
             <div key={d} role="button" tabIndex={0} data-testid="cal-month-day" data-date={d}
               onClick={() => onDay(d)} onKeyDown={(e) => e.key === "Enter" && onDay(d)}
-              className={`bg-[#12121a] min-h-[64px] sm:min-h-[96px] p-1 flex flex-col gap-0.5 cursor-pointer hover:bg-surface-container ${d.slice(0, 7) !== month ? "opacity-40" : ""}`}>
+              className={`bg-card min-h-[64px] sm:min-h-[96px] p-1 flex flex-col gap-0.5 cursor-pointer hover:bg-surface-container ${d.slice(0, 7) !== month ? "opacity-40" : ""}`}>
               <span className={`text-[11px] font-jetbrains self-end px-1 rounded ${d === today ? "bg-primary text-on-primary" : "text-on-surface-variant"}`}>{Number(d.slice(8))}</span>
               <div className="hidden sm:flex flex-col gap-0.5">
                 {list.slice(0, 3).map((e) => <EventChip key={e.key} e={e} subjects={subjects} onOpen={onOpen} compact />)}

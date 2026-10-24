@@ -10,8 +10,8 @@
 import { useTimerStore, formatTime } from "@/store/timerStore";
 
 const MODE_COLORS: Record<string, string> = {
-  focus:       "#d2bbff",
-  "short-break": "#40efb7",
+  focus:       "#a7b2f7",
+  "short-break": "#5ed8a9",
   "long-break":  "#ffb95f",
 };
 
@@ -96,7 +96,7 @@ export async function togglePiPTimer(): Promise<void> {
   Object.assign(timeEl.style, {
     fontSize: "62px",
     fontWeight: "800",
-    color: "#e8e8f0",
+    color: "#eeeef0",
     letterSpacing: "-3px",
     lineHeight: "1",
     fontVariantNumeric: "tabular-nums",
@@ -104,7 +104,7 @@ export async function togglePiPTimer(): Promise<void> {
 
   Object.assign(subjEl.style, {
     fontSize: "11px",
-    color: "#7c3aed",
+    color: "#5e6ad2",
     maxWidth: "230px",
     textAlign: "center",
     overflow: "hidden",
@@ -116,7 +116,7 @@ export async function togglePiPTimer(): Promise<void> {
   Object.assign(barWrap.style, {
     width: "180px",
     height: "3px",
-    background: "#1e1e2e",
+    background: "#16171b",
     borderRadius: "99px",
     overflow: "hidden",
     marginTop: "2px",
@@ -150,9 +150,9 @@ export async function togglePiPTimer(): Promise<void> {
 
   Object.assign(playBtn.style, {
     ...btnBase,
-    background: "rgba(124,58,237,0.25)",
-    color: "#d2bbff",
-    borderColor: "rgba(124,58,237,0.5)",
+    background: "rgba(94, 106, 210,0.25)",
+    color: "#a7b2f7",
+    borderColor: "rgba(94, 106, 210,0.5)",
   } as Partial<CSSStyleDeclaration>);
 
   barWrap.appendChild(barFill);
@@ -168,7 +168,7 @@ export async function togglePiPTimer(): Promise<void> {
   // ── Live update loop ────────────────────────────────────────────────────────
   const render = () => {
     const s = useTimerStore.getState();
-    const color = MODE_COLORS[s.mode] ?? "#d2bbff";
+    const color = MODE_COLORS[s.mode] ?? "#a7b2f7";
     const pct   = s.totalSeconds > 0 ? (s.secondsRemaining / s.totalSeconds) * 100 : 100;
     const isPaused = s.state === "paused";
 
@@ -176,7 +176,7 @@ export async function togglePiPTimer(): Promise<void> {
     modeEl.textContent   = (MODE_LABELS[s.mode] ?? "FOCUS") + (isPaused ? " · PAUSED" : "");
 
     timeEl.textContent   = formatTime(s.secondsRemaining);
-    timeEl.style.color   = isPaused ? "#4a4a5a" : "#e8e8f0";
+    timeEl.style.color   = isPaused ? "#4a4a5a" : "#eeeef0";
 
     const sub = s.selectedSubjectName !== "Select a Subject" ? s.selectedSubjectName : "";
     subjEl.textContent   = sub;
@@ -187,9 +187,9 @@ export async function togglePiPTimer(): Promise<void> {
 
     playBtn.textContent  = s.state === "running" ? "⏸" : "▶";
     const isRunning = s.state === "running";
-    playBtn.style.background    = isRunning ? "rgba(124,58,237,0.25)" : "rgba(64,239,183,0.2)";
-    playBtn.style.color         = isRunning ? "#d2bbff" : "#40efb7";
-    playBtn.style.borderColor   = isRunning ? "rgba(124,58,237,0.5)" : "rgba(64,239,183,0.4)";
+    playBtn.style.background    = isRunning ? "rgba(94, 106, 210,0.25)" : "rgba(94, 216, 169,0.2)";
+    playBtn.style.color         = isRunning ? "#a7b2f7" : "#5ed8a9";
+    playBtn.style.borderColor   = isRunning ? "rgba(94, 106, 210,0.5)" : "rgba(94, 216, 169,0.4)";
   };
 
   render();

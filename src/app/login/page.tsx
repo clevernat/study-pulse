@@ -75,16 +75,16 @@ export default function LoginPage() {
       {/* Background decoration */}
       <div
         className="absolute -left-48 -top-48 w-[600px] h-[600px] rounded-full pointer-events-none"
-        style={{ background: "radial-gradient(circle, rgba(124,58,237,0.07) 0%, transparent 70%)" }}
+        style={{ background: "radial-gradient(circle, rgba(94, 106, 210,0.07) 0%, transparent 70%)" }}
       />
       <div
         className="absolute -right-48 -bottom-48 w-[500px] h-[500px] rounded-full pointer-events-none"
-        style={{ background: "radial-gradient(circle, rgba(64,239,183,0.05) 0%, transparent 70%)" }}
+        style={{ background: "radial-gradient(circle, rgba(94, 216, 169,0.05) 0%, transparent 70%)" }}
       />
 
       <div className="w-full max-w-md relative z-10">
         {/* Card */}
-        <div className="bg-[#12121a] border border-[#252535] rounded-2xl p-8">
+        <div className="bg-card border border-outline-variant rounded-2xl p-8">
           {/* Logo */}
           <div className="text-center mb-8">
             <Link href="/" className="inline-flex flex-col items-center group">
@@ -98,7 +98,7 @@ export default function LoginPage() {
           </div>
 
           {/* Tab switcher */}
-          <div className="flex bg-[#0e0e11] rounded-xl p-1 mb-6">
+          <div className="flex bg-surface-container-lowest rounded-xl p-1 mb-6">
             <button
               type="button"
               onClick={() => { setMode("signin"); setError(""); }}
@@ -137,7 +137,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
-                className="bg-[#0e0e11] border border-outline-variant rounded-lg px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm placeholder:text-on-surface-variant/40"
+                className="bg-surface-container-lowest border border-outline-variant rounded-lg px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm placeholder:text-on-surface-variant/40"
               />
             </div>
             <div>
@@ -152,7 +152,7 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={mode === "signup" ? "Min. 6 characters" : "Enter your password"}
                 required
-                className="bg-[#0e0e11] border border-outline-variant rounded-lg px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm placeholder:text-on-surface-variant/40"
+                className="bg-surface-container-lowest border border-outline-variant rounded-lg px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm placeholder:text-on-surface-variant/40"
               />
             </div>
 

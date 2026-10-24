@@ -56,7 +56,7 @@ export default function HabitModal({ uid, habit, onClose }: { uid: string; habit
         </div>
         <div className="flex flex-wrap gap-2" aria-label="Colour">
           {Object.entries(COLOR_PALETTE).slice(0, 10).map(([k, c]) => (
-            <button key={k} type="button" aria-label={c.label} onClick={() => setColor(k)} className={`w-6 h-6 rounded-full ${color === k ? "ring-2 ring-offset-2 ring-offset-[#12121a] ring-white" : ""}`} style={{ background: c.dot }} />
+            <button key={k} type="button" aria-label={c.label} onClick={() => setColor(k)} className={`w-6 h-6 rounded-full ${color === k ? "ring-2 ring-offset-2 ring-offset-card ring-white" : ""}`} style={{ background: c.dot }} />
           ))}
         </div>
         <Field label="How often">

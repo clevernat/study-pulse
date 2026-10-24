@@ -79,7 +79,7 @@ export default function LogSessionModal({ onClose, onSaved }: Props) {
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
-        className="relative bg-[#12121a] border border-[#252535] rounded-2xl p-8 w-full max-w-md shadow-2xl"
+        className="relative bg-card border border-outline-variant rounded-2xl p-8 w-full max-w-md shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-6">
@@ -104,7 +104,7 @@ export default function LogSessionModal({ onClose, onSaved }: Props) {
           <div>
             <label className="text-on-surface-variant text-sm font-inter mb-1.5 block">Subject *</label>
             {subjects.length === 0 ? (
-              <p className="text-on-surface-variant text-sm font-inter bg-[#0e0e11] border border-outline-variant rounded-xl px-4 py-3">
+              <p className="text-on-surface-variant text-sm font-inter bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-3">
                 No subjects yet — add one in Subjects first
               </p>
             ) : (
@@ -145,7 +145,7 @@ export default function LogSessionModal({ onClose, onSaved }: Props) {
                   onChange={(e) => setHours(e.target.value)}
                   min="0"
                   max="12"
-                  className="bg-[#0e0e11] border border-outline-variant rounded-xl px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm text-center"
+                  className="bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm text-center"
                 />
                 <p className="text-center text-xs text-on-surface-variant mt-1">hours</p>
               </div>
@@ -157,12 +157,12 @@ export default function LogSessionModal({ onClose, onSaved }: Props) {
                   onChange={(e) => setMinutes(e.target.value)}
                   min="0"
                   max="59"
-                  className="bg-[#0e0e11] border border-outline-variant rounded-xl px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm text-center"
+                  className="bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm text-center"
                 />
                 <p className="text-center text-xs text-on-surface-variant mt-1">minutes</p>
               </div>
               <div className="flex-1">
-                <div className="bg-[#0e0e11] border border-outline-variant rounded-xl px-4 py-3 text-primary font-jetbrains text-sm text-center">
+                <div className="bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-3 text-primary font-jetbrains text-sm text-center">
                   {totalMinutes}m
                 </div>
                 <p className="text-center text-xs text-on-surface-variant mt-1">total</p>
@@ -177,7 +177,7 @@ export default function LogSessionModal({ onClose, onSaved }: Props) {
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="bg-[#0e0e11] border border-outline-variant rounded-xl px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm"
+              className="bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm"
               style={{ colorScheme: "dark" }}
             />
           </div>
@@ -212,7 +212,7 @@ export default function LogSessionModal({ onClose, onSaved }: Props) {
               placeholder="What did you cover? Any blockers?"
               rows={2}
               maxLength={200}
-              className="bg-[#0e0e11] border border-outline-variant rounded-xl px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm placeholder:text-on-surface-variant/40 resize-none"
+              className="bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm placeholder:text-on-surface-variant/40 resize-none"
             />
           </div>
 

@@ -134,7 +134,7 @@ function SubjectModal({ onClose, onSave, uid, editing }: SubjectModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
       <div
-        className="relative bg-[#12121a] border border-[#252535] rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col"
+        className="relative bg-card border border-outline-variant rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -167,7 +167,7 @@ function SubjectModal({ onClose, onSave, uid, editing }: SubjectModalProps) {
               onChange={(e) => { setName(e.target.value); if (e.target.value.trim()) setNameError(false); }}
               placeholder="e.g. Calculus II"
               maxLength={40}
-              className={`bg-[#0e0e11] border rounded-xl px-4 py-3 text-on-surface w-full focus:outline-none transition-colors font-inter text-sm placeholder:text-on-surface-variant/40 ${
+              className={`bg-surface-container-lowest border rounded-xl px-4 py-3 text-on-surface w-full focus:outline-none transition-colors font-inter text-sm placeholder:text-on-surface-variant/40 ${
                 nameError ? "border-error focus:border-error" : "border-outline-variant focus:border-primary"
               }`}
               autoFocus
@@ -201,7 +201,7 @@ function SubjectModal({ onClose, onSave, uid, editing }: SubjectModalProps) {
                 onChange={(e) => setCustomCategory(e.target.value)}
                 placeholder="Type your category name…"
                 maxLength={20}
-                className="mt-3 bg-[#0e0e11] border border-primary/40 rounded-xl px-4 py-2.5 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm placeholder:text-on-surface-variant/40"
+                className="mt-3 bg-surface-container-lowest border border-primary/40 rounded-xl px-4 py-2.5 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm placeholder:text-on-surface-variant/40"
               />
             )}
           </div>

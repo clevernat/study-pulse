@@ -22,7 +22,7 @@ export default function InstallCard() {
 
   return (
     <section className="glass-card p-6 flex flex-col gap-3" data-testid="install-card">
-      <h2 className="font-space font-semibold text-[#e8e8f0]">Install the app</h2>
+      <h2 className="font-space font-semibold text-on-surface">Install the app</h2>
       {installed ? (
         <p data-testid="install-status" className="text-sm text-secondary">StudyPulse is installed on this device.</p>
       ) : prompt ? (

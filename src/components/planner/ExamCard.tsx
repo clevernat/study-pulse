@@ -31,7 +31,7 @@ export default function ExamCard({ exam, subject, today, progress, onEdit, warni
         {progress.total > 0 && (
           <div className="mt-1 text-[11px] text-on-surface-variant" data-testid="exam-progress">
             Revision {progress.done}/{progress.total} ({progress.pct}%)
-            <div className="h-1.5 mt-1 rounded-full bg-[#1a1a24] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${progress.pct}%`, background: c.bar }} /></div>
+            <div className="h-1.5 mt-1 rounded-full bg-surface-container overflow-hidden"><div className="h-full rounded-full" style={{ width: `${progress.pct}%`, background: c.bar }} /></div>
           </div>
         )}
       </div>

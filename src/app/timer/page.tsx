@@ -63,7 +63,7 @@ function DurationCol({ label, color, presets, value, draft, setDraft, onApply }:
           </button>
         ))}
       </div>
-      <div className="flex items-center gap-1 bg-[#0e0e11] border border-outline-variant rounded-lg px-3 py-2">
+      <div className="flex items-center gap-1 bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2">
         <input
           type="number"
           min={1}
@@ -234,34 +234,34 @@ function TimerPageInner() {
   // ── Mode-specific visual theme ────────────────────────────────────────────
   const modeTheme = {
     focus: {
-      gradStart:   "#7c3aed",
-      gradEnd:     "#d2bbff",
-      glow:        "rgba(124,58,237,0.22)",
-      labelColor:  "#d2bbff",
-      dotColor:    "#7c3aed",
-      btnBg:       "rgba(124,58,237,0.25)",
-      btnBorder:   "rgba(124,58,237,0.6)",
-      btnShadow:   "0 0 28px rgba(124,58,237,0.45)",
-      btnText:     "#d2bbff",
+      gradStart:   "#5e6ad2",
+      gradEnd:     "#a7b2f7",
+      glow:        "rgba(94, 106, 210,0.22)",
+      labelColor:  "#a7b2f7",
+      dotColor:    "#5e6ad2",
+      btnBg:       "rgba(94, 106, 210,0.25)",
+      btnBorder:   "rgba(94, 106, 210,0.6)",
+      btnShadow:   "0 0 28px rgba(94, 106, 210,0.45)",
+      btnText:     "#a7b2f7",
       trackColor:  "#2a2a3d",
       badge:       "FOCUS",
-      badgeBg:     "rgba(124,58,237,0.15)",
-      badgeBorder: "rgba(124,58,237,0.35)",
+      badgeBg:     "rgba(94, 106, 210,0.15)",
+      badgeBorder: "rgba(94, 106, 210,0.35)",
     },
     "short-break": {
-      gradStart:   "#00d29c",
-      gradEnd:     "#40efb7",
-      glow:        "rgba(64,239,183,0.2)",
-      labelColor:  "#40efb7",
-      dotColor:    "#40efb7",
-      btnBg:       "rgba(64,239,183,0.18)",
-      btnBorder:   "rgba(64,239,183,0.55)",
-      btnShadow:   "0 0 28px rgba(64,239,183,0.35)",
-      btnText:     "#40efb7",
+      gradStart:   "#3fbe90",
+      gradEnd:     "#5ed8a9",
+      glow:        "rgba(94, 216, 169,0.2)",
+      labelColor:  "#5ed8a9",
+      dotColor:    "#5ed8a9",
+      btnBg:       "rgba(94, 216, 169,0.18)",
+      btnBorder:   "rgba(94, 216, 169,0.55)",
+      btnShadow:   "0 0 28px rgba(94, 216, 169,0.35)",
+      btnText:     "#5ed8a9",
       trackColor:  "#1a2e28",
       badge:       "SHORT BREAK",
-      badgeBg:     "rgba(64,239,183,0.12)",
-      badgeBorder: "rgba(64,239,183,0.3)",
+      badgeBg:     "rgba(94, 216, 169,0.12)",
+      badgeBorder: "rgba(94, 216, 169,0.3)",
     },
     "long-break": {
       gradStart:   "#f97316",
@@ -503,14 +503,14 @@ function TimerPageInner() {
       })()}
 
       {/* Duration Controls */}
-      <div className="w-full bg-[#12121a] border border-[#252535] rounded-2xl overflow-hidden">
-        <div className="grid grid-cols-3 divide-x divide-[#252535]">
+      <div className="w-full bg-card border border-outline-variant rounded-2xl overflow-hidden">
+        <div className="grid grid-cols-3 divide-x divide-outline-variant">
           <DurationCol label="Focus"       color="text-primary"   presets={[25,45,60]}  value={pomodoroLength} draft={draftFocus} setDraft={setDraftFocus} onApply={(v)=>setDurations(v,shortBreak,longBreak)} />
           <DurationCol label="Short Break" color="text-secondary" presets={[5,10,15]}   value={shortBreak}     draft={draftShort} setDraft={setDraftShort} onApply={(v)=>setDurations(pomodoroLength,v,longBreak)} />
           <DurationCol label="Long Break"  color="text-tertiary"  presets={[15,20,30]}  value={longBreak}      draft={draftLong}  setDraft={setDraftLong}  onApply={(v)=>setDurations(pomodoroLength,shortBreak,v)} />
         </div>
         {/* Rounds before long break */}
-        <div className="border-t border-[#252535] px-4 py-3 flex items-center gap-3">
+        <div className="border-t border-outline-variant px-4 py-3 flex items-center gap-3">
           <span className="text-xs font-semibold text-on-surface-variant flex-1">
             Rounds before long break
           </span>
@@ -558,7 +558,7 @@ function TimerPageInner() {
             )}
           </div>
           <div className="h-1.5 rounded-full bg-surface-container overflow-hidden">
-            <div className="h-full rounded-full transition-all" style={{ width: `${todayProgress * 100}%`, background: "linear-gradient(to right,#40efb7,#00d29c)" }} />
+            <div className="h-full rounded-full transition-all" style={{ width: `${todayProgress * 100}%`, background: "linear-gradient(to right,#5ed8a9,#3fbe90)" }} />
           </div>
         </div>
 

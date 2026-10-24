@@ -13,8 +13,8 @@ const MODE_LABELS: Record<string, string> = {
 };
 
 const MODE_COLORS: Record<string, { ring: string; text: string }> = {
-  focus: { ring: "#7c3aed", text: "text-primary" },
-  "short-break": { ring: "#40efb7", text: "text-secondary" },
+  focus: { ring: "#5e6ad2", text: "text-primary" },
+  "short-break": { ring: "#5ed8a9", text: "text-secondary" },
   "long-break": { ring: "#ffb95f", text: "text-tertiary" },
 };
 
@@ -134,7 +134,7 @@ export default function FloatingTimer() {
       onPointerCancel={onPointerUp}
     >
       <div
-        className="flex items-center gap-3 bg-[#0e0e14] border border-[#2a2a40] rounded-2xl px-4 py-3 shadow-[0_8px_40px_rgba(0,0,0,0.6)] backdrop-blur-sm select-none"
+        className="flex items-center gap-3 bg-surface-container-lowest border border-outline-variant rounded-2xl px-4 py-3 shadow-[0_8px_40px_rgba(0,0,0,0.6)] backdrop-blur-sm select-none"
         style={{ cursor: isDragging.current ? "grabbing" : "grab" }}
       >
         {/* Drag handle hint */}
@@ -147,7 +147,7 @@ export default function FloatingTimer() {
         {/* Progress ring */}
         <div className="relative w-12 h-12 flex-shrink-0">
           <svg width="48" height="48" style={{ transform: "rotate(-90deg)" }}>
-            <circle cx="24" cy="24" r={R} fill="none" stroke="#1e1e2e" strokeWidth="3" />
+            <circle cx="24" cy="24" r={R} fill="none" stroke="#16171b" strokeWidth="3" />
             <circle
               cx="24" cy="24" r={R}
               fill="none"
@@ -189,7 +189,7 @@ export default function FloatingTimer() {
         </div>
 
         {/* Divider */}
-        <div className="w-px h-8 bg-[#252535] mx-1 flex-shrink-0" />
+        <div className="w-px h-8 bg-outline-variant mx-1 flex-shrink-0" />
 
         {/* Play / Pause */}
         <button
@@ -208,7 +208,7 @@ export default function FloatingTimer() {
         {/* Open full timer */}
         <Link
           href="/timer"
-          className="w-9 h-9 rounded-full border border-[#252535] text-on-surface-variant flex items-center justify-center hover:text-primary hover:border-primary transition-all flex-shrink-0"
+          className="w-9 h-9 rounded-full border border-outline-variant text-on-surface-variant flex items-center justify-center hover:text-primary hover:border-primary transition-all flex-shrink-0"
           title="Open full timer"
         >
           <span
@@ -226,7 +226,7 @@ export default function FloatingTimer() {
             className={`w-9 h-9 rounded-full border flex items-center justify-center transition-all flex-shrink-0 ${
               pipOpen
                 ? "border-primary/60 text-primary bg-primary-container/20"
-                : "border-[#252535] text-on-surface-variant hover:text-primary hover:border-primary"
+                : "border-outline-variant text-on-surface-variant hover:text-primary hover:border-primary"
             }`}
             title={pipOpen ? "Close floating overlay" : "Float timer above all windows"}
           >

@@ -33,7 +33,7 @@ export default function ReflectionModal() {
     <div className="fixed inset-0 z-[250] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleSkip} />
       <div
-        className="relative bg-[#12121a] border border-[#252535] rounded-2xl p-7 w-full max-w-md shadow-2xl flex flex-col gap-5"
+        className="relative bg-card border border-outline-variant rounded-2xl p-7 w-full max-w-md shadow-2xl flex flex-col gap-5"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -67,7 +67,7 @@ export default function ReflectionModal() {
             rows={4}
             maxLength={500}
             autoFocus
-            className="bg-[#0e0e11] border border-outline-variant rounded-xl px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm placeholder:text-on-surface-variant/40 resize-none"
+            className="bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm placeholder:text-on-surface-variant/40 resize-none"
           />
           <p className="text-xs text-on-surface-variant/50 text-right">{notes.length}/500</p>
         </div>
