@@ -40,6 +40,13 @@ describe("buildEvents", () => {
     expect(ev.find((e) => e.kind === "block")!.done).toBe(true);
     expect(ev.find((e) => e.refId === "t2")!.done).toBe(true);
   });
+  it("ends a session with end not after start at start + length, max 23:59", () => {
+    const s = data.sessions[0];
+    const endOf = (startTime: string, endTime: string) =>
+      buildEvents({ ...empty, sessions: [{ ...s, startTime, endTime }] }, "2026-10-23", "2026-10-23")[0].end;
+    expect(endOf("08:58", "08:58")).toBe("09:23");
+    expect(endOf("23:50", "00:15")).toBe("23:59");
+  });
   it("leaves out items outside the range", () => {
     expect(buildEvents(data, "2026-10-26", "2026-10-26").map((e) => e.kind)).toEqual(["class"]);
   });

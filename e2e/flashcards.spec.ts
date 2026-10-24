@@ -30,6 +30,7 @@ test("decks, basic + cloze cards, review with FSRS, undo, session saved", async 
   await page.getByTestId("note-save").click();
   await expect(page.getByTestId("note-message")).toHaveText("Added 2 cards.");
   await expect(page.getByTestId("note-item")).toHaveCount(2);
+  await expect(page.getByTestId("deck-total")).toHaveText("Cards (3)"); // updates without a reload
   await evidence(page, "10-deck");
 
   // Study: one new card per note per day → 2 cards (basic + first cloze)

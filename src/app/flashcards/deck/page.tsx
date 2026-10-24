@@ -22,7 +22,10 @@ function DeckView() {
   const id = useSearchParams().get("id") ?? "";
   const { uid, decks, cards: studyCards, logsToday, loading } = useStudyCards();
   const { notes, cards } = useDeckNotes(id);
-  const total = useDeckTotals([id], notes.length)[id] ?? 0;
+  // All notes loaded: count the local cards (sees writes not yet on the server). Else ask the server.
+  const allLoaded = notes.length < DECK_NOTES_LIMIT;
+  const serverTotal = useDeckTotals(allLoaded ? [] : [id], notes.length)[id] ?? 0;
+  const total = allLoaded ? cards.length : serverTotal;
   const { items: subjects } = useCollection<Subject>("subjects");
   const [settings, setSettings] = useState(false);
   const [editing, setEditing] = useState<Note | null>(null);

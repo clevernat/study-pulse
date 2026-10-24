@@ -53,8 +53,10 @@ export function buildEvents(d: CalendarData, from: string, to: string): CalEvent
       subjectId: b.subjectId, refId: b.id, done: blockDone(b) });
   }
   for (const s of d.sessions.filter((x) => inRange(x.date) && x.startTime && x.endTime)) {
-    // Sessions that cross midnight end at 23:59 on the calendar.
-    const end = s.endTime > s.startTime ? s.endTime : "23:59";
+    // End not after start (midnight crossing, or an old manual log with start = end):
+    // use start + duration, capped at 23:59.
+    const end = s.endTime > s.startTime ? s.endTime
+      : minutesToHHMM(Math.min(toMinutes(s.startTime) + (s.durationMinutes || 0), 23 * 60 + 59));
     out.push({ key: `session-${s.id}`, kind: "session", title: s.subjectName, date: s.date, start: s.startTime, end,
       subjectId: s.subjectId, refId: s.id, done: true, detail: `${s.durationMinutes} min` });
   }
