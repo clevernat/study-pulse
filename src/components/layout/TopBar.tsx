@@ -66,6 +66,16 @@ export default function TopBar() {
     }
   }, [popover]);
 
+  // Offline badge (changes are kept and sent when the connection is back)
+  const [online, setOnline] = useState(true);
+  useEffect(() => {
+    const update = () => setOnline(navigator.onLine);
+    update();
+    window.addEventListener("online", update);
+    window.addEventListener("offline", update);
+    return () => { window.removeEventListener("online", update); window.removeEventListener("offline", update); };
+  }, []);
+
   const toggle = (p: Popover) => setPopover((cur) => (cur === p ? null : p));
 
   const volumeIcon =
@@ -77,6 +87,12 @@ export default function TopBar() {
         <h2 data-testid="page-title" className="font-grotesk text-[18px] md:text-[22px] font-bold text-primary truncate min-w-0">{title}</h2>
 
         <div ref={toolbarRef} className="flex items-center gap-2 md:gap-3 relative">
+          {!online && (
+            <span data-testid="offline-badge" title="You are offline. Changes are saved on this device and sent when you are back online."
+              className="flex items-center gap-1 px-2 py-1 rounded-full bg-tertiary/15 text-tertiary text-[11px] font-bold">
+              <span className="material-symbols-outlined text-[14px]">cloud_off</span><span className="hidden sm:inline">Offline</span>
+            </span>
+          )}
           {/* Sounds */}
           <div className="relative">
             <button

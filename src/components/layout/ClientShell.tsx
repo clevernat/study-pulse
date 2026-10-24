@@ -12,6 +12,7 @@ import AmbientController from "./AmbientController";
 import CompletionToast from "./CompletionToast";
 import ReflectionModal from "@/components/ui/ReflectionModal";
 import { formatTime } from "@/store/timerStore";
+import { registerServiceWorker } from "@/lib/pwa";
 import { localDateStr } from "@/lib/dateUtils";
 
 export default function ClientShell({ children }: { children: React.ReactNode }) {
@@ -26,6 +27,9 @@ export default function ClientShell({ children }: { children: React.ReactNode })
     initTimer();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Installable app + offline pages
+  useEffect(() => { registerServiceWorker(); }, []);
 
   // Restore reduced-motion CSS class from localStorage on every page load
   useEffect(() => {

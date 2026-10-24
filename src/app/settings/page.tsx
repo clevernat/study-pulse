@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { subscribeSessions, deleteAllUserData, saveUserPreferences, subscribeUserPreferences } from "@/lib/firebase/firestore";
 import { useTimerStore } from "@/store/timerStore";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import InstallCard from "@/components/settings/InstallCard";
 import type { Session } from "@/types";
 import { localDateStr } from "@/lib/dateUtils";
 import { toCsv, downloadText as download } from "@/lib/csv";
@@ -304,6 +305,8 @@ export default function SettingsPage() {
           />
         </div>
       </div>
+
+      <InstallCard />
 
       {/* Appearance */}
       <div className="glass-card p-6">

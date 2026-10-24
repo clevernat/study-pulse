@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "@/app/globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import ClientShell from "@/components/layout/ClientShell";
@@ -6,11 +6,13 @@ import ClientShell from "@/components/layout/ClientShell";
 export const metadata: Metadata = {
   title: "StudyPulse — Study Planner and Flashcards",
   description: "Flashcards with spaced repetition, a focus timer, exams, timetable and a study calendar in one app.",
+  manifest: "/manifest.webmanifest",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
-    apple: "/favicon.svg",
+    apple: "/icons/apple-touch-icon.png",
   },
+  appleWebApp: { capable: true, title: "StudyPulse", statusBarStyle: "black-translucent" },
   openGraph: {
     title: "StudyPulse — Study Planner and Flashcards",
     description: "Flashcards, focus timer, exams, timetable and a study calendar in one app.",
@@ -32,6 +34,13 @@ export const metadata: Metadata = {
     description: "Flashcards, focus timer, exams, timetable and a study calendar in one app.",
     images: ["https://studypulse-tracker-app.web.app/og.svg"],
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#131316",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
