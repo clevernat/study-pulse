@@ -1,10 +1,10 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { useFlashcards } from "@/lib/firebase/useFlashcards";
+import { useStudyCards, useDeckTotals, useReviewDays } from "@/lib/firebase/useFlashcards";
 import { useCollection } from "@/lib/firebase/useCollection";
 import { buildQueue } from "@/lib/flashcards/queue";
-import { todayStats } from "@/lib/flashcards/stats";
+import { dayTotals } from "@/lib/flashcards/reviewDays";
 import { localDateStr } from "@/lib/dateUtils";
 import { getColor } from "@/lib/colorPalette";
 import DeckModal from "@/components/flashcards/DeckModal";
@@ -12,14 +12,16 @@ import { EmptyState, primaryBtnCls, secondaryBtnCls } from "@/components/ui/Fiel
 import type { Subject } from "@/types";
 
 export default function FlashcardsPage() {
-  const { uid, decks, cards, logsToday, loading } = useFlashcards();
+  const { uid, decks, cards, logsToday, loading } = useStudyCards();
+  const totals = useDeckTotals(decks.map((d) => d.id), logsToday.length);
+  const reviewDays = useReviewDays().items;
   const { items: subjects } = useCollection<Subject>("subjects");
   const [creating, setCreating] = useState(false);
   const now = new Date();
   const today = localDateStr(now);
   const all = buildQueue(cards, decks, logsToday, now, today);
   const due = all.counts.learning + all.counts.review + all.counts.new;
-  const stats = todayStats(logsToday);
+  const stats = dayTotals(reviewDays.find((d) => d.id === today));
 
   return (
     <div className="max-w-4xl mx-auto flex flex-col gap-6">
@@ -42,7 +44,7 @@ export default function FlashcardsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {decks.map((d) => {
             const q = buildQueue(cards, [d], logsToday, now, today);
-            const total = cards.filter((c) => c.deckId === d.id).length;
+            const total = totals[d.id] ?? 0;
             const subject = subjects.find((s) => s.id === d.subjectId);
             const c = getColor(subject?.color ?? "violet");
             const toStudy = q.counts.learning + q.counts.review + q.counts.new;

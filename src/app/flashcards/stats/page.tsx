@@ -1,13 +1,16 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useFlashcards } from "@/lib/firebase/useFlashcards";
-import { todayStats, forecast, cardCounts, trueRetention, reviewsPerDay } from "@/lib/flashcards/stats";
+import { where } from "firebase/firestore";
+import { useAuth } from "@/context/AuthContext";
+import { useCollection } from "@/lib/firebase/useCollection";
+import { useComingCards, useReviewDays, countCards } from "@/lib/firebase/useFlashcards";
+import { forecast } from "@/lib/flashcards/stats";
+import { dayTotals, retentionSince } from "@/lib/flashcards/reviewDays";
 import { dayBounds } from "@/lib/flashcards/queue";
 import { localDateStr, daysAgoStr } from "@/lib/dateUtils";
 import { inputCls } from "@/components/ui/Field";
-
-const dayKey = (ms: number) => localDateStr(new Date(ms));
+import type { Deck } from "@/types";
 
 function Stat({ label, value, testId }: { label: string; value: string; testId?: string }) {
   return (
@@ -18,24 +21,43 @@ function Stat({ label, value, testId }: { label: string; value: string; testId?:
   );
 }
 
-export default function FlashcardStatsPage() {
-  const { decks, cards, logs, logsToday } = useFlashcards();
-  const [deckId, setDeckId] = useState("");
-  const pick = <T extends { deckId: string }>(list: T[]) => (deckId ? list.filter((x) => x.deckId === deckId) : list);
-  const myCards = pick(cards), myLogs = pick(logs), myToday = pick(logsToday);
+interface Counts { total: number; new: number; learning: number; mature: number; suspended: number }
 
-  const today = todayStats(myToday);
+/** Card counts with count queries (cheap: 1 read per 1,000 cards). */
+function useCardCounts(deckId: string, refresh: number): Counts | null {
+  const { user } = useAuth();
+  const [counts, setCounts] = useState<Counts | null>(null);
+  useEffect(() => {
+    if (!user) return;
+    const deck = deckId ? [where("deckId", "==", deckId)] : [];
+    const c = (...f: Parameters<typeof where>[]) => countCards(user.uid, ...deck, ...f.map((args) => where(...args)));
+    Promise.all([c(), c(["state", "==", 0]), c(["state", "in", [1, 3]]), c(["state", "==", 2], ["scheduled_days", ">=", 21]), c(["suspended", "==", true])])
+      .then(([total, n, learning, mature, suspended]) => setCounts({ total, new: n, learning, mature, suspended }))
+      .catch((err) => console.error("Counting cards failed:", err));
+  }, [user, deckId, refresh]);
+  return counts;
+}
+
+export default function FlashcardStatsPage() {
+  const decks = useCollection<Deck>("decks").items;
+  const days = useReviewDays().items;
+  const [deckId, setDeckId] = useState("");
+  const coming = useComingCards(30).items.filter((c) => !deckId || c.deckId === deckId);
+  const today = localDateStr();
+  const todayDay = days.find((d) => d.id === today);
+  const counts = useCardCounts(deckId, todayDay?.count ?? 0);
+
+  const totals = dayTotals(todayDay);
   const { start } = dayBounds(new Date());
   const starts = Array.from({ length: 30 }, (_, i) => new Date(new Date(start).setDate(new Date(start).getDate() + i)).getTime());
-  const fc = forecast(myCards, starts);
+  const fc = forecast(coming, starts);
   const fcMax = Math.max(1, ...fc);
-  const counts = cardCounts(myCards);
-  const week = trueRetention(myLogs.filter((l) => l.review >= Date.now() - 7 * 86_400_000), dayKey);
-  const month = trueRetention(myLogs.filter((l) => l.review >= Date.now() - 30 * 86_400_000), dayKey);
-  const perDay = reviewsPerDay(myLogs, dayKey);
+  const week = retentionSince(days, daysAgoStr(6));
+  const month = retentionSince(days, daysAgoStr(29));
+  const perDay = Object.fromEntries(days.map((d) => [d.id, d.count ?? 0]));
   const heat = Array.from({ length: 91 }, (_, i) => daysAgoStr(90 - i));
   const heatMax = Math.max(1, ...heat.map((d) => perDay[d] ?? 0));
-  const total = counts.new + counts.learning + counts.young + counts.mature + counts.suspended;
+  const young = counts ? Math.max(0, counts.total - counts.new - counts.learning - counts.mature) : 0;
 
   return (
     <div className="max-w-4xl mx-auto flex flex-col gap-6">
@@ -45,12 +67,13 @@ export default function FlashcardStatsPage() {
           <option value="">All decks</option>
           {decks.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
         </select>
+        {deckId && <span className="text-xs text-on-surface-variant">The deck choice changes cards and forecast. Answers and retention are for all decks.</span>}
       </div>
 
       <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Stat label="Cards today" value={String(today.cards)} testId="stats-today-cards" />
-        <Stat label="Minutes today" value={String(today.minutes)} />
-        <Stat label="Again today" value={today.cards ? `${today.againPct}%` : "—"} testId="stats-today-again" />
+        <Stat label="Cards today" value={String(totals.cards)} testId="stats-today-cards" />
+        <Stat label="Minutes today" value={String(totals.minutes)} />
+        <Stat label="Again today" value={totals.cards ? `${totals.againPct}%` : "—"} testId="stats-today-again" />
         <Stat label="Remembered (30 days)" value={month.total ? `${month.pct}%` : "—"} testId="stats-retention" />
       </section>
 
@@ -69,12 +92,12 @@ export default function FlashcardStatsPage() {
 
       <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="glass-card p-5" data-testid="stats-counts">
-          <h2 className="font-grotesk font-bold text-on-surface mb-3">Cards ({total})</h2>
-          {([["New", counts.new, "#d2bbff"], ["Learning", counts.learning, "#ffb4ab"], ["Young (< 21 days)", counts.young, "#40efb7"], ["Mature (21+ days)", counts.mature, "#00d29c"], ["Suspended", counts.suspended, "#ffb95f"]] as const).map(([label, n, color]) => (
+          <h2 className="font-grotesk font-bold text-on-surface mb-3">Cards ({counts?.total ?? "…"})</h2>
+          {([["New", counts?.new, "#d2bbff"], ["Learning", counts?.learning, "#ffb4ab"], ["Young (< 21 days)", counts ? young : undefined, "#40efb7"], ["Mature (21+ days)", counts?.mature, "#00d29c"], ["Suspended (counted above too)", counts?.suspended, "#ffb95f"]] as const).map(([label, n, color]) => (
             <div key={label} className="flex items-center gap-3 text-sm py-1">
               <span className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
               <span className="flex-1 text-on-surface-variant">{label}</span>
-              <span className="font-jetbrains text-on-surface">{n}</span>
+              <span className="font-jetbrains text-on-surface">{n ?? "…"}</span>
             </div>
           ))}
         </div>

@@ -1,7 +1,7 @@
 import { clozeNumbers, renderCloze, cardOrds, cardSides, textToHtml, htmlToText, notePreview } from "./cloze";
 import { newCardFields, answerCard, previewIntervals, formatInterval, Rating, LEECH_LAPSES, retrievability } from "./scheduler";
 import { buildQueue, dayBounds, LEARN_AHEAD_MS } from "./queue";
-import { todayStats, forecast, cardCounts, trueRetention, reviewsPerDay } from "./stats";
+import { forecast } from "./stats";
 import type { Card, Deck } from "@/types";
 
 const NOW = new Date(2026, 9, 23, 10, 0, 0); // Oct 23, 10:00 local
@@ -136,12 +136,6 @@ describe("buildQueue", () => {
 });
 
 describe("stats", () => {
-  const day = (ms: number) => new Date(ms).toISOString().slice(0, 10);
-  it("today stats", () => {
-    expect(todayStats([{ rating: 1, durationMs: 30_000 }, { rating: 3, durationMs: 60_000 }, { rating: 4, durationMs: 30_000 }]))
-      .toEqual({ cards: 3, minutes: 2, againPct: 33, correctPct: 67 });
-    expect(todayStats([])).toEqual({ cards: 0, minutes: 0, againPct: 0, correctPct: 0 });
-  });
   it("forecast puts overdue cards on day 0 and skips new/suspended", () => {
     const starts = [0, 1, 2].map((i) => Date.UTC(2026, 9, 23 + i));
     const cards = [
@@ -150,19 +144,5 @@ describe("stats", () => {
       card({ state: 2, due: starts[2] + 2 * 86_400_000 }),
     ];
     expect(forecast(cards, starts)).toEqual([2, 0, 1]);
-  });
-  it("card counts by maturity", () => {
-    expect(cardCounts([card(), card({ state: 1 }), card({ state: 2, scheduled_days: 3 }), card({ state: 2, scheduled_days: 30 }), card({ suspended: true })]))
-      .toEqual({ new: 1, learning: 1, young: 1, mature: 1, suspended: 1 });
-  });
-  it("true retention uses the first review answer per card per day", () => {
-    const t = Date.UTC(2026, 9, 23, 12);
-    const logs = [
-      { cardId: "a", rating: 1, state: 2, review: t }, { cardId: "a", rating: 3, state: 3, review: t + 1 },
-      { cardId: "a", rating: 3, state: 2, review: t + 2 }, // same card same day: ignored
-      { cardId: "b", rating: 3, state: 2, review: t }, { cardId: "c", rating: 4, state: 0, review: t },
-    ];
-    expect(trueRetention(logs, day)).toEqual({ pass: 1, total: 2, pct: 50 });
-    expect(reviewsPerDay(logs, day)).toEqual({ "2026-10-23": 5 });
   });
 });

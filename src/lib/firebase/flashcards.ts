@@ -1,10 +1,11 @@
-import { collection, doc, getDocs, query, where, writeBatch, type WriteBatch } from "firebase/firestore";
+import { collection, doc, getDocs, increment, query, where, writeBatch, type WriteBatch } from "firebase/firestore";
 import { db } from "./config";
 import { queue, addSession } from "./firestore";
 import { cardOrds } from "@/lib/flashcards/cloze";
 import { newCardFields, type SchedFields } from "@/lib/flashcards/scheduler";
 import { localDateStr } from "@/lib/dateUtils";
 import type { Card, Deck, Note, ReviewLogDoc, Subject } from "@/types";
+import type { DayDelta } from "@/lib/flashcards/reviewDays";
 
 const col = (uid: string, name: string) => collection(db, "users", uid, name);
 
@@ -69,21 +70,32 @@ export async function deleteDeck(uid: string, deckId: string): Promise<void> {
   await queue(writeBatch(db).delete(doc(db, "users", uid, "decks", deckId)).commit());
 }
 
-/** Saves an answer: new card fields + one review log entry. Returns the log id (for undo). */
-export async function saveAnswer(uid: string, cardId: string, fields: Partial<Card>, log: Omit<ReviewLogDoc, "id">): Promise<string> {
+function addToDay(b: WriteBatch, uid: string, day: string, d: DayDelta) {
+  b.set(doc(db, "users", uid, "reviewDays", day), {
+    count: increment(d.count), ms: increment(d.ms), again: increment(d.again), retPass: increment(d.retPass), retTotal: increment(d.retTotal),
+  }, { merge: true });
+}
+
+/**
+ * Saves an answer: new card fields, one review log entry, and the day summary
+ * (reviewDays/{day}) that stats and habits read. Returns the log id (for undo).
+ */
+export async function saveAnswer(uid: string, cardId: string, fields: Partial<Card>, log: Omit<ReviewLogDoc, "id">, day: string, delta: DayDelta): Promise<string> {
   const b = writeBatch(db);
   const logRef = doc(col(uid, "reviewLogs"));
   b.update(doc(db, "users", uid, "cards", cardId), fields);
   b.set(logRef, log);
+  addToDay(b, uid, day, delta);
   await queue(b.commit());
   return logRef.id;
 }
 
-/** Undo: puts the card back as it was and removes the review log entry. */
-export async function undoAnswer(uid: string, cardId: string, before: SchedFields & Pick<Card, "suspended">, logId: string): Promise<void> {
+/** Undo: puts the card back as it was, removes the review log entry and takes it off the day summary. */
+export async function undoAnswer(uid: string, cardId: string, before: SchedFields & Pick<Card, "suspended">, logId: string, day: string, minus: DayDelta): Promise<void> {
   const b = writeBatch(db);
   b.update(doc(db, "users", uid, "cards", cardId), { ...before });
   b.delete(doc(db, "users", uid, "reviewLogs", logId));
+  addToDay(b, uid, day, minus);
   await queue(b.commit());
 }
 

@@ -97,7 +97,7 @@ export async function updateSubject(
 }
 
 /** Collections whose documents belong to one subject (deleted with the subject). */
-export const SUBJECT_OWNED_COLLECTIONS = ["sessions", "goals", "topics", "exams", "classes", "decks", "notes", "cards"];
+export const SUBJECT_OWNED_COLLECTIONS = ["sessions", "goals", "topics", "exams", "classes", "decks", "notes"];
 
 export async function deleteSubject(
   uid: string,
@@ -108,6 +108,9 @@ export async function deleteSubject(
 
   // Data that only makes sense with the subject is deleted with it.
   const owned = await Promise.all(SUBJECT_OWNED_COLLECTIONS.map(bySubject));
+  // Cards belong to a deck (no subject field): delete the cards of this subject's decks too.
+  const deckIds = owned[SUBJECT_OWNED_COLLECTIONS.indexOf("decks")].docs.map((d) => d.id);
+  owned.push(...(await Promise.all(deckIds.map((id) => getDocs(query(collection(db, "users", uid, "cards"), where("deckId", "==", id)))))));
   // Tasks and study blocks stay, but lose their subject link.
   const linked = await Promise.all(["tasks", "studyBlocks"].map(bySubject));
 
@@ -211,7 +214,7 @@ export async function deleteAllUserData(uid: string): Promise<void> {
   }
   const subcollections = [
     "sessions", "subjects", "goals", "tasks", "topics", "exams", "classes", "studyBlocks",
-    "habits", "decks", "notes", "cards", "reviewLogs", "reminders", "devices", "preferences", "calendarFeed",
+    "habits", "decks", "notes", "cards", "reviewLogs", "reviewDays", "reminders", "devices", "preferences", "calendarFeed",
   ];
   await Promise.all(
     subcollections.map(async (col) => {

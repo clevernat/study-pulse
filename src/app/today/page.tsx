@@ -14,7 +14,7 @@ import { blockMinutes, blockDone } from "@/lib/calendar";
 import { startBlockTimer } from "@/components/planner/BlockModal";
 import type { StudyBlock, Habit } from "@/types";
 import HabitRow from "@/components/planner/HabitRow";
-import { useFlashcards } from "@/lib/firebase/useFlashcards";
+import { useStudyCards } from "@/lib/firebase/useFlashcards";
 import { buildQueue } from "@/lib/flashcards/queue";
 import { useHabitContext } from "@/lib/firebase/useHabitContext";
 import type { ClassItem } from "@/types";
@@ -49,7 +49,7 @@ export default function TodayPage() {
   const { items: blocks } = useCollection<StudyBlock>("studyBlocks");
   const { items: habits } = useCollection<Habit>("habits");
   const habitCtx = useHabitContext();
-  const fc = useFlashcards();
+  const fc = useStudyCards();
   const fcQueue = buildQueue(fc.cards, fc.decks, fc.logsToday, new Date(), today);
   const fcDue = fcQueue.counts.learning + fcQueue.counts.review + fcQueue.counts.new;
   const activeHabits = habits.filter((h) => !h.archived);

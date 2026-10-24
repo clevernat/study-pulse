@@ -2,7 +2,8 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useFlashcards } from "@/lib/firebase/useFlashcards";
+import { useStudyCards, useNotesByIds } from "@/lib/firebase/useFlashcards";
+import { dayDelta, negate, type DayDelta } from "@/lib/flashcards/reviewDays";
 import { useCollection } from "@/lib/firebase/useCollection";
 import { updateItem, linkSessionToBlock } from "@/lib/firebase/firestore";
 import { saveAnswer, undoAnswer, saveReviewSession } from "@/lib/firebase/flashcards";
@@ -21,7 +22,7 @@ const BUTTON_STYLE: Record<number, string> = {
   4: "bg-primary/15 text-primary border-primary/40",
 };
 
-interface UndoItem { cardId: string; deckId: string; before: SchedFields & Pick<Card, "suspended">; logId: string; durationMs: number }
+interface UndoItem { cardId: string; deckId: string; before: SchedFields & Pick<Card, "suspended">; logId: string; durationMs: number; day: string; delta: DayDelta }
 interface Tally { answers: number; ms: number }
 
 function pickSched(c: Card): SchedFields & Pick<Card, "suspended"> {
@@ -33,7 +34,7 @@ function Review() {
   const params = useSearchParams();
   const deckParam = params.get("deck");
   const blockParam = params.get("block");
-  const { uid, decks, notes, cards, logsToday, loading } = useFlashcards();
+  const { uid, decks, cards, logsToday, loading } = useStudyCards();
   const { items: subjects } = useCollection<Subject>("subjects");
 
   const [now, setNow] = useState(() => Date.now());
@@ -57,7 +58,9 @@ function Review() {
   if (queue.cards.length === 0) queue = buildQueue(visibleCards, activeDecks, logsToday, new Date(now), today, LEARN_AHEAD_MS);
   const current = queue.cards.find((c) => c.id === currentId) ?? queue.cards[0];
   const deck = decks.find((d) => d.id === current?.deckId);
-  const note = notes.find((n) => n.id === current?.noteId);
+  // Load the notes of the next cards only (not every note).
+  const notesById = useNotesByIds(queue.cards.slice(0, 20).map((c) => c.noteId));
+  const note = current ? notesById[current.noteId] : undefined;
 
   useEffect(() => {
     if (current && current.id !== currentId) { setCurrentId(current.id); setShowAnswer(false); }
@@ -106,9 +109,11 @@ function Review() {
     const t = (tally.current[current.deckId] ??= { answers: 0, ms: 0 });
     t.answers++; t.ms += result.log.durationMs;
     setSavedMsg("");
-    const logId = await saveAnswer(uid, current.id, result.fields, result.log);
-    setUndoStack((s) => [...s.slice(-19), { cardId: current.id, deckId: current.deckId, before: pickSched(current), logId, durationMs: result.log.durationMs }]);
-  }, [current, uid, deck]);
+    const day = localDateStr(new Date(result.log.review));
+    const delta = dayDelta(current, rating, result.log.durationMs, logsToday);
+    const logId = await saveAnswer(uid, current.id, result.fields, result.log, day, delta);
+    setUndoStack((s) => [...s.slice(-19), { cardId: current.id, deckId: current.deckId, before: pickSched(current), logId, durationMs: result.log.durationMs, day, delta }]);
+  }, [current, uid, deck, logsToday]);
 
   const undo = useCallback(async () => {
     const last = undoStack.at(-1);
@@ -116,7 +121,7 @@ function Review() {
     setUndoStack((s) => s.slice(0, -1));
     const t = tally.current[last.deckId];
     if (t) { t.answers = Math.max(0, t.answers - 1); t.ms = Math.max(0, t.ms - last.durationMs); }
-    await undoAnswer(uid, last.cardId, last.before, last.logId);
+    await undoAnswer(uid, last.cardId, last.before, last.logId, last.day, negate(last.delta));
     setCurrentId(last.cardId);
     setShowAnswer(false);
   }, [undoStack, uid]);
@@ -162,7 +167,7 @@ function Review() {
     );
   }
 
-  const sides = note ? cardSides(note, current.ord) : { front: "(missing note)", back: "" };
+  const sides = note ? cardSides(note, current.ord) : { front: "Loading…", back: "" };
   const intervals = previewIntervals(current, new Date(), deck);
   const kind = current.state === 0 ? "new" : current.state === 2 ? "review" : "learning";
 

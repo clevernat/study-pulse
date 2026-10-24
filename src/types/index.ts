@@ -319,3 +319,17 @@ export interface ReviewLogDoc {
   /** Time spent on the card (ms) */
   durationMs: number;
 }
+
+/** One day of flashcard work (users/{uid}/reviewDays/{YYYY-MM-DD}), so stats and habits do not read every review. */
+export interface ReviewDay {
+  id: string;
+  /** Answers given */
+  count: number;
+  /** Time spent (ms) */
+  ms: number;
+  /** "Again" answers */
+  again: number;
+  /** First answer of the day on cards in review: remembered / total */
+  retPass: number;
+  retTotal: number;
+}

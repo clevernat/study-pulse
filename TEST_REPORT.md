@@ -6,7 +6,7 @@ Date: 2026-10-24. Branch: `feature/study-upgrade`. Written in simple English.
 
 | Check | Result | Saved output |
 |---|---|---|
-| Unit tests (Jest) | **98 passed**, 11 files | `docs/evidence/test-output/unit-tests.txt` |
+| Unit tests (Jest) | **104 passed**, 13 files | `docs/evidence/test-output/unit-tests.txt` |
 | Firestore rules tests (emulator) | **37 passed** | `docs/evidence/test-output/rules-tests.txt` |
 | Cloud Functions tests (emulator) | **3 passed** | `docs/evidence/test-output/functions-tests.txt` |
 | End-to-end tests (Playwright, emulators, laptop 1280×800 + phone 375×812) | **58 passed**, 2 skipped on purpose (one phone-only and one laptop-only test) | `docs/evidence/test-output/e2e-tests.txt` |
@@ -94,7 +94,7 @@ I also used the running app by hand in the browser with a demo account: Today sh
 - The daily summary text is made when the app plans it; it is refreshed every time you open the app.
 - The calendar feed covers 30 days back and 180 days ahead. Calendar apps refresh it every few hours (Google can take up to a day).
 - Classes in the feed are listed one by one (not as repeating rules), so A/B weeks and holidays are exact.
-- The app loads all your cards at once. This is fine for a few thousand cards.
+- Flashcards read only what a screen needs (free-plan friendly, 50,000 reads/day): cards due today, a few new cards per deck (4× the daily new limit), today's answers, one small summary per study day, and count queries for totals (1 read per 1,000 cards). The deck page shows the newest 300 notes. Example: a 10,000-card deck with 200 reviews due costs a few hundred reads per app open, not 10,000.
 - The calendar link is secret: anyone with the link can see those calendar items. Use "Make a new link" if it leaks.
 - Your project folder is in iCloud. If git or npm freeze again, iCloud has moved files to the cloud (see CURRENT_STATE.md).
 

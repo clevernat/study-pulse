@@ -4,12 +4,13 @@ import { doc, writeBatch } from "firebase/firestore";
 import { db } from "./config";
 import { useCollection } from "./useCollection";
 import { useTimetable } from "./useTimetable";
+import { useComingCards } from "./useFlashcards";
 import { queue, subscribeUserPreferences, saveUserPreferences, updateItem, type UserPrefs } from "./firestore";
 import { showLocalNotification } from "./push";
 import { planReminders, diffReminders } from "@/lib/reminders";
 import { localDateStr } from "@/lib/dateUtils";
 import { useAuth } from "@/context/AuthContext";
-import type { Card, ClassItem, Exam, Habit, StudyBlock, Subject, Task } from "@/types";
+import type { ClassItem, Exam, Habit, StudyBlock, Subject, Task } from "@/types";
 
 interface StoredReminder { id: string; fireAt: number; sent: boolean; title: string; body: string; url: string; tag: string }
 
@@ -38,7 +39,8 @@ export function useReminderSync() {
   const blocks = useCollection<StudyBlock>("studyBlocks").items;
   const habits = useCollection<Habit>("habits").items;
   const subjects = useCollection<Subject>("subjects").items;
-  const cards = useCollection<Card>("cards").items;
+  // Only cards coming due in the next 15 days (not every card): keeps reads small.
+  const cards = useComingCards(15).items;
   const stored = useCollection<StoredReminder>("reminders").items;
   const { settings: timetable } = useTimetable();
 
@@ -46,7 +48,7 @@ export function useReminderSync() {
     const out: Record<string, number> = {};
     const now = Date.now();
     for (const c of cards) {
-      if (c.state === 0 || c.suspended) continue;
+      if (c.suspended) continue;
       const d = localDateStr(new Date(Math.max(c.due, now)));
       out[d] = (out[d] ?? 0) + 1;
     }

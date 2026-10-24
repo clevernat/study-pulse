@@ -2,7 +2,7 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useFlashcards } from "@/lib/firebase/useFlashcards";
+import { useStudyCards, useDeckNotes, useDeckTotals, DECK_NOTES_LIMIT } from "@/lib/firebase/useFlashcards";
 import { useCollection } from "@/lib/firebase/useCollection";
 import { updateItem } from "@/lib/firebase/firestore";
 import { deleteNote } from "@/lib/firebase/flashcards";
@@ -20,7 +20,9 @@ const STATE = ["New", "Learning", "Review", "Relearning"];
 
 function DeckView() {
   const id = useSearchParams().get("id") ?? "";
-  const { uid, decks, notes, cards, logsToday, loading } = useFlashcards();
+  const { uid, decks, cards: studyCards, logsToday, loading } = useStudyCards();
+  const { notes, cards } = useDeckNotes(id);
+  const total = useDeckTotals([id], notes.length)[id] ?? 0;
   const { items: subjects } = useCollection<Subject>("subjects");
   const [settings, setSettings] = useState(false);
   const [editing, setEditing] = useState<Note | null>(null);
@@ -30,7 +32,7 @@ function DeckView() {
   if (!deck) return <div className="glass-card p-8 text-center"><p>This deck does not exist.</p><Link href="/flashcards" className="text-primary underline">Back to Flashcards</Link></div>;
 
   const now = new Date();
-  const q = buildQueue(cards, [deck], logsToday, now, localDateStr(now));
+  const q = buildQueue(studyCards, [deck], logsToday, now, localDateStr(now));
   const deckNotes = notes.filter((n) => n.deckId === id).sort((a, b) => b.createdAt - a.createdAt);
   const shown = deckNotes.filter((n) => !search || notePreview(n).toLowerCase().includes(search.toLowerCase()) || n.tags.some((t) => t.includes(search)));
   const cardsOf = (noteId: string) => cards.filter((c) => c.noteId === noteId).sort((a, b) => a.ord - b.ord);
@@ -52,9 +54,10 @@ function DeckView() {
 
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
-          <h2 className="font-grotesk font-bold text-lg text-on-surface mr-auto">Cards ({cards.filter((c) => c.deckId === id).length})</h2>
+          <h2 data-testid="deck-total" className="font-grotesk font-bold text-lg text-on-surface mr-auto">Cards ({total})</h2>
           <input className={`${inputCls} !w-48`} placeholder="Search" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
+        {deckNotes.length >= DECK_NOTES_LIMIT && <p className="text-xs text-on-surface-variant">Showing the newest {DECK_NOTES_LIMIT} notes. Search looks in these.</p>}
         {shown.map((n) => (
           <div key={n.id} data-testid="note-item" className="glass-card p-3 flex flex-col gap-2">
             <div className="flex items-start gap-2">
