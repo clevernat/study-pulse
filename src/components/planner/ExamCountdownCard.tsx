@@ -16,7 +16,7 @@ export default function ExamCountdownCard({ subjects, tasks }: { subjects: Subje
   return (
     <div className="glass-card p-6 flex flex-col gap-4" data-testid="exam-countdown">
       <div className="flex items-center justify-between">
-        <h2 className="font-grotesk font-bold text-lg text-on-surface">Upcoming Exams</h2>
+        <h2 className="font-grotesk font-bold text-lg text-on-surface">Upcoming exams</h2>
         <Link href="/exams" className="text-sm text-primary hover:opacity-80">All exams →</Link>
       </div>
       {next.length === 0 ? (

@@ -1,70 +1,46 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useAmbientStore } from "@/store/ambientStore";
 import LogSessionModal from "./LogSessionModal";
 import SoundsPopover from "./SoundsPopover";
-import VolumePopover from "./VolumePopover";
 import TasksPopover from "./TasksPopover";
+import { sectionFor } from "./nav";
 
-const pageTitles: Record<string, string> = {
-  "/": "Dashboard",
-  "/dashboard": "Dashboard",
-  "/today": "Today's Plan",
-  "/tasks": "Task Planner",
-  "/subjects": "Subjects",
-  "/subjects/view": "Subject",
-  "/exams": "Exams",
-  "/timetable": "Timetable",
-  "/calendar": "Calendar",
-  "/habits": "Habits",
-  "/flashcards": "Flashcards",
-  "/flashcards/deck": "Deck",
-  "/flashcards/review": "Review",
-  "/flashcards/stats": "Flashcard Stats",
-  "/flashcards/import": "Import Cards",
-  "/sessions": "Study Sessions",
-  "/timer": "Focus Timer",
-  "/goals": "Study Goals",
-  "/reports": "Reports & Analytics",
-  "/settings": "Settings",
-};
+type Popover = "sounds" | "tasks" | "account" | null;
 
-type Popover = "sounds" | "volume" | "tasks" | null;
+const iconBtn = (open: boolean) =>
+  `relative w-9 h-9 flex items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+    open ? "bg-primary/15 text-primary" : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high"
+  }`;
 
 export default function TopBar() {
   const pathname = usePathname();
-  const cleanPath = pathname.endsWith("/") && pathname !== "/" ? pathname.slice(0, -1) : pathname;
-  const title = pageTitles[cleanPath] ?? "StudyPulse";
+  // The page itself is named by the tabs below; the bar names the section.
+  const title = sectionFor(pathname)?.label ?? "StudyPulse";
 
   const { user, logOut } = useAuth();
   const displayName = user?.displayName ?? user?.email?.split("@")[0] ?? "User";
   const initials = displayName.slice(0, 2).toUpperCase();
-  const memberSince = user?.metadata?.creationTime
-    ? new Date(user.metadata.creationTime).getFullYear().toString()
-    : "2024";
 
   const [showLogModal, setShowLogModal] = useState(false);
   const [popover, setPopover] = useState<Popover>(null);
-
-  const masterVolume = useAmbientStore((s) => s.masterVolume);
-  const playingCount = useAmbientStore((s) =>
-    Object.values(s.tracks).filter((t) => t.playing).length
-  );
+  const playingCount = useAmbientStore((s) => Object.values(s.tracks).filter((t) => t.playing).length);
 
   const toolbarRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    function onClickOutside(e: MouseEvent) {
-      if (toolbarRef.current && !toolbarRef.current.contains(e.target as Node)) {
-        setPopover(null);
-      }
-    }
-    if (popover !== null) {
-      document.addEventListener("mousedown", onClickOutside);
-      return () => document.removeEventListener("mousedown", onClickOutside);
-    }
+    if (popover === null) return;
+    const onClickOutside = (e: MouseEvent) => {
+      if (toolbarRef.current && !toolbarRef.current.contains(e.target as Node)) setPopover(null);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setPopover(null); };
+    document.addEventListener("mousedown", onClickOutside);
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("mousedown", onClickOutside); document.removeEventListener("keydown", onKey); };
   }, [popover]);
+  useEffect(() => setPopover(null), [pathname]);
 
   // Offline badge (changes are kept and sent when the connection is back)
   const [online, setOnline] = useState(true);
@@ -78,105 +54,70 @@ export default function TopBar() {
 
   const toggle = (p: Popover) => setPopover((cur) => (cur === p ? null : p));
 
-  const volumeIcon =
-    masterVolume === 0 ? "volume_off" : masterVolume < 0.5 ? "volume_down" : "volume_up";
-
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 md:left-64 z-40 bg-surface/90 backdrop-blur-md border-b border-outline-variant flex justify-between items-center px-4 md:px-12 h-16 md:h-20">
-        <h2 data-testid="page-title" className="font-grotesk text-[18px] md:text-[22px] font-bold text-primary truncate min-w-0">{title}</h2>
+      <header className="fixed top-0 left-0 right-0 md:left-60 z-40 bg-surface/90 backdrop-blur-md border-b border-outline-variant flex justify-between items-center gap-3 px-4 md:px-10 h-14 md:h-16">
+        <h2 data-testid="page-title" className="font-grotesk text-[18px] md:text-[20px] font-semibold tracking-tight text-on-surface truncate min-w-0">{title}</h2>
 
-        <div ref={toolbarRef} className="flex items-center gap-2 md:gap-3 relative">
+        <div ref={toolbarRef} className="flex items-center gap-1 md:gap-2 relative">
           {!online && (
             <span data-testid="offline-badge" title="You are offline. Changes are saved on this device and sent when you are back online."
-              className="flex items-center gap-1 px-2 py-1 rounded-full bg-tertiary/15 text-tertiary text-[11px] font-bold">
+              className="flex items-center gap-1 px-2 py-1 rounded-full bg-tertiary/15 text-tertiary text-[11px] font-semibold">
               <span className="material-symbols-outlined text-[14px]">cloud_off</span><span className="hidden sm:inline">Offline</span>
             </span>
           )}
-          {/* Sounds */}
+
           <div className="relative">
-            <button
-              onClick={() => toggle("sounds")}
-              title="Relaxation sounds"
-              className={`w-9 h-9 flex items-center justify-center rounded-full transition-all ${
-                popover === "sounds" || playingCount > 0
-                  ? "bg-primary/15 text-primary border border-primary/40"
-                  : "text-on-surface-variant hover:text-primary hover:bg-primary/10 border border-transparent"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[18px]">music_note</span>
+            <button onClick={() => toggle("sounds")} title="Relaxation sounds" aria-label="Relaxation sounds and volume"
+              aria-expanded={popover === "sounds"} className={iconBtn(popover === "sounds" || playingCount > 0)}>
+              <span className="material-symbols-outlined text-[20px]">headphones</span>
               {playingCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-secondary text-[9px] font-bold text-background flex items-center justify-center">
-                  {playingCount}
-                </span>
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-secondary text-[10px] font-bold text-background flex items-center justify-center">{playingCount}</span>
               )}
             </button>
             {popover === "sounds" && <SoundsPopover onClose={() => setPopover(null)} />}
           </div>
 
-          {/* Volume */}
           <div className="relative">
-            <button
-              onClick={() => toggle("volume")}
-              title="Master volume"
-              className={`w-9 h-9 flex items-center justify-center rounded-full transition-all ${
-                popover === "volume"
-                  ? "bg-primary/15 text-primary border border-primary/40"
-                  : "text-on-surface-variant hover:text-primary hover:bg-primary/10 border border-transparent"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[18px]">{volumeIcon}</span>
-            </button>
-            {popover === "volume" && <VolumePopover onClose={() => setPopover(null)} />}
-          </div>
-
-          {/* Tasks */}
-          <div className="relative">
-            <button
-              onClick={() => toggle("tasks")}
-              title="Tasks"
-              className={`w-9 h-9 flex items-center justify-center rounded-full transition-all ${
-                popover === "tasks"
-                  ? "bg-primary/15 text-primary border border-primary/40"
-                  : "text-on-surface-variant hover:text-primary hover:bg-primary/10 border border-transparent"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[18px]">checklist</span>
+            <button onClick={() => toggle("tasks")} title="Tasks" aria-label="Quick tasks" aria-expanded={popover === "tasks"} className={iconBtn(popover === "tasks")}>
+              <span className="material-symbols-outlined text-[20px]">checklist</span>
             </button>
             {popover === "tasks" && <TasksPopover onClose={() => setPopover(null)} />}
           </div>
 
-          <div className="w-px h-6 bg-outline-variant mx-1 hidden sm:block" />
-
-          {/* Avatar + name (sign out and settings live in the "More" sheet on phones) */}
-          <div className="hidden md:flex items-center gap-2">
-            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-[13px] md:text-[16px] select-none flex-shrink-0">
-              {initials}
-            </div>
-            <div className="hidden lg:block">
-              <p className="text-[15px] font-bold text-on-surface font-inter leading-tight">{displayName}</p>
-              <p className="text-[12px] text-on-surface-variant font-inter">Member since {memberSince}</p>
-            </div>
-          </div>
-
-          {/* Sign out */}
-          <button
-            onClick={logOut}
-            title="Sign out"
-            className="hidden md:flex w-9 h-9 items-center justify-center rounded-full text-on-surface-variant hover:text-error hover:bg-error/10 transition-all"
-          >
-            <span className="material-symbols-outlined text-[18px] md:text-[20px]">logout</span>
-          </button>
-
-          {/* Log Session */}
           <button
             onClick={() => setShowLogModal(true)}
-            className="bg-primary text-on-primary px-3 md:px-5 py-1.5 md:py-2 rounded-full font-bold font-inter hover:opacity-80 transition-all text-[13px] md:text-[14px] flex items-center gap-1"
+            className="ml-1 bg-primary text-on-primary px-3 md:px-4 h-9 rounded-full font-semibold font-inter hover:brightness-110 active:scale-[0.98] transition text-[13px] md:text-[14px] flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
           >
-            <span className="material-symbols-outlined text-[15px]">add</span>
-            <span className="hidden sm:inline">Log Session</span>
+            <span className="material-symbols-outlined text-[18px]">add</span>
+            <span className="hidden sm:inline">Log session</span>
             <span className="sm:hidden">Log</span>
           </button>
+
+          {/* Account: name, settings, sign out */}
+          <div className="relative ml-1">
+            <button onClick={() => toggle("account")} data-testid="account-menu" aria-label="Account menu" aria-haspopup="menu"
+              aria-expanded={popover === "account"}
+              className="w-9 h-9 rounded-full bg-primary-container text-on-primary-container font-semibold text-[13px] flex items-center justify-center select-none hover:brightness-110 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+              {initials}
+            </button>
+            {popover === "account" && (
+              <div role="menu" className="absolute right-0 top-[calc(100%+8px)] w-64 glass-card p-2 shadow-[0_8px_40px_rgba(0,0,0,0.5)] z-50">
+                <div className="px-3 py-2 mb-1 border-b border-outline-variant">
+                  <p className="text-[14px] font-semibold text-on-surface truncate">{displayName}</p>
+                  <p className="text-[12px] text-on-surface-variant truncate">{user?.email}</p>
+                </div>
+                <Link role="menuitem" href="/settings" data-testid="account-settings"
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-[14px] text-on-surface hover:bg-surface-container-high">
+                  <span className="material-symbols-outlined text-[18px] text-on-surface-variant">settings</span>Settings
+                </Link>
+                <button role="menuitem" onClick={logOut} data-testid="account-signout"
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[14px] text-on-surface hover:bg-surface-container-high">
+                  <span className="material-symbols-outlined text-[18px] text-on-surface-variant">logout</span>Sign out
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 

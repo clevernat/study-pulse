@@ -224,7 +224,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-8 max-w-2xl mx-auto space-y-6">
+    <div className="max-w-2xl space-y-6">
       <ConfirmModal
         open={confirmReset}
         title="Reset All Data"
@@ -317,8 +317,8 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between py-3">
             <div>
               <div className="flex items-center gap-2">
-                <p className="text-sm text-[#e8e8f0] font-medium">Dark Mode</p>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/30 font-bold uppercase tracking-wide">
+                <p className="text-sm text-[#e8e8f0] font-medium">Dark mode</p>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/30 font-bold">
                   Always On
                 </span>
               </div>
@@ -349,7 +349,7 @@ export default function SettingsPage() {
           <Toggle
             enabled={sessionComplete}
             onToggle={() => handleSessionComplete(!sessionComplete)}
-            label="Session Complete"
+            label="Session complete"
             description="Get notified when a Pomodoro session ends"
           />
           <Toggle
@@ -369,7 +369,7 @@ export default function SettingsPage() {
           {/* Export */}
           <div className="flex flex-col gap-3">
             <div>
-              <p className="text-sm text-[#e8e8f0] font-medium">Export Sessions</p>
+              <p className="text-sm text-[#e8e8f0] font-medium">Export sessions</p>
               <p className="text-xs text-[#958da1] mt-0.5">
                 {getFilteredSessions().length} session{getFilteredSessions().length !== 1 ? "s" : ""} will be exported
               </p>
@@ -423,7 +423,7 @@ export default function SettingsPage() {
 
           <div className="border-t border-[#252535] pt-3 flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-red-400">Reset All Data</p>
+              <p className="text-sm font-medium text-red-400">Reset all data</p>
               <p className="text-xs text-[#958da1] mt-0.5">
                 Permanently delete all sessions, subjects, and goals
               </p>

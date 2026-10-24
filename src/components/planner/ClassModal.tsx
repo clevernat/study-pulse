@@ -64,7 +64,7 @@ export default function ClassModal({ uid, subjects, rotationWeeks, item, onClose
         </div>
 
         <div className="flex flex-col gap-2">
-          <span className="text-xs text-on-surface-variant uppercase tracking-wider font-bold">Times</span>
+          <span className="text-xs text-on-surface-variant font-bold">Times</span>
           {slots.map((slot, i) => (
             <div key={i} data-testid="class-slot" className="flex flex-wrap items-center gap-2">
               <select aria-label="Day" data-testid="class-day" className={`${inputCls} !w-auto flex-1`} value={slot.weekday} onChange={(e) => setSlot(i, { weekday: Number(e.target.value) })}>

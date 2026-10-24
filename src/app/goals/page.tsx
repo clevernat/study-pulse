@@ -246,15 +246,15 @@ export default function GoalsPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {isCompleted ? (
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-secondary/15 text-secondary border border-secondary/30">
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-secondary/15 text-secondary border border-secondary/30">
                 Completed
               </span>
             ) : isExpired ? (
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-error/15 text-error border border-error/30">
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-error/15 text-error border border-error/30">
                 Expired
               </span>
             ) : (
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider" style={typeBadge(goal.type)}>
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold" style={typeBadge(goal.type)}>
                 {goal.type.charAt(0).toUpperCase() + goal.type.slice(1)}
               </span>
             )}
@@ -377,21 +377,21 @@ export default function GoalsPage() {
         <div className="glass-card p-6 flex flex-col gap-3">
           <div className="flex items-center gap-3">
             <span className="material-symbols-outlined text-primary text-[28px]">track_changes</span>
-            <span className="text-xs uppercase tracking-widest text-on-surface-variant font-inter">Active Goals</span>
+            <span className="text-xs text-on-surface-variant font-inter">Active goals</span>
           </div>
           <span className="font-jetbrains text-3xl font-bold text-on-surface">{activeCount}</span>
         </div>
         <div className="glass-card p-6 flex flex-col gap-3">
           <div className="flex items-center gap-3">
             <span className="material-symbols-outlined text-secondary text-[28px]">check_circle</span>
-            <span className="text-xs uppercase tracking-widest text-on-surface-variant font-inter">Completed</span>
+            <span className="text-xs text-on-surface-variant font-inter">Completed</span>
           </div>
           <span className="font-jetbrains text-3xl font-bold text-on-surface">{completedCount}</span>
         </div>
         <div className="glass-card p-6 flex flex-col gap-3">
           <div className="flex items-center gap-3">
             <span className="material-symbols-outlined text-tertiary text-[28px]">pie_chart</span>
-            <span className="text-xs uppercase tracking-widest text-on-surface-variant font-inter">Completion Rate</span>
+            <span className="text-xs text-on-surface-variant font-inter">Completion rate</span>
           </div>
           <span className="font-jetbrains text-3xl font-bold text-on-surface">{completionRate}%</span>
         </div>
@@ -495,7 +495,7 @@ export default function GoalsPage() {
                 >
                   chevron_right
                 </span>
-                <span className="font-grotesk font-bold text-sm uppercase tracking-wider text-error">
+                <span className="font-grotesk font-bold text-sm text-error">
                   Expired
                 </span>
                 <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-error/15 text-error">
@@ -527,7 +527,7 @@ export default function GoalsPage() {
                 >
                   chevron_right
                 </span>
-                <span className="font-grotesk font-bold text-sm uppercase tracking-wider text-secondary">
+                <span className="font-grotesk font-bold text-sm text-secondary">
                   Completed
                 </span>
                 <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-secondary/15 text-secondary">

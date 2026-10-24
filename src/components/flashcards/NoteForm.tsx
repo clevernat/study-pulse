@@ -74,20 +74,20 @@ export default function NoteForm({ uid, deck, note, cards, onDone }: { uid: stri
       {hasHtml && <p className="text-[11px] text-tertiary">This card came from an import. Saving here keeps only the text, not its formatting.</p>}
       <div className="flex flex-col gap-1">
         <div className="flex items-center justify-between">
-          <span className="text-xs text-on-surface-variant uppercase tracking-wider font-bold">{isCloze ? "Text" : "Front"}</span>
+          <span className="text-xs text-on-surface-variant font-bold">{isCloze ? "Text" : "Front"}</span>
           {isCloze && <button type="button" data-testid="note-make-cloze" onClick={makeCloze} className="text-xs text-primary font-bold px-2 py-0.5 rounded border border-primary/40" title="Hide the selected words">[...]</button>}
         </div>
         <textarea ref={frontRef} data-testid="note-front" className={`${inputCls} min-h-[80px]`} value={front} onChange={(e) => setFront(e.target.value)}
           placeholder={isCloze ? "The {{c1::mitochondria}} is the powerhouse of the cell." : "Question"} />
       </div>
       <div className="flex flex-col gap-1">
-        <span className="text-xs text-on-surface-variant uppercase tracking-wider font-bold">{isCloze ? "Extra (optional)" : "Back"}</span>
+        <span className="text-xs text-on-surface-variant font-bold">{isCloze ? "Extra (optional)" : "Back"}</span>
         <textarea data-testid="note-back" className={`${inputCls} min-h-[60px]`} value={back} onChange={(e) => setBack(e.target.value)} placeholder={isCloze ? "Shown with the answer" : "Answer"} />
       </div>
       <input className={inputCls} value={tags} onChange={(e) => setTags(e.target.value)} placeholder="Tags (optional), e.g. chapter1 exam" />
       {preview && (
         <div className="rounded-xl border border-outline-variant/50 p-3 text-sm text-on-surface">
-          <p className="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Preview (front)</p>
+          <p className="text-xs text-on-surface-variant mb-1">Preview (front)</p>
           <CardHtml html={preview.front} />
         </div>
       )}

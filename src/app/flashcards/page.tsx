@@ -24,11 +24,11 @@ export default function FlashcardsPage() {
   const stats = dayTotals(reviewDays.find((d) => d.id === today));
 
   return (
-    <div className="max-w-4xl mx-auto flex flex-col gap-6">
+    <div className="max-w-4xl flex flex-col gap-6">
       <div className="grid grid-cols-3 gap-3">
-        <div className="glass-card p-4"><p className="font-jetbrains text-2xl text-on-surface" data-testid="fc-due-total">{due}</p><p className="text-xs uppercase tracking-widest text-on-surface-variant">To study now</p></div>
-        <div className="glass-card p-4"><p className="font-jetbrains text-2xl text-on-surface">{stats.cards}</p><p className="text-xs uppercase tracking-widest text-on-surface-variant">Answered today</p></div>
-        <div className="glass-card p-4"><p className="font-jetbrains text-2xl text-on-surface">{stats.cards ? `${stats.correctPct}%` : "—"}</p><p className="text-xs uppercase tracking-widest text-on-surface-variant">Correct today</p></div>
+        <div className="glass-card p-4"><p className="font-jetbrains text-2xl text-on-surface" data-testid="fc-due-total">{due}</p><p className="text-xs text-on-surface-variant">To study now</p></div>
+        <div className="glass-card p-4"><p className="font-jetbrains text-2xl text-on-surface">{stats.cards}</p><p className="text-xs text-on-surface-variant">Answered today</p></div>
+        <div className="glass-card p-4"><p className="font-jetbrains text-2xl text-on-surface">{stats.cards ? `${stats.correctPct}%` : "—"}</p><p className="text-xs text-on-surface-variant">Correct today</p></div>
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">

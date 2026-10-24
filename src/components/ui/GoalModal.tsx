@@ -181,7 +181,7 @@ export default function GoalModal({
 
           {/* Target Hours */}
           <div>
-            <label className="text-on-surface-variant text-sm font-inter mb-1.5 block">Target Hours</label>
+            <label className="text-on-surface-variant text-sm font-inter mb-1.5 block">Target hours</label>
             <input
               type="number"
               value={targetHours}
@@ -230,7 +230,7 @@ export default function GoalModal({
               <div className="flex items-center gap-3 bg-[#0e0e11] border border-primary/30 rounded-xl px-4 py-3">
                 <span className="material-symbols-outlined text-primary text-[18px]">{lockedSubject.icon}</span>
                 <span className="text-on-surface font-medium text-sm">{lockedSubject.name}</span>
-                <span className="ml-auto text-[10px] uppercase tracking-widest text-on-surface-variant">{lockedSubject.category}</span>
+                <span className="ml-auto text-xs text-on-surface-variant">{lockedSubject.category}</span>
               </div>
             ) : subjects.length === 0 ? (
               <p className="text-xs text-error bg-error/10 border border-error/20 rounded-xl px-4 py-3 font-inter">

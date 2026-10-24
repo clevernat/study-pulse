@@ -83,7 +83,7 @@ export default function LogSessionModal({ onClose, onSaved }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-6">
-          <h2 className="font-grotesk font-bold text-xl text-on-surface">Log Study Session</h2>
+          <h2 className="font-grotesk font-bold text-xl text-on-surface">Log study session</h2>
           <button onClick={onClose} className="text-on-surface-variant hover:text-on-surface transition-colors">
             <span className="material-symbols-outlined">close</span>
           </button>
@@ -185,7 +185,7 @@ export default function LogSessionModal({ onClose, onSaved }: Props) {
           {/* Focus Score */}
           <div>
             <label className="text-on-surface-variant text-sm font-inter mb-1.5 flex items-center justify-between">
-              <span>Focus Score</span>
+              <span>Focus score</span>
               <span className="font-jetbrains text-primary font-bold">{focusScore}%</span>
             </label>
             <input

@@ -79,7 +79,7 @@ export default function ImportPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto flex flex-col gap-6">
+    <div className="max-w-2xl flex flex-col gap-6">
       <div className="flex items-center gap-3">
         <Link href="/flashcards" aria-label="Back to Flashcards" className="text-on-surface-variant hover:text-primary"><span className="material-symbols-outlined">arrow_back</span></Link>
         <h1 className="font-grotesk font-bold text-2xl text-on-surface">Import cards</h1>

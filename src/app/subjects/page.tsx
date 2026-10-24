@@ -438,7 +438,7 @@ export default function SubjectsPage() {
                 </Link>
 
                 <span
-                  className="self-start px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider"
+                  className="self-start px-2.5 py-0.5 rounded-full text-[11px] font-bold"
                   style={{ background: c.chip, color: c.chipText }}
                 >
                   {subject.category}
@@ -447,7 +447,7 @@ export default function SubjectsPage() {
                 <div className="flex items-end justify-between">
                   <div>
                     <div className="font-jetbrains font-semibold text-[20px]" style={{ color: c.text }}>{hoursLabel}</div>
-                    <div className="text-xs text-on-surface-variant mt-0.5">Total Time</div>
+                    <div className="text-xs text-on-surface-variant mt-0.5">Total time</div>
                   </div>
                   <div className="text-right">
                     <div className="font-jetbrains font-semibold text-[20px] text-on-surface">{stats.count}</div>

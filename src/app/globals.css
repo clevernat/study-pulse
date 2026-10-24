@@ -14,7 +14,8 @@ html {
 body {
   background-color: #131316;
   color: #e5e1e6;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Geist', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 .material-symbols-outlined {
@@ -56,33 +57,32 @@ body {
     border-color: rgba(210, 187, 255, 0.4);
   }
 
-  .nav-item {
+  .nav-item, .nav-item-active {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 8px 16px;
-    border-radius: 0.5rem;
-    color: #ccc3d8;
+    gap: 12px;
+    padding: 9px 12px;
+    border-radius: 0.625rem;
     font-weight: 500;
-    transition: background-color 0.2s;
-    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
   }
 
-  .nav-item:hover {
-    background-color: #353438;
+  .nav-item { color: #ccc3d8; }
+
+  @media (hover: hover) and (pointer: fine) {
+    .nav-item:hover { background-color: #2a2a2d; color: #e5e1e6; }
   }
+
+  .nav-item:focus-visible, .nav-item-active:focus-visible { outline: 2px solid #d2bbff; outline-offset: 2px; }
 
   .nav-item-active {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 8px 16px;
-    border-radius: 0.5rem;
-    color: #d2bbff;
-    font-weight: 700;
-    background-color: rgba(124, 58, 237, 0.1);
-    border-right: 2px solid #d2bbff;
+    color: #e5e1e6;
+    font-weight: 600;
+    background-color: rgba(124, 58, 237, 0.16);
+    box-shadow: inset 2px 0 0 0 #d2bbff;
   }
+
+  .nav-item-active .material-symbols-outlined { color: #d2bbff; }
 
   .progress-track {
     width: 100%;
@@ -173,7 +173,3 @@ html.reduced-motion *::after {
 .cloze-blank { color: #40efb7; font-weight: 700; }
 .cloze-answer { color: #40efb7; font-weight: 700; }
 
-/* Laptop screens up to 960px high (e.g. 1440x900): keep every sidebar link visible */
-@media (max-height: 960px) {
-  .nav-item, .nav-item-active { padding-top: 5px; padding-bottom: 5px; }
-}

@@ -3,55 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
-function LiveClock() {
-  const [now, setNow] = useState<Date | null>(null);
-
-  useEffect(() => {
-    setNow(new Date());
-    const id = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  if (!now) return null;
-
-  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-  const datePart = now.toLocaleDateString("en-US", {
-    timeZone: tz,
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-
-  const timePart = now.toLocaleTimeString("en-US", {
-    timeZone: tz,
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
-
-  const tzAbbr = now.toLocaleTimeString("en-US", {
-    timeZone: tz,
-    timeZoneName: "short",
-  }).split(" ").pop();
-
-  return (
-    <p className="text-on-surface-variant mt-1 font-inter">
-      {datePart}
-      <span className="mx-2 text-outline-variant">·</span>
-      <span className="font-jetbrains text-sm text-primary">{timePart}</span>
-      <span className="ml-1.5 text-xs text-on-surface-variant/60">{tzAbbr}</span>
-    </p>
-  );
-}
 import { useAuth } from "@/context/AuthContext";
 import { subscribeSessions, subscribeSubjects } from "@/lib/firebase/firestore";
 import { computeStreak, computeLongestStreak, hasPerfectWeek } from "@/lib/streakLogic";
 import { getColor } from "@/lib/colorPalette";
 import { localDateStr, formatSmartDuration, daysAgoStr } from "@/lib/dateUtils";
-import TasksWidget from "@/components/dashboard/TasksWidget";
 import ExamCountdownCard from "@/components/planner/ExamCountdownCard";
 import { useCollection } from "@/lib/firebase/useCollection";
 import { toCsv, downloadText } from "@/lib/csv";
@@ -129,7 +85,7 @@ function WeeklyBarChart({ sessions }: { sessions: Session[] }) {
   return (
     <div className="glass-card p-6 flex flex-col gap-3">
       <div>
-        <h2 className="font-grotesk font-bold text-lg text-on-surface">Weekly Study Hours</h2>
+        <h2 className="font-grotesk font-bold text-lg text-on-surface">Study time this week</h2>
         <p className="text-xs text-on-surface-variant mt-0.5">Minutes studied per day · last 7 days · hover a bar for details</p>
       </div>
       <div className="flex gap-3 mt-2">
@@ -204,7 +160,7 @@ function Heatmap({ sessions }: { sessions: Session[] }) {
   return (
     <div className="glass-card p-6 flex flex-col gap-4 overflow-hidden relative">
       <div>
-        <h2 className="font-grotesk font-bold text-lg text-on-surface">90-Day Velocity</h2>
+        <h2 className="font-grotesk font-bold text-lg text-on-surface">Last 90 days</h2>
         <p className="text-xs text-on-surface-variant mt-0.5">
           {totalDays} active days · {totalHours}h total
         </p>
@@ -270,9 +226,9 @@ function ActiveSubjects({ subjects, sessions }: { subjects: Subject[]; sessions:
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-grotesk font-bold text-lg text-on-surface">Active Subjects</h2>
+        <h2 className="font-grotesk font-bold text-lg text-on-surface">Top subjects</h2>
         <Link href="/subjects" className="text-sm text-primary hover:opacity-80 transition-opacity">
-          View All →
+          View all →
         </Link>
       </div>
       <div className="flex flex-col gap-3">
@@ -287,7 +243,7 @@ function ActiveSubjects({ subjects, sessions }: { subjects: Subject[]; sessions:
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-grotesk font-bold text-sm text-on-surface truncate">{s.name}</span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ background: c.chip, color: c.chipText }}>{s.category}</span>
+                  <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: c.chip, color: c.chipText }}>{s.category}</span>
                 </div>
                 <span className="text-xs text-on-surface-variant">{formatSmartDuration(totalMins)} total</span>
               </div>
@@ -313,18 +269,18 @@ function RecentSessions({ sessions, subjectById }: { sessions: Session[]; subjec
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-grotesk font-bold text-lg text-on-surface">Recent Sessions</h2>
+        <h2 className="font-grotesk font-bold text-lg text-on-surface">Recent sessions</h2>
         <button onClick={handleExport} className="text-sm text-on-surface-variant border border-outline-variant px-3 py-1 rounded-full hover:border-primary hover:text-primary transition-all">
-          Export Logs
+          Export CSV
         </button>
       </div>
       <div className="glass-card overflow-hidden overflow-x-auto">
         <table className="w-full min-w-[400px]">
           <thead>
             <tr className="border-b border-outline-variant">
-              <th className="text-left text-xs uppercase tracking-widest text-on-surface-variant px-4 py-3">Subject</th>
-              <th className="text-left text-xs uppercase tracking-widest text-on-surface-variant px-4 py-3">Duration</th>
-              <th className="text-left text-xs uppercase tracking-widest text-on-surface-variant px-4 py-3">Focus Score</th>
+              <th className="text-left text-xs text-on-surface-variant px-4 py-3">Subject</th>
+              <th className="text-left text-xs text-on-surface-variant px-4 py-3">Duration</th>
+              <th className="text-left text-xs text-on-surface-variant px-4 py-3">Focus score</th>
             </tr>
           </thead>
           <tbody>
@@ -430,8 +386,6 @@ export default function DashboardPage() {
   const { items: tasks } = useCollection<Task>("tasks");
   const [loading, setLoading] = useState(true);
 
-  const greeting = user?.displayName ?? user?.email?.split("@")[0] ?? "Alex";
-
   useEffect(() => {
     if (!user) return;
     setLoading(true);
@@ -479,12 +433,6 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-10">
-      {/* Greeting */}
-      <div>
-        <h1 className="font-grotesk font-bold text-3xl text-on-surface">Welcome back, {greeting}</h1>
-        <LiveClock />
-      </div>
-
       {/* Stats Row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
         {/* Streak */}
@@ -495,8 +443,8 @@ export default function DashboardPage() {
             </span>
           </div>
           <div>
-            <div className="font-jetbrains font-semibold text-2xl text-on-surface">{streakDays} {streakDays === 1 ? "Day" : "Day"} Streak</div>
-            <div className="text-xs uppercase tracking-widest text-on-surface-variant mt-1">Consistency King</div>
+            <div className="font-jetbrains font-semibold text-2xl text-on-surface tabular-nums">{streakDays} {streakDays === 1 ? "day" : "days"}</div>
+            <div className="text-sm text-on-surface-variant mt-0.5">Current streak</div>
           </div>
         </div>
 
@@ -509,7 +457,7 @@ export default function DashboardPage() {
             <div className="font-jetbrains font-semibold text-2xl text-on-surface">
               {formatSmartDuration(Math.round(weeklyHours * 60))}
             </div>
-            <div className="text-xs uppercase tracking-widest text-on-surface-variant mt-1">Weekly Effort</div>
+            <div className="text-sm text-on-surface-variant mt-0.5">Studied this week</div>
           </div>
         </div>
 
@@ -522,7 +470,7 @@ export default function DashboardPage() {
             <div className="font-jetbrains font-semibold text-2xl text-on-surface">
               {formatSmartDuration(Math.round(dailyAvg * 60))}
             </div>
-            <div className="text-xs uppercase tracking-widest text-secondary mt-1">Daily Average</div>
+            <div className="text-sm text-on-surface-variant mt-0.5">Daily average this week</div>
           </div>
         </div>
       </div>
@@ -539,9 +487,6 @@ export default function DashboardPage() {
           <Heatmap sessions={sessions} />
         </div>
       </div>
-
-      {/* Tasks Widget */}
-      <TasksWidget />
 
       {/* Bottom Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">

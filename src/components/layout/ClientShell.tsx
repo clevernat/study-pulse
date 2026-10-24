@@ -6,6 +6,7 @@ import { useTimerStore } from "@/store/timerStore";
 import { subscribeTimerState, subscribeUserPreferences, hasTimerPrefs } from "@/lib/firebase/firestore";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
+import SectionTabs from "./SectionTabs";
 import FloatingTimer from "./FloatingTimer";
 import TimerSync from "./TimerSync";
 import AmbientController from "./AmbientController";
@@ -157,7 +158,7 @@ export default function ClientShell({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     if (!loading && user && (pathname === "/" || pathname === "")) {
-      router.push("/dashboard");
+      router.push("/today");
     }
   }, [user, loading, pathname, router]);
 
@@ -181,12 +182,14 @@ export default function ClientShell({ children }: { children: React.ReactNode })
 
   return (
     <div className="flex bg-background min-h-screen">
+      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-primary focus:text-on-primary">Skip to content</a>
       <Sidebar />
       {/* Content: offset by sidebar on md+, full-width on mobile */}
-      <div className="flex-1 md:ml-64 min-w-0">
+      <div className="flex-1 md:ml-60 min-w-0">
         <TopBar />
-        {/* pt for topbar, pb-20 on mobile for bottom nav */}
-        <main className="pt-20 pb-24 px-4 md:pt-28 md:pb-12 md:px-12 min-h-screen">
+        {/* pt for topbar, pb-24 on mobile for bottom nav */}
+        <main id="main" className="pt-16 pb-24 px-4 md:pt-20 md:pb-12 md:px-10 min-h-screen max-w-[1400px] mx-auto">
+          <SectionTabs />
           {children}
         </main>
       </div>

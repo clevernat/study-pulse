@@ -143,7 +143,7 @@ export default function TasksPage() {
   ];
 
   return (
-    <div className="max-w-2xl mx-auto flex flex-col gap-6">
+    <div className="max-w-2xl flex flex-col gap-6">
       <ConfirmModal
         open={!!confirmId}
         title="Delete Task"
@@ -165,14 +165,14 @@ export default function TasksPage() {
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-container text-on-primary-container font-bold font-inter text-sm hover:opacity-90 active:scale-95 transition-all"
         >
           <span className="material-symbols-outlined text-[18px]">add</span>
-          New Task
+          New task
         </button>
       </div>
 
       {/* Add form */}
       {showForm && (
         <form onSubmit={handleAdd} className="glass-card p-5 flex flex-col gap-4">
-          <h3 className="font-grotesk font-bold text-on-surface">New Task</h3>
+          <h3 className="font-grotesk font-bold text-on-surface">New task</h3>
 
           <div className="flex gap-2" role="radiogroup" aria-label="Kind">
             {TASK_KINDS.map((k) => (
@@ -200,7 +200,7 @@ export default function TasksPage() {
           <div className="grid grid-cols-2 gap-3">
             {/* Subject */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-on-surface-variant uppercase tracking-wider font-bold">Subject</label>
+              <label className="text-xs text-on-surface-variant font-bold">Subject</label>
               <select
                 value={subjectId}
                 onChange={(e) => setSubjectId(e.target.value)}
@@ -213,7 +213,7 @@ export default function TasksPage() {
 
             {/* Due date */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-on-surface-variant uppercase tracking-wider font-bold">Due Date</label>
+              <label className="text-xs text-on-surface-variant font-bold">Due date</label>
               <input
                 data-testid="task-due"
                 type="date"
@@ -226,7 +226,7 @@ export default function TasksPage() {
 
             {/* Priority */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-on-surface-variant uppercase tracking-wider font-bold">Priority</label>
+              <label className="text-xs text-on-surface-variant font-bold">Priority</label>
               <div className="flex gap-2">
                 {(["high","medium","low"] as Task["priority"][]).map((p) => {
                   const c = PRIORITY_COLORS[p!];
@@ -244,7 +244,7 @@ export default function TasksPage() {
 
             {/* Estimated time */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-on-surface-variant uppercase tracking-wider font-bold">Est. Time (min)</label>
+              <label className="text-xs text-on-surface-variant font-bold">Estimated minutes</label>
               <input
                 type="number"
                 min="1" max="480"
@@ -259,12 +259,12 @@ export default function TasksPage() {
             {dueDate && (
               <>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs text-on-surface-variant uppercase tracking-wider font-bold">Due Time</label>
+                  <label className="text-xs text-on-surface-variant font-bold">Due time</label>
                   <input type="time" data-testid="task-time" value={dueTime} onChange={(e) => setDueTime(e.target.value)} style={{ colorScheme: "dark" }}
                     className="bg-[#0e0e11] border border-outline-variant rounded-xl px-3 py-2.5 text-on-surface text-sm focus:outline-none focus:border-primary transition-colors" />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs text-on-surface-variant uppercase tracking-wider font-bold">Reminder</label>
+                  <label className="text-xs text-on-surface-variant font-bold">Reminder</label>
                   <select value={reminder} onChange={(e) => setReminder(e.target.value)}
                     className="bg-[#0e0e11] border border-outline-variant rounded-xl px-3 py-2.5 text-on-surface text-sm focus:outline-none focus:border-primary transition-colors">
                     {REMINDER_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.value === "0" ? "At due time" : o.label}</option>)}
@@ -277,7 +277,7 @@ export default function TasksPage() {
             {kind === "revision" && (
               <>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs text-on-surface-variant uppercase tracking-wider font-bold">For Exam</label>
+                  <label className="text-xs text-on-surface-variant font-bold">For exam</label>
                   <select data-testid="task-exam" value={examId} onChange={(e) => setExamId(e.target.value)}
                     className="bg-[#0e0e11] border border-outline-variant rounded-xl px-3 py-2.5 text-on-surface text-sm focus:outline-none focus:border-primary transition-colors">
                     <option value="">None</option>
@@ -285,7 +285,7 @@ export default function TasksPage() {
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs text-on-surface-variant uppercase tracking-wider font-bold">Repeat after done</label>
+                  <label className="text-xs text-on-surface-variant font-bold">Repeat after done</label>
                   <select value={repeatDays} onChange={(e) => setRepeatDays(e.target.value)}
                     className="bg-[#0e0e11] border border-outline-variant rounded-xl px-3 py-2.5 text-on-surface text-sm focus:outline-none focus:border-primary transition-colors">
                     <option value="">Do not repeat</option>
@@ -354,7 +354,7 @@ export default function TasksPage() {
               {filter === "done" ? "No completed tasks yet" : filter === "overdue" ? "No overdue tasks" : filter === "today" ? "Nothing due today" : "All caught up!"}
             </p>
             <p className="text-sm text-on-surface-variant">
-              {filter === "all" ? "Click \"New Task\" above to get started." : ""}
+              {filter === "all" ? "Click \"New task\" above to get started." : ""}
             </p>
           </div>
         ) : filtered.map((task) => {

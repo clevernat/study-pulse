@@ -16,7 +16,7 @@ function Stat({ label, value, testId }: { label: string; value: string; testId?:
   return (
     <div className="glass-card p-4">
       <p className="font-jetbrains text-2xl text-on-surface" data-testid={testId}>{value}</p>
-      <p className="text-xs uppercase tracking-widest text-on-surface-variant mt-1">{label}</p>
+      <p className="text-xs text-on-surface-variant mt-1">{label}</p>
     </div>
   );
 }
@@ -60,7 +60,7 @@ export default function FlashcardStatsPage() {
   const young = counts ? Math.max(0, counts.total - counts.new - counts.learning - counts.mature) : 0;
 
   return (
-    <div className="max-w-4xl mx-auto flex flex-col gap-6">
+    <div className="max-w-4xl flex flex-col gap-6">
       <div className="flex items-center gap-3">
         <Link href="/flashcards" aria-label="Back to Flashcards" className="text-on-surface-variant hover:text-primary"><span className="material-symbols-outlined">arrow_back</span></Link>
         <select aria-label="Deck" className={`${inputCls} !w-auto`} value={deckId} onChange={(e) => setDeckId(e.target.value)}>

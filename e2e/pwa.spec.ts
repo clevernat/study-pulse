@@ -42,7 +42,8 @@ test("works offline: pages open, data shows, changes sync when back online", asy
   await expect(page.getByTestId("task-item").filter({ hasText: "Made offline" })).toBeVisible();
   await evidence(page, "14-offline");
   await page.goto("/flashcards/");           // a page not opened before also loads offline
-  await expect(page.getByTestId("page-title")).toHaveText("Flashcards");
+  await expect(page.getByTestId("page-title")).toHaveText("Study");
+  await expect(page.getByTestId("tab-flashcards")).toHaveAttribute("aria-current", "page");
 
   // Back online: the offline task reaches the server.
   await context.setOffline(false);

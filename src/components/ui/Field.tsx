@@ -11,7 +11,7 @@ export const secondaryBtnCls =
 export function Field({ label, children, className = "" }: { label: string; children: React.ReactNode; className?: string }) {
   return (
     <label className={`flex flex-col gap-1.5 ${className}`}>
-      <span className="text-xs text-on-surface-variant uppercase tracking-wider font-bold">{label}</span>
+      <span className="text-xs text-on-surface-variant font-bold">{label}</span>
       {children}
     </label>
   );

@@ -175,7 +175,7 @@ export default function FloatingTimer() {
               {MODE_LABELS[mode] ?? "FOCUS"}
             </span>
             {state === "paused" && (
-              <span className="text-[9px] uppercase tracking-widest text-on-surface-variant">· PAUSED</span>
+              <span className="text-[9px] text-on-surface-variant">· PAUSED</span>
             )}
           </div>
           <span className="font-jetbrains text-[22px] font-bold text-on-surface leading-tight tabular-nums">

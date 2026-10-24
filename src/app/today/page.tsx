@@ -103,7 +103,7 @@ export default function TodayPage() {
   } as const;
 
   return (
-    <div className="max-w-2xl mx-auto flex flex-col gap-8">
+    <div className="max-w-2xl flex flex-col gap-8">
 
       {/* Greeting */}
       <div>
@@ -119,21 +119,21 @@ export default function TodayPage() {
           <span className="material-symbols-outlined text-secondary text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>timer</span>
           <div>
             <div className="font-jetbrains font-bold text-lg text-on-surface">{todayMins > 0 ? formatSmartDuration(todayMins) : "0 min"}</div>
-            <div className="text-[10px] uppercase tracking-widest text-on-surface-variant">Focused today</div>
+            <div className="text-xs text-on-surface-variant">Focused today</div>
           </div>
         </div>
         <div className="glass-card px-5 py-3 flex items-center gap-3">
           <span className="material-symbols-outlined text-primary text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>task_alt</span>
           <div>
             <div className="font-jetbrains font-bold text-lg text-on-surface">{tasksDone}/{tasksDone + tasksLeft}</div>
-            <div className="text-[10px] uppercase tracking-widest text-on-surface-variant">Tasks done today</div>
+            <div className="text-xs text-on-surface-variant">Tasks done today</div>
           </div>
         </div>
         <div className="glass-card px-5 py-3 flex items-center gap-3">
           <span className="material-symbols-outlined text-tertiary text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>checklist</span>
           <div>
             <div className="font-jetbrains font-bold text-lg text-on-surface">{openCount}</div>
-            <div className="text-[10px] uppercase tracking-widest text-on-surface-variant">Open tasks</div>
+            <div className="text-xs text-on-surface-variant">Open tasks</div>
           </div>
         </div>
       </div>
@@ -141,7 +141,7 @@ export default function TodayPage() {
       {/* Classes today (from the timetable) */}
       {(classesToday.length > 0 || holidayToday) && (
         <section data-testid="today-classes" className="flex flex-col gap-2">
-          <h2 className="text-xs uppercase tracking-widest text-on-surface-variant font-bold">Classes today</h2>
+          <h2 className="text-xs text-on-surface-variant font-bold">Classes today</h2>
           {holidayToday && <p className="text-sm text-tertiary">{holidayToday.name}: no classes.</p>}
           {classesToday.map((o, i) => {
             const sub = subjects.find((x) => x.id === o.subjectId);
@@ -172,7 +172,7 @@ export default function TodayPage() {
       {/* Planned study blocks for today */}
       {blocksToday.length > 0 && (
         <section data-testid="today-blocks" className="flex flex-col gap-2">
-          <h2 className="text-xs uppercase tracking-widest text-on-surface-variant font-bold">Planned study</h2>
+          <h2 className="text-xs text-on-surface-variant font-bold">Planned study</h2>
           {blocksToday.map((b) => {
             const sub = subjects.find((x) => x.id === b.subjectId);
             const done = blockDone(b);
@@ -201,7 +201,7 @@ export default function TodayPage() {
       {/* Habits */}
       {activeHabits.length > 0 && user && (
         <section data-testid="today-habits" className="flex flex-col gap-2">
-          <h2 className="text-xs uppercase tracking-widest text-on-surface-variant font-bold">Habits</h2>
+          <h2 className="text-xs text-on-surface-variant font-bold">Habits</h2>
           {activeHabits.map((h) => <HabitRow key={h.id} uid={user.uid} habit={h} today={today} ctx={habitCtx} />)}
         </section>
       )}
@@ -209,7 +209,7 @@ export default function TodayPage() {
       {/* Exams in the next 14 days */}
       {examsSoon.length > 0 && (
         <section data-testid="today-exams" className="flex flex-col gap-2">
-          <h2 className="text-xs uppercase tracking-widest text-on-surface-variant font-bold">Exams soon</h2>
+          <h2 className="text-xs text-on-surface-variant font-bold">Exams soon</h2>
           {examsSoon.map((e) => {
             const days = daysUntil(e.date, today);
             const sub = subjects.find((x) => x.id === e.subjectId);
@@ -256,11 +256,11 @@ export default function TodayPage() {
       <section>
         <h2 className="font-grotesk font-bold text-base text-on-surface mb-3 flex items-center gap-2">
           <span className="material-symbols-outlined text-primary text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>today</span>
-          Due Today {dueTodayTasks.length > 0 && `(${dueTodayTasks.length})`}
+          Due today {dueTodayTasks.length > 0 && `(${dueTodayTasks.length})`}
         </h2>
         {dueTodayTasks.length === 0 ? (
           <div className="glass-card p-5 text-center text-on-surface-variant text-sm">
-            Nothing due today. {openCount > 0 ? `You have ${openCount} open tasks.` : "Add tasks in the Task Planner."}
+            Nothing due today. {openCount > 0 ? `You have ${openCount} open ${openCount === 1 ? "task" : "tasks"}.` : "Add tasks in Plan → Tasks."}
           </div>
         ) : (
           <div className="flex flex-col gap-2">
@@ -290,7 +290,7 @@ export default function TodayPage() {
       <section>
         <h2 className="font-grotesk font-bold text-base text-on-surface mb-3 flex items-center gap-2">
           <span className="material-symbols-outlined text-secondary text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>history</span>
-          Sessions Today ({todaySessions.length})
+          Sessions today ({todaySessions.length})
         </h2>
         {todaySessions.length === 0 ? (
           <div className="glass-card p-5 flex flex-col items-center gap-3 text-center">
@@ -299,7 +299,7 @@ export default function TodayPage() {
               onClick={() => router.push("/timer")}
               className="px-4 py-2 rounded-xl bg-primary-container text-on-primary-container font-bold text-sm hover:opacity-90 transition-all"
             >
-              Start a Focus Session
+              Start a focus session
             </button>
           </div>
         ) : (
