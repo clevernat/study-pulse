@@ -42,3 +42,8 @@ CLAUDE.md
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# test output
+/test-results/
+/docs/evidence/playwright-report/
+/test-fixtures/

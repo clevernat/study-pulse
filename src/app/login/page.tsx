@@ -130,6 +130,7 @@ export default function LoginPage() {
                 Email
               </label>
               <input
+                data-testid="login-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -143,6 +144,7 @@ export default function LoginPage() {
                 Password
               </label>
               <input
+                data-testid="login-password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -161,6 +163,7 @@ export default function LoginPage() {
 
             {/* Submit */}
             <button
+              data-testid="login-submit"
               type="submit"
               disabled={submitting}
               className="w-full bg-primary-container text-on-primary-container py-3 rounded-xl font-bold font-inter text-sm mt-1 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
