@@ -23,21 +23,21 @@ function Toggle({ enabled, onToggle, label, description }: ToggleProps) {
   return (
     <div className="flex items-center justify-between py-3">
       <div>
-        <p className="text-sm text-[#e8e8f0] font-medium">{label}</p>
+        <p className="text-sm text-on-surface font-medium">{label}</p>
         {description && (
-          <p className="text-xs text-[#958da1] mt-0.5">{description}</p>
+          <p className="text-xs text-outline mt-0.5">{description}</p>
         )}
       </div>
       <button
         onClick={onToggle}
         className={`relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none ${
-          enabled ? "bg-secondary" : "bg-[#252535]"
+          enabled ? "bg-secondary" : "bg-outline-variant"
         }`}
         aria-pressed={enabled}
         aria-label={label}
       >
         <span
-          className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-[#0e0e11] transition-transform duration-200 ${
+          className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-surface-container-lowest transition-transform duration-200 ${
             enabled ? "translate-x-5" : "translate-x-0"
           }`}
         />
@@ -58,22 +58,22 @@ interface StepperProps {
 function Stepper({ label, value, min, max, onChange, unit = "min" }: StepperProps) {
   return (
     <div className="flex items-center justify-between py-3">
-      <p className="text-sm text-[#e8e8f0] font-medium">{label}</p>
+      <p className="text-sm text-on-surface font-medium">{label}</p>
       <div className="flex items-center gap-3">
         <button
           onClick={() => onChange(Math.max(min, value - 1))}
-          className="w-7 h-7 rounded-lg border border-[#252535] text-[#958da1] hover:text-[#e8e8f0] hover:border-[#d2bbff]/40 transition-colors flex items-center justify-center text-lg leading-none"
+          className="w-7 h-7 rounded-lg border border-outline-variant text-outline hover:text-on-surface hover:border-primary/40 transition-colors flex items-center justify-center text-lg leading-none"
           aria-label={`Decrease ${label}`}
         >
           −
         </button>
-        <div className="bg-[#0e0e11] border border-outline-variant rounded-lg p-2 text-center font-jetbrains w-16 text-[#e8e8f0] text-sm">
+        <div className="bg-surface-container-lowest border border-outline-variant rounded-lg p-2 text-center font-jetbrains w-16 text-on-surface text-sm">
           {value}
-          <span className="text-[#958da1] text-xs ml-0.5">{unit}</span>
+          <span className="text-outline text-xs ml-0.5">{unit}</span>
         </div>
         <button
           onClick={() => onChange(Math.min(max, value + 1))}
-          className="w-7 h-7 rounded-lg border border-[#252535] text-[#958da1] hover:text-[#e8e8f0] hover:border-[#d2bbff]/40 transition-colors flex items-center justify-center text-lg leading-none"
+          className="w-7 h-7 rounded-lg border border-outline-variant text-outline hover:text-on-surface hover:border-primary/40 transition-colors flex items-center justify-center text-lg leading-none"
           aria-label={`Increase ${label}`}
         >
           +
@@ -248,39 +248,39 @@ export default function SettingsPage() {
         onCancel={() => setResetDone(false)}
       />
       {/* Subtitle */}
-      <p className="text-sm text-[#958da1]">
+      <p className="text-sm text-outline">
         Manage your preferences and account
       </p>
 
       {/* Profile */}
       <div className="glass-card p-6">
-        <h2 className="font-space font-semibold text-[#e8e8f0] mb-4">
+        <h2 className="font-space font-semibold text-on-surface mb-4">
           Profile
         </h2>
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-[#7c3aed]/30 border border-[#d2bbff]/20 flex items-center justify-center flex-shrink-0">
-            <span className="font-jetbrains font-bold text-[#d2bbff] text-lg">
+          <div className="w-14 h-14 rounded-full bg-primary-container/30 border border-primary/20 flex items-center justify-center flex-shrink-0">
+            <span className="font-jetbrains font-bold text-primary text-lg">
               {initials}
             </span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-space font-semibold text-[#e8e8f0] truncate">
+            <p className="font-space font-semibold text-on-surface truncate">
               {displayName}
             </p>
-            <p className="text-sm text-[#958da1] truncate">{displayEmail}</p>
+            <p className="text-sm text-outline truncate">{displayEmail}</p>
           </div>
         </div>
       </div>
 
       {/* Timer Preferences */}
       <div className="glass-card p-6">
-        <h2 className="font-space font-semibold text-[#e8e8f0] mb-2">
+        <h2 className="font-space font-semibold text-on-surface mb-2">
           Timer Preferences
         </h2>
-        <p className="text-xs text-[#958da1] mb-4">
+        <p className="text-xs text-outline mb-4">
           Customize your Pomodoro session lengths
         </p>
-        <div className="divide-y divide-[#252535]">
+        <div className="divide-y divide-outline-variant">
           <Stepper
             label="Pomodoro Length"
             value={pomodoroLen}
@@ -311,25 +311,25 @@ export default function SettingsPage() {
 
       {/* Appearance */}
       <div className="glass-card p-6">
-        <h2 className="font-space font-semibold text-[#e8e8f0] mb-2">Appearance</h2>
-        <div className="divide-y divide-[#252535]">
+        <h2 className="font-space font-semibold text-on-surface mb-2">Appearance</h2>
+        <div className="divide-y divide-outline-variant">
           {/* Dark Mode — locked until light theme is built */}
           <div className="flex items-center justify-between py-3">
             <div>
               <div className="flex items-center gap-2">
-                <p className="text-sm text-[#e8e8f0] font-medium">Dark mode</p>
+                <p className="text-sm text-on-surface font-medium">Dark mode</p>
                 <span className="text-xs px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/30 font-bold">
                   Always On
                 </span>
               </div>
-              <p className="text-xs text-[#958da1] mt-0.5">Light mode coming soon</p>
+              <p className="text-xs text-outline mt-0.5">Light mode coming soon</p>
             </div>
             <button
               disabled
               className="relative w-11 h-6 rounded-full bg-secondary cursor-not-allowed opacity-60"
               aria-label="Dark mode (always on)"
             >
-              <span className="absolute top-1 left-1 w-4 h-4 rounded-full bg-[#0e0e11] translate-x-5" />
+              <span className="absolute top-1 left-1 w-4 h-4 rounded-full bg-surface-container-lowest translate-x-5" />
             </button>
           </div>
 
@@ -344,8 +344,8 @@ export default function SettingsPage() {
 
       {/* Notifications */}
       <div className="glass-card p-6">
-        <h2 className="font-space font-semibold text-[#e8e8f0] mb-2">Notifications</h2>
-        <div className="divide-y divide-[#252535]">
+        <h2 className="font-space font-semibold text-on-surface mb-2">Notifications</h2>
+        <div className="divide-y divide-outline-variant">
           <Toggle
             enabled={sessionComplete}
             onToggle={() => handleSessionComplete(!sessionComplete)}
@@ -363,14 +363,14 @@ export default function SettingsPage() {
 
       {/* Data */}
       <div className="glass-card p-6">
-        <h2 className="font-space font-semibold text-[#e8e8f0] mb-4">Data</h2>
+        <h2 className="font-space font-semibold text-on-surface mb-4">Data</h2>
         <div className="space-y-4">
 
           {/* Export */}
           <div className="flex flex-col gap-3">
             <div>
-              <p className="text-sm text-[#e8e8f0] font-medium">Export sessions</p>
-              <p className="text-xs text-[#958da1] mt-0.5">
+              <p className="text-sm text-on-surface font-medium">Export sessions</p>
+              <p className="text-xs text-outline mt-0.5">
                 {getFilteredSessions().length} session{getFilteredSessions().length !== 1 ? "s" : ""} will be exported
               </p>
             </div>
@@ -383,8 +383,8 @@ export default function SettingsPage() {
                   onClick={() => setExportRange(r)}
                   className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${
                     exportRange === r
-                      ? "bg-primary/20 text-[#d2bbff] border-primary/50"
-                      : "border-[#252535] text-[#958da1] hover:border-[#d2bbff]/30 hover:text-[#c4c4d4]"
+                      ? "bg-primary/20 text-primary border-primary/50"
+                      : "border-outline-variant text-outline hover:border-primary/30 hover:text-on-surface-variant"
                   }`}
                 >
                   {r === "all" ? "All Time" : r === "this-month" ? "This Month" : r === "last-month" ? "Last Month" : "Custom"}
@@ -395,11 +395,11 @@ export default function SettingsPage() {
             {exportRange === "custom" && (
               <div className="flex items-center gap-2">
                 <input type="date" value={exportFrom} onChange={(e) => setExportFrom(e.target.value)}
-                  className="flex-1 bg-[#0e0e11] border border-[#252535] rounded-lg px-3 py-1.5 text-xs text-[#e8e8f0] focus:outline-none focus:border-[#d2bbff]/40"
+                  className="flex-1 bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-1.5 text-xs text-on-surface focus:outline-none focus:border-primary/40"
                   style={{ colorScheme: "dark" }} />
-                <span className="text-[#958da1] text-xs">→</span>
+                <span className="text-outline text-xs">→</span>
                 <input type="date" value={exportTo} onChange={(e) => setExportTo(e.target.value)}
-                  className="flex-1 bg-[#0e0e11] border border-[#252535] rounded-lg px-3 py-1.5 text-xs text-[#e8e8f0] focus:outline-none focus:border-[#d2bbff]/40"
+                  className="flex-1 bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-1.5 text-xs text-on-surface focus:outline-none focus:border-primary/40"
                   style={{ colorScheme: "dark" }} />
               </div>
             )}
@@ -407,24 +407,24 @@ export default function SettingsPage() {
             {/* Download buttons */}
             <div className="flex flex-wrap gap-2">
               <button onClick={handleExportCSV}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-[#252535] text-sm text-[#c4c4d4] hover:text-[#e8e8f0] hover:border-[#d2bbff]/30 transition-colors">
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-outline-variant text-sm text-on-surface-variant hover:text-on-surface hover:border-primary/30 transition-colors">
                 <span className="material-symbols-outlined text-[16px]">download</span> CSV
               </button>
               <button onClick={handleExportExcel}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-[#252535] text-sm text-[#c4c4d4] hover:text-[#e8e8f0] hover:border-[#d2bbff]/30 transition-colors">
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-outline-variant text-sm text-on-surface-variant hover:text-on-surface hover:border-primary/30 transition-colors">
                 <span className="material-symbols-outlined text-[16px]">table_view</span> Excel
               </button>
               <button onClick={handleExportJSON}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-[#252535] text-sm text-[#c4c4d4] hover:text-[#e8e8f0] hover:border-[#d2bbff]/30 transition-colors">
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-outline-variant text-sm text-on-surface-variant hover:text-on-surface hover:border-primary/30 transition-colors">
                 <span className="material-symbols-outlined text-[16px]">data_object</span> JSON
               </button>
             </div>
           </div>
 
-          <div className="border-t border-[#252535] pt-3 flex items-center justify-between">
+          <div className="border-t border-outline-variant pt-3 flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-red-400">Reset all data</p>
-              <p className="text-xs text-[#958da1] mt-0.5">
+              <p className="text-xs text-outline mt-0.5">
                 Permanently delete all sessions, subjects, and goals
               </p>
             </div>

@@ -93,7 +93,7 @@ export default function FlashcardStatsPage() {
       <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="glass-card p-5" data-testid="stats-counts">
           <h2 className="font-grotesk font-bold text-on-surface mb-3">Cards ({counts?.total ?? "…"})</h2>
-          {([["New", counts?.new, "#d2bbff"], ["Learning", counts?.learning, "#ffb4ab"], ["Young (< 21 days)", counts ? young : undefined, "#40efb7"], ["Mature (21+ days)", counts?.mature, "#00d29c"], ["Suspended (counted above too)", counts?.suspended, "#ffb95f"]] as const).map(([label, n, color]) => (
+          {([["New", counts?.new, "#a7b2f7"], ["Learning", counts?.learning, "#ffb4ab"], ["Young (< 21 days)", counts ? young : undefined, "#5ed8a9"], ["Mature (21+ days)", counts?.mature, "#3fbe90"], ["Suspended (counted above too)", counts?.suspended, "#ffb95f"]] as const).map(([label, n, color]) => (
             <div key={label} className="flex items-center gap-3 text-sm py-1">
               <span className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
               <span className="flex-1 text-on-surface-variant">{label}</span>
@@ -116,7 +116,7 @@ export default function FlashcardStatsPage() {
         <div className="grid grid-flow-col grid-rows-7 gap-1 w-fit max-w-full overflow-x-auto">
           {heat.map((d) => {
             const n = perDay[d] ?? 0;
-            return <span key={d} title={`${d}: ${n}`} className="w-3 h-3 rounded-sm" style={{ background: n ? `rgba(64,239,183,${0.2 + 0.8 * (n / heatMax)})` : "#1f1f27" }} />;
+            return <span key={d} title={`${d}: ${n}`} className="w-3 h-3 rounded-sm" style={{ background: n ? `rgba(94, 216, 169,${0.2 + 0.8 * (n / heatMax)})` : "#1f1f27" }} />;
           })}
         </div>
       </section>

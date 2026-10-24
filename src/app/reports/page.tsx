@@ -365,21 +365,21 @@ export default function ReportsPage() {
               <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto block" aria-label="Weekly learning trend">
                 <defs>
                   <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#7c3aed" stopOpacity="1" />
-                    <stop offset="100%" stopColor="#7c3aed" stopOpacity="0" />
+                    <stop offset="0%" stopColor="#5e6ad2" stopOpacity="1" />
+                    <stop offset="100%" stopColor="#5e6ad2" stopOpacity="0" />
                   </linearGradient>
                 </defs>
                 {/* Y gridlines + labels */}
                 {yTicks.map((t, i) => (
                   <g key={i}>
-                    <line x1={padL} y1={t.y} x2={W - padR} y2={t.y} stroke="#252535" strokeWidth="1" />
-                    <text x={padL - 6} y={t.y + 3} textAnchor="end" fontSize="9" fill="#958da1" fontFamily="monospace">{t.val}h</text>
+                    <line x1={padL} y1={t.y} x2={W - padR} y2={t.y} stroke="#292b30" strokeWidth="1" />
+                    <text x={padL - 6} y={t.y + 3} textAnchor="end" fontSize="9" fill="#838690" fontFamily="monospace">{t.val}h</text>
                   </g>
                 ))}
                 <polygon points={areaPoints} fill="url(#lineGrad)" opacity="0.25" />
                 <polyline
                   points={weeklyPoints.map((p) => `${p.x},${p.y}`).join(" ")}
-                  stroke="#d2bbff"
+                  stroke="#a7b2f7"
                   strokeWidth="2"
                   fill="none"
                   strokeLinejoin="round"
@@ -387,17 +387,17 @@ export default function ReportsPage() {
                 />
                 {weeklyPoints.map((p, i) => (
                   <g key={i} onMouseEnter={() => setWeeklyHover(i)} onMouseLeave={() => setWeeklyHover(null)} style={{ cursor: "pointer" }}>
-                    <circle cx={p.x} cy={p.y} r={weeklyHover === i ? 6 : 3.5} fill="#d2bbff" />
+                    <circle cx={p.x} cy={p.y} r={weeklyHover === i ? 6 : 3.5} fill="#a7b2f7" />
                     <circle cx={p.x} cy={p.y} r={20} fill="transparent" />
                   </g>
                 ))}
                 {weeklyHours.map((w, i) => (
-                  <text key={i} x={padL + i * stepX} y={H - 8} textAnchor="middle" fontSize="10" fill="#958da1" fontFamily="monospace">{w.label}</text>
+                  <text key={i} x={padL + i * stepX} y={H - 8} textAnchor="middle" fontSize="10" fill="#838690" fontFamily="monospace">{w.label}</text>
                 ))}
               </svg>
               {weeklyHover !== null && (
                 <div
-                  className="absolute z-10 bg-[#0e0e14] border border-primary/40 rounded-lg px-3 py-2 shadow-[0_4px_16px_rgba(0,0,0,0.5)] whitespace-nowrap pointer-events-none -translate-x-1/2 -translate-y-full"
+                  className="absolute z-10 bg-surface-container-lowest border border-primary/40 rounded-lg px-3 py-2 shadow-[0_4px_16px_rgba(0,0,0,0.5)] whitespace-nowrap pointer-events-none -translate-x-1/2 -translate-y-full"
                   style={{ left: `${(weeklyPoints[weeklyHover].x / W) * 100}%`, top: `${(weeklyPoints[weeklyHover].y / H) * 100}%`, marginTop: -8 }}
                 >
                   <div className="text-[10px] text-on-surface-variant">Week of {weeklyHours[weeklyHover].weekStart}</div>
@@ -429,10 +429,10 @@ export default function ReportsPage() {
                     style={{ cursor: "pointer", transition: "stroke-width 150ms" }}
                   />
                 ))}
-                <text x="80" y="76" textAnchor="middle" fontSize="13" fill="#e8e8f0" fontFamily="monospace" fontWeight="bold">
+                <text x="80" y="76" textAnchor="middle" fontSize="13" fill="#eeeef0" fontFamily="monospace" fontWeight="bold">
                   {donutHover !== null ? `${donutSubjects[donutHover].percentage}%` : donutSubjects.length}
                 </text>
-                <text x="80" y="92" textAnchor="middle" fontSize="9" fill="#958da1" fontFamily="monospace">
+                <text x="80" y="92" textAnchor="middle" fontSize="9" fill="#838690" fontFamily="monospace">
                   {donutHover !== null ? donutSubjects[donutHover].name : donutSubjects.length === 1 ? "Area" : "Areas"}
                 </text>
               </svg>
@@ -470,7 +470,7 @@ export default function ReportsPage() {
                   const pct = (mins / hourMax) * 100;
                   const isHover = hourHover === h;
                   // Color band: night cool / morning warm / afternoon energy / evening calm
-                  const band = h < 6 ? "#60a5fa" : h < 12 ? "#ffb95f" : h < 18 ? "#d2bbff" : "#40efb7";
+                  const band = h < 6 ? "#60a5fa" : h < 12 ? "#ffb95f" : h < 18 ? "#a7b2f7" : "#5ed8a9";
                   return (
                     <div
                       key={h}
@@ -495,7 +495,7 @@ export default function ReportsPage() {
                 <span>0h</span><span>6h</span><span>12h</span><span>18h</span><span>23h</span>
               </div>
               {hourHover !== null && hourOfDay[hourHover] > 0 && (
-                <div className="absolute top-4 right-4 bg-[#0e0e14] border border-primary/40 rounded-lg px-3 py-2 shadow-[0_4px_16px_rgba(0,0,0,0.5)] pointer-events-none">
+                <div className="absolute top-4 right-4 bg-surface-container-lowest border border-primary/40 rounded-lg px-3 py-2 shadow-[0_4px_16px_rgba(0,0,0,0.5)] pointer-events-none">
                   <div className="text-[10px] text-on-surface-variant">{hourHover.toString().padStart(2, "0")}:00 – {(hourHover + 1).toString().padStart(2, "0")}:00</div>
                   <div className="text-sm font-jetbrains font-semibold text-on-surface">{hourOfDay[hourHover]} min</div>
                 </div>
@@ -523,7 +523,7 @@ export default function ReportsPage() {
                 {focusByDay.map((d, i) => {
                   const score = d.score;
                   const pct = (score / 100) * 100;
-                  const color = score === 0 ? "#252535" : score >= 90 ? "#40efb7" : score >= 80 ? "#d2bbff" : "#ffb95f";
+                  const color = score === 0 ? "#292b30" : score >= 90 ? "#5ed8a9" : score >= 80 ? "#a7b2f7" : "#ffb95f";
                   const isHover = focusHover === i;
                   return (
                     <div
@@ -556,7 +556,7 @@ export default function ReportsPage() {
                 ))}
               </div>
               {focusHover !== null && focusByDay[focusHover].score > 0 && (
-                <div className="absolute top-4 right-4 bg-[#0e0e14] border border-primary/40 rounded-lg px-3 py-2 shadow-[0_4px_16px_rgba(0,0,0,0.5)] pointer-events-none">
+                <div className="absolute top-4 right-4 bg-surface-container-lowest border border-primary/40 rounded-lg px-3 py-2 shadow-[0_4px_16px_rgba(0,0,0,0.5)] pointer-events-none">
                   <div className="text-[10px] text-on-surface-variant">{DAYS[focusHover]}</div>
                   <div className="text-sm font-jetbrains font-semibold text-on-surface">{focusByDay[focusHover].score}%</div>
                   <div className="text-[10px] text-on-surface-variant">{focusByDay[focusHover].count} session{focusByDay[focusHover].count === 1 ? "" : "s"}</div>
@@ -629,7 +629,7 @@ export default function ReportsPage() {
               {heatHover !== null && (() => {
                 const cell = heatmapData[heatHover.row][heatHover.col];
                 return (
-                  <div className="absolute top-4 right-4 bg-[#0e0e14] border border-primary/40 rounded-lg px-3 py-2 shadow-[0_4px_16px_rgba(0,0,0,0.5)] pointer-events-none">
+                  <div className="absolute top-4 right-4 bg-surface-container-lowest border border-primary/40 rounded-lg px-3 py-2 shadow-[0_4px_16px_rgba(0,0,0,0.5)] pointer-events-none">
                     <div className="text-[10px] text-on-surface-variant">
                       {new Date(cell.date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
                     </div>

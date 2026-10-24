@@ -66,16 +66,16 @@ function ProgressRing({ current, target, color }: { current: number; target: num
   return (
     <div className="relative inline-flex items-center justify-center">
       <svg width="80" height="80" className="timer-ring">
-        <circle cx="40" cy="40" r={r} fill="none" stroke="#252535" strokeWidth="6" />
+        <circle cx="40" cy="40" r={r} fill="none" stroke="#292b30" strokeWidth="6" />
         <circle
           cx="40" cy="40" r={r} fill="none"
-          stroke={exceeded ? "#40efb7" : color} strokeWidth="6" strokeLinecap="round"
+          stroke={exceeded ? "#5ed8a9" : color} strokeWidth="6" strokeLinecap="round"
           strokeDasharray={circumference} strokeDashoffset={exceeded ? 0 : offset}
           transform="rotate(-90 40 40)"
-          style={{ filter: exceeded ? "drop-shadow(0 0 6px #40efb7)" : "none" }}
+          style={{ filter: exceeded ? "drop-shadow(0 0 6px #5ed8a9)" : "none" }}
         />
       </svg>
-      <span className="absolute font-jetbrains text-[12px] font-bold" style={{ color: exceeded ? "#40efb7" : "#e8e8f0" }}>
+      <span className="absolute font-jetbrains text-[12px] font-bold" style={{ color: exceeded ? "#5ed8a9" : "#eeeef0" }}>
         {exceeded ? `+${pct - 100}%` : `${pct}%`}
       </span>
     </div>
@@ -328,14 +328,14 @@ export default function GoalsPage() {
         <div className="flex items-center gap-6">
           <ProgressRing current={currentHours} target={goal.targetHours} color={color} />
           <div className="flex flex-col gap-2 flex-1">
-            <span className="font-jetbrains text-xl font-bold" style={{ color: exceeded ? "#40efb7" : "#e8e8f0" }}>
+            <span className="font-jetbrains text-xl font-bold" style={{ color: exceeded ? "#5ed8a9" : "#eeeef0" }}>
               {formatHours(currentHours)}
               <span className="text-on-surface-variant text-sm font-normal"> / {goal.targetHours}h target</span>
             </span>
             <div className="progress-track">
               <div
                 className="progress-fill transition-all"
-                style={{ width: `${pct}%`, backgroundColor: exceeded ? "#40efb7" : color }}
+                style={{ width: `${pct}%`, backgroundColor: exceeded ? "#5ed8a9" : color }}
               />
             </div>
             {exceeded ? (
@@ -406,7 +406,7 @@ export default function GoalsPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search goals or subjects…"
-            className="w-full bg-[#12121a] border border-[#252535] rounded-xl pl-10 pr-4 py-2.5 text-on-surface text-sm font-inter placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors"
+            className="w-full bg-card border border-outline-variant rounded-xl pl-10 pr-4 py-2.5 text-on-surface text-sm font-inter placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors"
           />
           {searchQuery && (
             <button
@@ -420,7 +420,7 @@ export default function GoalsPage() {
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as SortBy)}
-          className="bg-[#12121a] border border-[#252535] rounded-xl px-4 py-2.5 text-on-surface text-sm font-inter focus:outline-none focus:border-primary transition-colors"
+          className="bg-card border border-outline-variant rounded-xl px-4 py-2.5 text-on-surface text-sm font-inter focus:outline-none focus:border-primary transition-colors"
           style={{ colorScheme: "dark" }}
         >
           <option value="deadline">Sort: Deadline</option>
@@ -438,7 +438,7 @@ export default function GoalsPage() {
             className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${
               activeFilter === f
                 ? "bg-primary text-on-primary"
-                : "text-on-surface-variant hover:text-on-surface hover:bg-[#252535]"
+                : "text-on-surface-variant hover:text-on-surface hover:bg-outline-variant"
             }`}
           >
             {filterLabels[f]}

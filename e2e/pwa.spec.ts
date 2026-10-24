@@ -14,7 +14,7 @@ test("manifest and icons are valid for installing", async ({ page, request }) =>
   expect(sizes).toEqual(expect.arrayContaining(["192x192:any", "512x512:any", "512x512:maskable"]));
   for (const icon of m.icons) expect((await request.get(icon.src)).headers()["content-type"]).toBe("image/png");
   expect(await page.locator('link[rel="apple-touch-icon"]').getAttribute("href")).toBe("/icons/apple-touch-icon.png");
-  expect(await page.locator('meta[name="theme-color"]').getAttribute("content")).toBe("#131316");
+  expect(await page.locator('meta[name="theme-color"]').getAttribute("content")).toBe("#08090a");
   expect(await page.locator('meta[name="apple-mobile-web-app-capable"], meta[name="mobile-web-app-capable"]').count()).toBeGreaterThan(0);
 });
 

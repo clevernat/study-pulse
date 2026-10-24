@@ -30,7 +30,7 @@ export default function HabitRow({ uid, habit, today, ctx, onEdit }: { uid: stri
         </p>
         <div className="flex items-center gap-1 mt-1.5" aria-label="Last 7 days">
           {week.map((d) => (
-            <span key={d} title={d} className="w-3 h-3 rounded-sm" style={{ background: doneOn(habit, d, ctx) ? c.dot : "#252535" }} />
+            <span key={d} title={d} className="w-3 h-3 rounded-sm" style={{ background: doneOn(habit, d, ctx) ? c.dot : "#292b30" }} />
           ))}
           <span data-testid="habit-streak" className="ml-2 text-xs font-jetbrains text-on-surface flex items-center gap-0.5" title={`Best: ${best}`}>
             <span className="material-symbols-outlined text-[14px] text-tertiary" style={{ fontVariationSettings: "'FILL' 1" }}>local_fire_department</span>
@@ -51,7 +51,7 @@ export default function HabitRow({ uid, habit, today, ctx, onEdit }: { uid: stri
           onClick={() => setValue(done ? 0 : 1)}
           className={`w-10 h-10 rounded-full border-2 flex items-center justify-center ${done ? "border-transparent" : "border-outline-variant hover:border-primary"}`}
           style={done ? { background: c.dot } : undefined}>
-          {done && <span className="material-symbols-outlined text-[20px] text-[#131316]">check</span>}
+          {done && <span className="material-symbols-outlined text-[20px] text-background">check</span>}
         </button>
       )}
     </div>

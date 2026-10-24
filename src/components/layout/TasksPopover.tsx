@@ -104,7 +104,7 @@ export default function TasksPopover({ onClose }: { onClose: () => void }) {
           onChange={(e) => setDraft(e.target.value)}
           placeholder="Add a task…"
           maxLength={120}
-          className="bg-[#0e0e11] border border-outline-variant rounded-lg px-3 py-2 text-on-surface text-sm focus:outline-none focus:border-primary transition-colors placeholder:text-on-surface-variant/40"
+          className="bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-on-surface text-sm focus:outline-none focus:border-primary transition-colors placeholder:text-on-surface-variant/40"
           autoFocus
         />
         <div className="flex items-center gap-2">
@@ -112,7 +112,7 @@ export default function TasksPopover({ onClose }: { onClose: () => void }) {
             <select
               value={draftSubjectId}
               onChange={(e) => setDraftSubjectId(e.target.value)}
-              className="flex-1 bg-[#0e0e11] border border-outline-variant rounded-lg px-2 py-1.5 text-on-surface text-xs focus:outline-none focus:border-primary transition-colors"
+              className="flex-1 bg-surface-container-lowest border border-outline-variant rounded-lg px-2 py-1.5 text-on-surface text-xs focus:outline-none focus:border-primary transition-colors"
             >
               <option value="">No subject</option>
               {subjects.map((s) => (

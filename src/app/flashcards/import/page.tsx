@@ -122,7 +122,7 @@ export default function ImportPage() {
           )}
           {status === "saving" ? (
             <div className="flex flex-col gap-1" data-testid="import-progress">
-              <div className="h-2 rounded-full bg-[#1a1a24] overflow-hidden"><div className="h-full bg-primary transition-all" style={{ width: `${progress}%` }} /></div>
+              <div className="h-2 rounded-full bg-surface-container overflow-hidden"><div className="h-full bg-primary transition-all" style={{ width: `${progress}%` }} /></div>
               <p className="text-xs text-on-surface-variant">Saving… {progress}%</p>
             </div>
           ) : (

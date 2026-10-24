@@ -12,11 +12,11 @@ html {
 }
 
 body {
-  background-color: #131316;
-  color: #e5e1e6;
+  background-color: #08090a;
+  color: #eeeef0;
   font-family: 'IBM Plex Sans', system-ui, sans-serif;
-  caret-color: #d2bbff;
-  accent-color: #7c3aed;
+  caret-color: #a7b2f7;
+  accent-color: #5e6ad2;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -42,21 +42,21 @@ body {
 
 @layer components {
   .glass-card {
-    background-color: #12121a;
-    border: 1px solid #252535;
+    background-color: #0d0e11;
+    border: 1px solid #292b30;
     border-radius: 0.75rem;
   }
 
   .glass-card-hover {
-    background-color: #12121a;
-    border: 1px solid #252535;
+    background-color: #0d0e11;
+    border: 1px solid #292b30;
     border-radius: 0.75rem;
     transition: border-color 0.2s;
     cursor: pointer;
   }
 
   .glass-card-hover:hover {
-    border-color: rgba(210, 187, 255, 0.4);
+    border-color: rgba(167, 178, 247, 0.4);
   }
 
   .nav-item, .nav-item-active {
@@ -69,26 +69,26 @@ body {
     transition: background-color 0.15s, color 0.15s;
   }
 
-  .nav-item { color: #ccc3d8; }
+  .nav-item { color: #a7aab7; }
 
   @media (hover: hover) and (pointer: fine) {
-    .nav-item:hover { background-color: #2a2a2d; color: #e5e1e6; }
+    .nav-item:hover { background-color: #1d1e22; color: #eeeef0; }
   }
 
-  .nav-item:focus-visible, .nav-item-active:focus-visible { outline: 2px solid #d2bbff; outline-offset: 2px; }
+  .nav-item:focus-visible, .nav-item-active:focus-visible { outline: 2px solid #a7b2f7; outline-offset: 2px; }
 
   .nav-item-active {
-    color: #e5e1e6;
+    color: #eeeef0;
     font-weight: 600;
-    background-color: rgba(124, 58, 237, 0.16);
-    box-shadow: inset 2px 0 0 0 #d2bbff;
+    background-color: rgba(94, 106, 210, 0.16);
+    box-shadow: inset 2px 0 0 0 #a7b2f7;
   }
 
-  .nav-item-active .material-symbols-outlined { color: #d2bbff; }
+  .nav-item-active .material-symbols-outlined { color: #a7b2f7; }
 
   .progress-track {
     width: 100%;
-    background-color: #1a1a24;
+    background-color: #16171b;
     border-radius: 9999px;
     height: 8px;
     overflow: hidden;
@@ -97,13 +97,13 @@ body {
   .progress-fill {
     height: 100%;
     border-radius: 9999px;
-    background: linear-gradient(to right, #7c3aed, #40efb7);
+    background: linear-gradient(to right, #5e6ad2, #5ed8a9);
   }
 
   .chip {
     padding: 2px 8px;
-    background-color: rgba(210, 187, 255, 0.1);
-    color: #d2bbff;
+    background-color: rgba(167, 178, 247, 0.1);
+    color: #a7b2f7;
     font-size: 10px;
     font-weight: 700;
     border-radius: 4px;
@@ -113,8 +113,8 @@ body {
 
   .chip-secondary {
     padding: 2px 8px;
-    background-color: rgba(64, 239, 183, 0.1);
-    color: #40efb7;
+    background-color: rgba(94, 216, 169, 0.1);
+    color: #5ed8a9;
     font-size: 10px;
     font-weight: 700;
     border-radius: 4px;
@@ -140,14 +140,14 @@ body {
   height: 4px;
 }
 ::-webkit-scrollbar-track {
-  background: #131316;
+  background: #08090a;
 }
 ::-webkit-scrollbar-thumb {
-  background: #4a4455;
+  background: #292b30;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #7c3aed;
+  background: #5e6ad2;
 }
 
 /* Timer ring */
@@ -169,17 +169,17 @@ html.reduced-motion *::after {
 /* Flashcards */
 .card-html { overflow-wrap: anywhere; }
 .card-html img { max-width: 100%; height: auto; }
-.card-html hr { border-color: #252535; margin: 1rem 0; }
+.card-html hr { border-color: #292b30; margin: 1rem 0; }
 .card-html ul { list-style: disc; padding-left: 1.25rem; }
 .card-html ol { list-style: decimal; padding-left: 1.25rem; }
-.cloze-blank { color: #40efb7; font-weight: 700; }
-.cloze-answer { color: #40efb7; font-weight: 700; }
+.cloze-blank { color: #5ed8a9; font-weight: 700; }
+.cloze-answer { color: #5ed8a9; font-weight: 700; }
 
 
 /* ── Browser surfaces and accessibility ─────────────────────────────── */
 /* One themed keyboard-focus ring for every control (mouse clicks show none). */
-:focus-visible { outline: 2px solid #d2bbff; outline-offset: 2px; }
-::selection { background: rgba(124, 58, 237, 0.45); color: #fff; }
+:focus-visible { outline: 2px solid #a7b2f7; outline-offset: 2px; }
+::selection { background: rgba(94, 106, 210, 0.45); color: #fff; }
 
 /* Numbers line up in stats, timers and tables. */
 .font-jetbrains { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }

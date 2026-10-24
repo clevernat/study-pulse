@@ -41,7 +41,7 @@ export default function CalendarFeedCard() {
 
   return (
     <section className="glass-card p-6 flex flex-col gap-3" data-testid="calendar-card">
-      <h2 className="font-space font-semibold text-[#e8e8f0]">Calendar sync</h2>
+      <h2 className="font-space font-semibold text-on-surface">Calendar sync</h2>
       {!LIVE_FEED ? (
         <p data-testid="feed-download-only" className="text-sm text-on-surface-variant">Put your exams, homework, study blocks and classes into Google, Apple or Outlook Calendar: download the .ics file below and import it in your calendar app. It is a copy: download it again after changes. (A live link that updates by itself will come later.)</p>
       ) : (

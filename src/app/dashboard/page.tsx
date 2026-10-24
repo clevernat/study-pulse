@@ -124,7 +124,7 @@ function WeeklyBarChart({ sessions }: { sessions: Session[] }) {
                           : isBest
                             ? "bg-secondary"
                             : "bg-primary/60"
-                      } ${isHover && d.minutes > 0 ? "opacity-100 shadow-[0_0_20px_rgba(124,58,237,0.4)]" : ""}`}
+                      } ${isHover && d.minutes > 0 ? "opacity-100 shadow-[0_0_20px_rgba(94, 106, 210,0.4)]" : ""}`}
                       style={{ height: `${Math.max(pct, d.minutes > 0 ? 2 : 0)}%` }}
                     />
                   </div>
@@ -132,7 +132,7 @@ function WeeklyBarChart({ sessions }: { sessions: Session[] }) {
                     {d.day}
                   </span>
                   {isHover && (
-                    <div className="absolute -top-14 left-1/2 -translate-x-1/2 z-10 bg-[#0e0e14] border border-primary/40 rounded-lg px-3 py-2 shadow-[0_4px_16px_rgba(0,0,0,0.5)] whitespace-nowrap pointer-events-none">
+                    <div className="absolute -top-14 left-1/2 -translate-x-1/2 z-10 bg-surface-container-lowest border border-primary/40 rounded-lg px-3 py-2 shadow-[0_4px_16px_rgba(0,0,0,0.5)] whitespace-nowrap pointer-events-none">
                       <div className="text-[10px] text-on-surface-variant">{d.fullLabel}</div>
                       <div className="text-sm font-jetbrains text-on-surface font-semibold">
                         {d.minutes === 0 ? "No study" : `${d.minutes} min`}
@@ -194,7 +194,7 @@ function Heatmap({ sessions }: { sessions: Session[] }) {
       {/* Tooltip */}
       {hover !== null && (
         <div
-          className="absolute z-20 bg-[#0e0e14] border border-primary/40 rounded-lg px-3 py-1.5 shadow-[0_4px_16px_rgba(0,0,0,0.5)] whitespace-nowrap pointer-events-none -translate-x-1/2 -translate-y-full"
+          className="absolute z-20 bg-surface-container-lowest border border-primary/40 rounded-lg px-3 py-1.5 shadow-[0_4px_16px_rgba(0,0,0,0.5)] whitespace-nowrap pointer-events-none -translate-x-1/2 -translate-y-full"
           style={{ left: hover.x, top: hover.y - 8 }}
         >
           <div className="text-[10px] text-on-surface-variant">

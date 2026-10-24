@@ -18,14 +18,14 @@ function Navbar() {
         background: "rgba(19,19,22,0.80)",
         backdropFilter: "blur(24px)",
         WebkitBackdropFilter: "blur(24px)",
-        borderBottom: "1px solid #252535",
+        borderBottom: "1px solid #292b30",
       }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <span
           className="text-xl font-bold select-none"
-          style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#d2bbff" }}
+          style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#a7b2f7" }}
         >
           StudyPulse
         </span>
@@ -41,9 +41,9 @@ function Navbar() {
               key={id}
               onClick={() => scrollTo(id)}
               className="text-sm transition-colors"
-              style={{ color: "#ccc3d8", fontFamily: "'Inter', sans-serif" }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "#d2bbff")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = "#ccc3d8")}
+              style={{ color: "#a7aab7", fontFamily: "'Inter', sans-serif" }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "#a7b2f7")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "#a7aab7")}
             >
               {label}
             </button>
@@ -56,15 +56,15 @@ function Navbar() {
             href="/login"
             className="hidden sm:inline-flex px-4 py-2 rounded-full text-sm font-medium transition-all"
             style={{
-              color: "#d2bbff",
-              border: "1px solid rgba(210,187,255,0.25)",
+              color: "#a7b2f7",
+              border: "1px solid rgba(167, 178, 247,0.25)",
               fontFamily: "'Inter', sans-serif",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.borderColor = "rgba(210,187,255,0.6)";
+              (e.currentTarget as HTMLElement).style.borderColor = "rgba(167, 178, 247,0.6)";
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.borderColor = "rgba(210,187,255,0.25)";
+              (e.currentTarget as HTMLElement).style.borderColor = "rgba(167, 178, 247,0.25)";
             }}
           >
             Sign In
@@ -73,15 +73,15 @@ function Navbar() {
             href="/login"
             className="px-3 sm:px-4 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap"
             style={{
-              background: "#7c3aed",
+              background: "#5e6ad2",
               color: "#fff",
               fontFamily: "'Inter', sans-serif",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.background = "#6d28d9";
+              (e.currentTarget as HTMLElement).style.background = "#4c55bc";
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.background = "#7c3aed";
+              (e.currentTarget as HTMLElement).style.background = "#5e6ad2";
             }}
           >
             <span className="hidden sm:inline">Get Started Free</span>
@@ -105,25 +105,25 @@ function AppMockup() {
 
   function heatColor(i: number) {
     if (i === 0) return "#1a1a2e";
-    if (i === 1) return "rgba(64,239,183,0.2)";
-    if (i === 2) return "rgba(64,239,183,0.4)";
-    if (i === 3) return "rgba(64,239,183,0.7)";
-    return "#40efb7";
+    if (i === 1) return "rgba(94, 216, 169,0.2)";
+    if (i === 2) return "rgba(94, 216, 169,0.4)";
+    if (i === 3) return "rgba(94, 216, 169,0.7)";
+    return "#5ed8a9";
   }
 
   return (
     <div
       className="w-full max-w-4xl mx-auto mt-10 sm:mt-16 rounded-2xl overflow-hidden"
       style={{
-        background: "#12121a",
-        border: "1px solid #252535",
-        boxShadow: "0 0 80px rgba(124,58,237,0.2), 0 40px 80px rgba(0,0,0,0.6)",
+        background: "#0d0e11",
+        border: "1px solid #292b30",
+        boxShadow: "0 0 80px rgba(94, 106, 210,0.2), 0 40px 80px rgba(0,0,0,0.6)",
       }}
     >
       {/* Window chrome */}
       <div
         className="flex items-center gap-2 px-4 py-3"
-        style={{ background: "#0e0e14", borderBottom: "1px solid #252535" }}
+        style={{ background: "#060608", borderBottom: "1px solid #292b30" }}
       >
         <div className="w-3 h-3 rounded-full" style={{ background: "#ff5f57" }} />
         <div className="w-3 h-3 rounded-full" style={{ background: "#febc2e" }} />
@@ -131,8 +131,8 @@ function AppMockup() {
         <div
           className="ml-4 text-xs px-8 py-1 rounded"
           style={{
-            background: "#1a1a24",
-            color: "#555570",
+            background: "#16171b",
+            color: "#55585f",
             fontFamily: "'Inter', sans-serif",
           }}
         >
@@ -147,8 +147,8 @@ function AppMockup() {
           className="hidden sm:flex flex-col gap-3 p-4 pt-6"
           style={{
             width: "56px",
-            background: "#0e0e14",
-            borderRight: "1px solid #252535",
+            background: "#060608",
+            borderRight: "1px solid #292b30",
           }}
         >
           {["dashboard", "timer", "history_edu", "insights", "track_changes", "settings"].map((icon, i) => (
@@ -156,14 +156,14 @@ function AppMockup() {
               key={icon}
               className="w-8 h-8 rounded-lg flex items-center justify-center"
               style={{
-                background: i === 0 ? "rgba(124,58,237,0.2)" : "transparent",
+                background: i === 0 ? "rgba(94, 106, 210,0.2)" : "transparent",
               }}
             >
               <span
                 className="text-base"
                 style={{
                   fontFamily: "'Material Symbols Outlined'",
-                  color: i === 0 ? "#d2bbff" : "#444460",
+                  color: i === 0 ? "#a7b2f7" : "#3d4047",
                   fontSize: "18px",
                 }}
               >
@@ -180,13 +180,13 @@ function AppMockup() {
             <div>
               <div
                 className="font-bold text-base"
-                style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#e5e1e6" }}
+                style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#eeeef0" }}
               >
                 Welcome back, Alex
               </div>
               <div
                 className="text-xs mt-0.5"
-                style={{ fontFamily: "'Inter', sans-serif", color: "#666680" }}
+                style={{ fontFamily: "'Inter', sans-serif", color: "#666970" }}
               >
                 Thursday, May 14, 2026
               </div>
@@ -194,10 +194,10 @@ function AppMockup() {
             <div
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
               style={{
-                background: "rgba(64,239,183,0.1)",
-                color: "#40efb7",
+                background: "rgba(94, 216, 169,0.1)",
+                color: "#5ed8a9",
                 fontFamily: "'JetBrains Mono', monospace",
-                border: "1px solid rgba(64,239,183,0.2)",
+                border: "1px solid rgba(94, 216, 169,0.2)",
               }}
             >
               <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: "14px" }}>local_fire_department</span>
@@ -208,14 +208,14 @@ function AppMockup() {
           {/* Stats cards */}
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: "WEEKLY EFFORT", value: "14.2h", icon: "schedule", color: "#d2bbff", bg: "rgba(210,187,255,0.1)" },
-              { label: "DAILY AVERAGE", value: "2.4h", icon: "insights", color: "#40efb7", bg: "rgba(64,239,183,0.1)" },
+              { label: "WEEKLY EFFORT", value: "14.2h", icon: "schedule", color: "#a7b2f7", bg: "rgba(167, 178, 247,0.1)" },
+              { label: "DAILY AVERAGE", value: "2.4h", icon: "insights", color: "#5ed8a9", bg: "rgba(94, 216, 169,0.1)" },
               { label: "FOCUS SCORE", value: "87%", icon: "track_changes", color: "#ffb95f", bg: "rgba(255,185,95,0.1)" },
             ].map(({ label, value, icon, color, bg }) => (
               <div
                 key={label}
                 className="rounded-xl p-3 flex items-center gap-3"
-                style={{ background: "#12121a", border: "1px solid #252535" }}
+                style={{ background: "#0d0e11", border: "1px solid #292b30" }}
               >
                 <div
                   className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -226,13 +226,13 @@ function AppMockup() {
                 <div>
                   <div
                     className="font-bold text-sm"
-                    style={{ fontFamily: "'JetBrains Mono', monospace", color: "#e5e1e6" }}
+                    style={{ fontFamily: "'JetBrains Mono', monospace", color: "#eeeef0" }}
                   >
                     {value}
                   </div>
                   <div
                     className="text-[9px] uppercase tracking-widest mt-0.5"
-                    style={{ fontFamily: "'Inter', sans-serif", color: "#555570" }}
+                    style={{ fontFamily: "'Inter', sans-serif", color: "#55585f" }}
                   >
                     {label}
                   </div>
@@ -246,11 +246,11 @@ function AppMockup() {
             {/* Bar chart */}
             <div
               className="col-span-3 rounded-xl p-4 flex flex-col gap-2"
-              style={{ background: "#12121a", border: "1px solid #252535" }}
+              style={{ background: "#0d0e11", border: "1px solid #292b30" }}
             >
               <div
                 className="text-xs font-bold"
-                style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#e5e1e6" }}
+                style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#eeeef0" }}
               >
                 Weekly Study Hours
               </div>
@@ -262,7 +262,7 @@ function AppMockup() {
                         className="w-full rounded-t"
                         style={{
                           height: `${h}%`,
-                          background: h === 90 ? "#40efb7" : "rgba(210,187,255,0.4)",
+                          background: h === 90 ? "#5ed8a9" : "rgba(167, 178, 247,0.4)",
                           transition: "height 0.3s",
                         }}
                       />
@@ -271,7 +271,7 @@ function AppMockup() {
                       className="text-[8px]"
                       style={{
                         fontFamily: "'Inter', sans-serif",
-                        color: h === 90 ? "#40efb7" : "#444460",
+                        color: h === 90 ? "#5ed8a9" : "#3d4047",
                       }}
                     >
                       {barDays[i]}
@@ -284,11 +284,11 @@ function AppMockup() {
             {/* Heatmap */}
             <div
               className="col-span-2 rounded-xl p-4 flex flex-col gap-2"
-              style={{ background: "#12121a", border: "1px solid #252535" }}
+              style={{ background: "#0d0e11", border: "1px solid #292b30" }}
             >
               <div
                 className="text-xs font-bold"
-                style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#e5e1e6" }}
+                style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#eeeef0" }}
               >
                 90-Day Velocity
               </div>
@@ -321,13 +321,13 @@ function Hero() {
   return (
     <section
       className="relative min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 pt-28 pb-16 sm:pb-24 overflow-hidden"
-      style={{ background: "#131316" }}
+      style={{ background: "#08090a" }}
     >
       {/* Background glow */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(124,58,237,0.3), transparent)",
+          background: "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(94, 106, 210,0.3), transparent)",
         }}
       />
 
@@ -336,13 +336,13 @@ function Hero() {
         <div
           className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-8 text-sm font-medium"
           style={{
-            background: "rgba(124,58,237,0.15)",
-            border: "1px solid rgba(124,58,237,0.4)",
-            color: "#d2bbff",
+            background: "rgba(94, 106, 210,0.15)",
+            border: "1px solid rgba(94, 106, 210,0.4)",
+            color: "#a7b2f7",
             fontFamily: "'Inter', sans-serif",
           }}
         >
-          <span style={{ color: "#7c3aed" }}>✦</span>
+          <span style={{ color: "#5e6ad2" }}>✦</span>
           Study and planning in one app
         </div>
 
@@ -354,11 +354,11 @@ function Hero() {
             fontSize: "clamp(36px, 7vw, 72px)",
           }}
         >
-          <span style={{ color: "#e5e1e6" }}>Study Smarter.</span>
+          <span style={{ color: "#eeeef0" }}>Study Smarter.</span>
           <br />
-          <span style={{ color: "#e5e1e6" }}>Track Everything.</span>
+          <span style={{ color: "#eeeef0" }}>Track Everything.</span>
           <br />
-          <span style={{ color: "#d2bbff" }}>Achieve More.</span>
+          <span style={{ color: "#a7b2f7" }}>Achieve More.</span>
         </h1>
 
         {/* Subheadline */}
@@ -367,7 +367,7 @@ function Hero() {
           style={{
             fontFamily: "'Inter', sans-serif",
             fontSize: "clamp(15px, 2.5vw, 20px)",
-            color: "#ccc3d8",
+            color: "#a7aab7",
           }}
         >
           Flashcards with spaced repetition, a focus timer, exams, a class timetable
@@ -380,18 +380,18 @@ function Hero() {
             href="/login"
             className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 rounded-full font-bold text-base sm:text-lg transition-all text-center"
             style={{
-              background: "#7c3aed",
+              background: "#5e6ad2",
               color: "#fff",
               fontFamily: "'Inter', sans-serif",
-              boxShadow: "0 0 40px rgba(124,58,237,0.4)",
+              boxShadow: "0 0 40px rgba(94, 106, 210,0.4)",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.background = "#6d28d9";
-              (e.currentTarget as HTMLElement).style.boxShadow = "0 0 60px rgba(124,58,237,0.6)";
+              (e.currentTarget as HTMLElement).style.background = "#4c55bc";
+              (e.currentTarget as HTMLElement).style.boxShadow = "0 0 60px rgba(94, 106, 210,0.6)";
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.background = "#7c3aed";
-              (e.currentTarget as HTMLElement).style.boxShadow = "0 0 40px rgba(124,58,237,0.4)";
+              (e.currentTarget as HTMLElement).style.background = "#5e6ad2";
+              (e.currentTarget as HTMLElement).style.boxShadow = "0 0 40px rgba(94, 106, 210,0.4)";
             }}
           >
             Start Tracking Free →
@@ -401,15 +401,15 @@ function Hero() {
             className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 rounded-full font-bold text-base sm:text-lg transition-all"
             style={{
               background: "transparent",
-              color: "#d2bbff",
-              border: "1px solid rgba(210,187,255,0.3)",
+              color: "#a7b2f7",
+              border: "1px solid rgba(167, 178, 247,0.3)",
               fontFamily: "'Inter', sans-serif",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.borderColor = "rgba(210,187,255,0.7)";
+              (e.currentTarget as HTMLElement).style.borderColor = "rgba(167, 178, 247,0.7)";
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.borderColor = "rgba(210,187,255,0.3)";
+              (e.currentTarget as HTMLElement).style.borderColor = "rgba(167, 178, 247,0.3)";
             }}
           >
             See How It Works
@@ -427,13 +427,13 @@ function Hero() {
             <div key={label} className="flex flex-col items-center">
               <span
                 className="font-bold text-xl"
-                style={{ fontFamily: "'JetBrains Mono', monospace", color: "#d2bbff" }}
+                style={{ fontFamily: "'JetBrains Mono', monospace", color: "#a7b2f7" }}
               >
                 {value}
               </span>
               <span
                 className="text-xs uppercase tracking-widest mt-0.5"
-                style={{ fontFamily: "'Inter', sans-serif", color: "#666680" }}
+                style={{ fontFamily: "'Inter', sans-serif", color: "#666970" }}
               >
                 {label}
               </span>
@@ -455,15 +455,15 @@ const features = [
     icon: "style",
     title: "Flashcards That Remember for You",
     desc: "Basic and cloze cards in decks for each subject. Spaced repetition shows each card again just before you would forget it.",
-    color: "#d2bbff",
-    bg: "rgba(210,187,255,0.1)",
+    color: "#a7b2f7",
+    bg: "rgba(167, 178, 247,0.1)",
   },
   {
     icon: "calendar_month",
     title: "Study Calendar",
     desc: "Day, week and month views with tasks, exams, classes and planned study blocks. Start the timer straight from a block.",
-    color: "#40efb7",
-    bg: "rgba(64,239,183,0.1)",
+    color: "#5ed8a9",
+    bg: "rgba(94, 216, 169,0.1)",
   },
   {
     icon: "event_upcoming",
@@ -476,15 +476,15 @@ const features = [
     icon: "timer",
     title: "Pomodoro Focus Timer",
     desc: "Focus and break cycles with ambient sounds. Every focus block is saved as a study session.",
-    color: "#d2bbff",
-    bg: "rgba(210,187,255,0.1)",
+    color: "#a7b2f7",
+    bg: "rgba(167, 178, 247,0.1)",
   },
   {
     icon: "local_fire_department",
     title: "Habits, Streaks and Goals",
     desc: "Daily or weekly habits, study streaks, a 90-day heat map and goals that fill up from your real sessions.",
-    color: "#40efb7",
-    bg: "rgba(64,239,183,0.1)",
+    color: "#5ed8a9",
+    bg: "rgba(94, 216, 169,0.1)",
   },
   {
     icon: "notifications_active",
@@ -497,7 +497,7 @@ const features = [
 
 function Features() {
   return (
-    <section id="features" className="py-20 sm:py-32 px-4 sm:px-6" style={{ background: "#131316" }}>
+    <section id="features" className="py-20 sm:py-32 px-4 sm:px-6" style={{ background: "#08090a" }}>
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <h2
@@ -505,7 +505,7 @@ function Features() {
             style={{
               fontFamily: "'Space Grotesk', sans-serif",
               fontSize: "clamp(32px, 4vw, 48px)",
-              color: "#e5e1e6",
+              color: "#eeeef0",
             }}
           >
             Everything you need to excel
@@ -515,7 +515,7 @@ function Features() {
             style={{
               fontFamily: "'Inter', sans-serif",
               fontSize: "18px",
-              color: "#ccc3d8",
+              color: "#a7aab7",
             }}
           >
             Built for serious students who treat learning as a performance sport.
@@ -528,16 +528,16 @@ function Features() {
               key={title}
               className="p-6 rounded-xl transition-all duration-300 group"
               style={{
-                background: "#12121a",
-                border: "1px solid #252535",
+                background: "#0d0e11",
+                border: "1px solid #292b30",
                 cursor: "default",
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = "rgba(210,187,255,0.3)";
+                (e.currentTarget as HTMLElement).style.borderColor = "rgba(167, 178, 247,0.3)";
                 (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)";
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = "#252535";
+                (e.currentTarget as HTMLElement).style.borderColor = "#292b30";
                 (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
               }}
             >
@@ -557,13 +557,13 @@ function Features() {
               </div>
               <h3
                 className="font-bold text-lg mb-2"
-                style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#e5e1e6" }}
+                style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#eeeef0" }}
               >
                 {title}
               </h3>
               <p
                 className="text-sm leading-relaxed"
-                style={{ fontFamily: "'Inter', sans-serif", color: "#888899" }}
+                style={{ fontFamily: "'Inter', sans-serif", color: "#8a8d96" }}
               >
                 {desc}
               </p>
@@ -604,9 +604,9 @@ function HowItWorks() {
       id="how-it-works"
       className="py-20 sm:py-32 px-4 sm:px-6"
       style={{
-        background: "#0e0e11",
-        borderTop: "1px solid #252535",
-        borderBottom: "1px solid #252535",
+        background: "#060608",
+        borderTop: "1px solid #292b30",
+        borderBottom: "1px solid #292b30",
       }}
     >
       <div className="max-w-7xl mx-auto">
@@ -616,7 +616,7 @@ function HowItWorks() {
             style={{
               fontFamily: "'Space Grotesk', sans-serif",
               fontSize: "clamp(32px, 4vw, 48px)",
-              color: "#e5e1e6",
+              color: "#eeeef0",
             }}
           >
             Get started in 3 steps
@@ -628,13 +628,13 @@ function HowItWorks() {
             <div
               key={num}
               className="p-8 rounded-2xl relative overflow-hidden"
-              style={{ background: "#12121a", border: "1px solid #252535" }}
+              style={{ background: "#0d0e11", border: "1px solid #292b30" }}
             >
               {/* Corner shimmer */}
               <div
                 className="absolute top-0 left-0 w-32 h-32 pointer-events-none"
                 style={{
-                  background: "radial-gradient(circle at 0% 0%, rgba(124,58,237,0.12), transparent 70%)",
+                  background: "radial-gradient(circle at 0% 0%, rgba(94, 106, 210,0.12), transparent 70%)",
                 }}
               />
 
@@ -644,7 +644,7 @@ function HowItWorks() {
                 style={{
                   fontFamily: "'Space Grotesk', sans-serif",
                   fontSize: "80px",
-                  color: "rgba(210,187,255,0.12)",
+                  color: "rgba(167, 178, 247,0.12)",
                   lineHeight: 1,
                 }}
               >
@@ -654,12 +654,12 @@ function HowItWorks() {
               {/* Icon */}
               <div
                 className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
-                style={{ background: "rgba(124,58,237,0.15)" }}
+                style={{ background: "rgba(94, 106, 210,0.15)" }}
               >
                 <span
                   style={{
                     fontFamily: "'Material Symbols Outlined'",
-                    color: "#d2bbff",
+                    color: "#a7b2f7",
                     fontSize: "24px",
                   }}
                 >
@@ -669,13 +669,13 @@ function HowItWorks() {
 
               <h3
                 className="font-bold text-xl mb-3"
-                style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#e5e1e6" }}
+                style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#eeeef0" }}
               >
                 {title}
               </h3>
               <p
                 className="text-sm leading-relaxed"
-                style={{ fontFamily: "'Inter', sans-serif", color: "#888899" }}
+                style={{ fontFamily: "'Inter', sans-serif", color: "#8a8d96" }}
               >
                 {desc}
               </p>
@@ -693,13 +693,13 @@ function FinalCTA() {
   return (
     <section
       className="py-20 sm:py-32 px-4 sm:px-6 text-center relative overflow-hidden"
-      style={{ background: "#131316" }}
+      style={{ background: "#08090a" }}
     >
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "radial-gradient(ellipse 60% 80% at 50% 50%, rgba(124,58,237,0.15), transparent)",
+            "radial-gradient(ellipse 60% 80% at 50% 50%, rgba(94, 106, 210,0.15), transparent)",
         }}
       />
       <div className="relative z-10 max-w-3xl mx-auto">
@@ -708,14 +708,14 @@ function FinalCTA() {
           style={{
             fontFamily: "'Space Grotesk', sans-serif",
             fontSize: "clamp(32px, 4vw, 52px)",
-            color: "#e5e1e6",
+            color: "#eeeef0",
           }}
         >
           Ready to plan your next study session?
         </h2>
         <p
           className="mb-10 text-lg"
-          style={{ fontFamily: "'Inter', sans-serif", color: "#ccc3d8" }}
+          style={{ fontFamily: "'Inter', sans-serif", color: "#a7aab7" }}
         >
           Free to use. Your data stays in your own account.
         </p>
@@ -724,19 +724,19 @@ function FinalCTA() {
           href="/login"
           className="inline-block w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 rounded-full font-bold text-lg sm:text-xl transition-all"
           style={{
-            background: "#7c3aed",
+            background: "#5e6ad2",
             color: "#fff",
             fontFamily: "'Inter', sans-serif",
-            boxShadow: "0 0 60px rgba(124,58,237,0.4)",
+            boxShadow: "0 0 60px rgba(94, 106, 210,0.4)",
           }}
           onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.background = "#6d28d9";
-            (e.currentTarget as HTMLElement).style.boxShadow = "0 0 80px rgba(124,58,237,0.6)";
+            (e.currentTarget as HTMLElement).style.background = "#4c55bc";
+            (e.currentTarget as HTMLElement).style.boxShadow = "0 0 80px rgba(94, 106, 210,0.6)";
             (e.currentTarget as HTMLElement).style.transform = "scale(1.03)";
           }}
           onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.background = "#7c3aed";
-            (e.currentTarget as HTMLElement).style.boxShadow = "0 0 60px rgba(124,58,237,0.4)";
+            (e.currentTarget as HTMLElement).style.background = "#5e6ad2";
+            (e.currentTarget as HTMLElement).style.boxShadow = "0 0 60px rgba(94, 106, 210,0.4)";
             (e.currentTarget as HTMLElement).style.transform = "scale(1)";
           }}
         >
@@ -745,7 +745,7 @@ function FinalCTA() {
 
         <div
           className="flex flex-wrap justify-center gap-6 mt-6 text-sm"
-          style={{ fontFamily: "'Inter', sans-serif", color: "#666680" }}
+          style={{ fontFamily: "'Inter', sans-serif", color: "#666970" }}
         >
           <span>✓ Free</span>
           <span>✓ No credit card</span>
@@ -762,7 +762,7 @@ function Footer() {
   return (
     <footer
       className="px-4 sm:px-6 py-12"
-      style={{ background: "#0e0e11", borderTop: "1px solid #252535" }}
+      style={{ background: "#060608", borderTop: "1px solid #292b30" }}
     >
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 mb-8">
@@ -770,13 +770,13 @@ function Footer() {
           <div>
             <div
               className="text-xl font-bold mb-1"
-              style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#d2bbff" }}
+              style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#a7b2f7" }}
             >
               StudyPulse
             </div>
             <div
               className="text-sm"
-              style={{ fontFamily: "'Inter', sans-serif", color: "#555570" }}
+              style={{ fontFamily: "'Inter', sans-serif", color: "#55585f" }}
             >
               Your Academic Edge
             </div>
@@ -796,9 +796,9 @@ function Footer() {
                   key={label}
                   href={href}
                   className="text-sm transition-colors"
-                  style={{ color: "#555570", fontFamily: "'Inter', sans-serif" }}
-                  onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#d2bbff")}
-                  onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#555570")}
+                  style={{ color: "#55585f", fontFamily: "'Inter', sans-serif" }}
+                  onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#a7b2f7")}
+                  onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#55585f")}
                 >
                   {label}
                 </Link>
@@ -807,9 +807,9 @@ function Footer() {
                   key={label}
                   onClick={action}
                   className="text-sm transition-colors"
-                  style={{ color: "#555570", fontFamily: "'Inter', sans-serif" }}
-                  onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#d2bbff")}
-                  onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#555570")}
+                  style={{ color: "#55585f", fontFamily: "'Inter', sans-serif" }}
+                  onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#a7b2f7")}
+                  onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#55585f")}
                 >
                   {label}
                 </button>
@@ -820,7 +820,7 @@ function Footer() {
           {/* Right text */}
           <div
             className="text-sm"
-            style={{ fontFamily: "'Inter', sans-serif", color: "#555570" }}
+            style={{ fontFamily: "'Inter', sans-serif", color: "#55585f" }}
           >
             Built with ❤️ for students everywhere
           </div>
@@ -845,7 +845,7 @@ function Footer() {
 
 export default function LandingPage() {
   return (
-    <div style={{ background: "#131316", minHeight: "100vh" }}>
+    <div style={{ background: "#08090a", minHeight: "100vh" }}>
       <Navbar />
       <Hero />
       <Features />

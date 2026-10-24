@@ -6,8 +6,8 @@ import type { Goal, Subject } from "@/types";
 import { localDateStr } from "@/lib/dateUtils";
 
 export const typeColor: Record<Goal["type"], string> = {
-  daily:     "#d2bbff",
-  weekly:    "#40efb7",
+  daily:     "#a7b2f7",
+  weekly:    "#5ed8a9",
   monthly:   "#ffb95f",
   quarterly: "#60a5fa",
   yearly:    "#f472b6",
@@ -123,7 +123,7 @@ export default function GoalModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
-        className="relative bg-[#12121a] border border-[#252535] rounded-2xl w-full max-w-md shadow-2xl max-h-[90vh] flex flex-col overflow-hidden"
+        className="relative bg-card border border-outline-variant rounded-2xl w-full max-w-md shadow-2xl max-h-[90vh] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-8 pt-8 pb-4 flex-shrink-0">
@@ -152,7 +152,7 @@ export default function GoalModal({
               onChange={(e) => setTitle(e.target.value)}
               placeholder={locked && lockedSubject ? `e.g. Master ${lockedSubject.name}` : "e.g. Weekly Study Goal"}
               maxLength={60}
-              className="bg-[#0e0e11] border border-outline-variant rounded-xl px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm placeholder:text-on-surface-variant/40"
+              className="bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm placeholder:text-on-surface-variant/40"
               autoFocus
             />
           </div>
@@ -170,7 +170,7 @@ export default function GoalModal({
                   style={
                     type === t.value
                       ? { borderColor: t.color, color: t.color, background: `${t.color}18` }
-                      : { borderColor: "#252535", color: "#8a7fa8" }
+                      : { borderColor: "#292b30", color: "#8a7fa8" }
                   }
                 >
                   {t.label}
@@ -189,7 +189,7 @@ export default function GoalModal({
               min="0.5"
               max="200"
               step="0.5"
-              className="bg-[#0e0e11] border border-outline-variant rounded-xl px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm"
+              className="bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm"
             />
           </div>
 
@@ -202,7 +202,7 @@ export default function GoalModal({
                 type="date"
                 value={deadline}
                 onChange={(e) => handleDeadlineChange(e.target.value)}
-                className="bg-[#0e0e11] border border-outline-variant rounded-xl px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm pr-12"
+                className="bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm pr-12"
                 style={{ colorScheme: "dark" }}
               />
               <button
@@ -227,7 +227,7 @@ export default function GoalModal({
             </label>
             {locked && lockedSubject ? (
               // Locked to the subject the user came from — show read-only pill
-              <div className="flex items-center gap-3 bg-[#0e0e11] border border-primary/30 rounded-xl px-4 py-3">
+              <div className="flex items-center gap-3 bg-surface-container-lowest border border-primary/30 rounded-xl px-4 py-3">
                 <span className="material-symbols-outlined text-primary text-[18px]">{lockedSubject.icon}</span>
                 <span className="text-on-surface font-medium text-sm">{lockedSubject.name}</span>
                 <span className="ml-auto text-xs text-on-surface-variant">{lockedSubject.category}</span>
@@ -240,7 +240,7 @@ export default function GoalModal({
               <select
                 value={subjectId}
                 onChange={(e) => setSubjectId(e.target.value)}
-                className="bg-[#0e0e11] border border-outline-variant rounded-xl px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm"
+                className="bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm"
                 style={{ colorScheme: "dark" }}
               >
                 <option value="">— Select a subject —</option>

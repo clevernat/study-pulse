@@ -41,7 +41,7 @@ export default function ExamCountdownCard({ subjects, tasks }: { subjects: Subje
                 {prog.total > 0 && (
                   <div className="text-[11px] text-on-surface-variant">
                     Revision <span className="font-jetbrains">{prog.done}/{prog.total}</span>
-                    <div className="h-1.5 mt-1 rounded-full bg-[#1a1a24] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${prog.pct}%`, background: c.bar }} /></div>
+                    <div className="h-1.5 mt-1 rounded-full bg-surface-container overflow-hidden"><div className="h-full rounded-full" style={{ width: `${prog.pct}%`, background: c.bar }} /></div>
                   </div>
                 )}
               </div>

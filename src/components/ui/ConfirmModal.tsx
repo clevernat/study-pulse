@@ -47,7 +47,7 @@ export default function ConfirmModal({
 
       {/* Panel */}
       <div
-        className="relative bg-[#12121a] border border-[#252535] rounded-2xl w-full max-w-sm shadow-[0_24px_80px_rgba(0,0,0,0.7)] flex flex-col overflow-hidden"
+        className="relative bg-card border border-outline-variant rounded-2xl w-full max-w-sm shadow-[0_24px_80px_rgba(0,0,0,0.7)] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top accent bar */}

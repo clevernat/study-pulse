@@ -158,7 +158,7 @@ export default function TasksPage() {
 
       {/* Header */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-[#958da1]">{counts.all} open · {counts.done} done</p>
+        <p className="text-sm text-outline">{counts.all} open · {counts.done} done</p>
         <button
           onClick={() => setShowForm((v) => !v)}
           data-testid="task-new"
@@ -194,7 +194,7 @@ export default function TasksPage() {
             placeholder="Task title…"
             autoFocus
             maxLength={200}
-            className="bg-[#0e0e11] border border-outline-variant rounded-xl px-4 py-3 text-on-surface text-sm focus:outline-none focus:border-primary transition-colors placeholder:text-on-surface-variant/40"
+            className="bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-3 text-on-surface text-sm focus:outline-none focus:border-primary transition-colors placeholder:text-on-surface-variant/40"
           />
 
           <div className="grid grid-cols-2 gap-3">
@@ -204,7 +204,7 @@ export default function TasksPage() {
               <select
                 value={subjectId}
                 onChange={(e) => setSubjectId(e.target.value)}
-                className="bg-[#0e0e11] border border-outline-variant rounded-xl px-3 py-2.5 text-on-surface text-sm focus:outline-none focus:border-primary transition-colors"
+                className="bg-surface-container-lowest border border-outline-variant rounded-xl px-3 py-2.5 text-on-surface text-sm focus:outline-none focus:border-primary transition-colors"
               >
                 <option value="">None</option>
                 {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -219,7 +219,7 @@ export default function TasksPage() {
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="bg-[#0e0e11] border border-outline-variant rounded-xl px-3 py-2.5 text-on-surface text-sm focus:outline-none focus:border-primary transition-colors"
+                className="bg-surface-container-lowest border border-outline-variant rounded-xl px-3 py-2.5 text-on-surface text-sm focus:outline-none focus:border-primary transition-colors"
                 style={{ colorScheme: "dark" }}
               />
             </div>
@@ -251,7 +251,7 @@ export default function TasksPage() {
                 value={estMins}
                 onChange={(e) => setEstMins(e.target.value)}
                 placeholder="e.g. 30"
-                className="bg-[#0e0e11] border border-outline-variant rounded-xl px-3 py-2.5 text-on-surface text-sm focus:outline-none focus:border-primary transition-colors placeholder:text-on-surface-variant/40"
+                className="bg-surface-container-lowest border border-outline-variant rounded-xl px-3 py-2.5 text-on-surface text-sm focus:outline-none focus:border-primary transition-colors placeholder:text-on-surface-variant/40"
               />
             </div>
 
@@ -261,12 +261,12 @@ export default function TasksPage() {
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs text-on-surface-variant font-bold">Due time</label>
                   <input type="time" data-testid="task-time" value={dueTime} onChange={(e) => setDueTime(e.target.value)} style={{ colorScheme: "dark" }}
-                    className="bg-[#0e0e11] border border-outline-variant rounded-xl px-3 py-2.5 text-on-surface text-sm focus:outline-none focus:border-primary transition-colors" />
+                    className="bg-surface-container-lowest border border-outline-variant rounded-xl px-3 py-2.5 text-on-surface text-sm focus:outline-none focus:border-primary transition-colors" />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs text-on-surface-variant font-bold">Reminder</label>
                   <select value={reminder} onChange={(e) => setReminder(e.target.value)}
-                    className="bg-[#0e0e11] border border-outline-variant rounded-xl px-3 py-2.5 text-on-surface text-sm focus:outline-none focus:border-primary transition-colors">
+                    className="bg-surface-container-lowest border border-outline-variant rounded-xl px-3 py-2.5 text-on-surface text-sm focus:outline-none focus:border-primary transition-colors">
                     {REMINDER_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.value === "0" ? "At due time" : o.label}</option>)}
                   </select>
                 </div>
@@ -279,7 +279,7 @@ export default function TasksPage() {
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs text-on-surface-variant font-bold">For exam</label>
                   <select data-testid="task-exam" value={examId} onChange={(e) => setExamId(e.target.value)}
-                    className="bg-[#0e0e11] border border-outline-variant rounded-xl px-3 py-2.5 text-on-surface text-sm focus:outline-none focus:border-primary transition-colors">
+                    className="bg-surface-container-lowest border border-outline-variant rounded-xl px-3 py-2.5 text-on-surface text-sm focus:outline-none focus:border-primary transition-colors">
                     <option value="">None</option>
                     {exams.filter((ex) => ex.date >= today && (!subjectId || ex.subjectId === subjectId)).map((ex) => <option key={ex.id} value={ex.id}>{ex.title}</option>)}
                   </select>
@@ -287,7 +287,7 @@ export default function TasksPage() {
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs text-on-surface-variant font-bold">Repeat after done</label>
                   <select value={repeatDays} onChange={(e) => setRepeatDays(e.target.value)}
-                    className="bg-[#0e0e11] border border-outline-variant rounded-xl px-3 py-2.5 text-on-surface text-sm focus:outline-none focus:border-primary transition-colors">
+                    className="bg-surface-container-lowest border border-outline-variant rounded-xl px-3 py-2.5 text-on-surface text-sm focus:outline-none focus:border-primary transition-colors">
                     <option value="">Do not repeat</option>
                     {[1, 2, 3, 7, 14, 30].map((d) => <option key={d} value={d}>{d === 1 ? "1 day later" : `${d} days later`}</option>)}
                   </select>
@@ -329,7 +329,7 @@ export default function TasksPage() {
           data-testid="task-kind-filter"
           value={kindFilter}
           onChange={(e) => setKindFilter(e.target.value as TaskKind | "")}
-          className="bg-[#0e0e11] border border-outline-variant rounded-lg px-3 py-1.5 text-on-surface text-xs focus:outline-none focus:border-primary transition-colors ml-auto"
+          className="bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-1.5 text-on-surface text-xs focus:outline-none focus:border-primary transition-colors ml-auto"
         >
           <option value="">All kinds</option>
           {TASK_KINDS.map((k) => <option key={k.value} value={k.value}>{k.label}</option>)}
@@ -337,7 +337,7 @@ export default function TasksPage() {
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value as SortKind)}
-          className="bg-[#0e0e11] border border-outline-variant rounded-lg px-3 py-1.5 text-on-surface text-xs focus:outline-none focus:border-primary transition-colors"
+          className="bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-1.5 text-on-surface text-xs focus:outline-none focus:border-primary transition-colors"
         >
           <option value="due">Sort: Due Date</option>
           <option value="priority">Sort: Priority</option>

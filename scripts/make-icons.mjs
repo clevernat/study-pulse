@@ -2,9 +2,9 @@
 import { chromium } from "@playwright/test";
 
 const pulse = (pad) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-pad} ${-pad} ${64 + 2 * pad} ${64 + 2 * pad}" width="100%" height="100%">
-  <defs><linearGradient id="g" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#1a1028"/><stop offset="100%" stop-color="#0e0e14"/></linearGradient></defs>
+  <defs><linearGradient id="g" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#12142a"/><stop offset="100%" stop-color="#060608"/></linearGradient></defs>
   <rect x="${-pad}" y="${-pad}" width="${64 + 2 * pad}" height="${64 + 2 * pad}" fill="url(#g)"/>
-  <polyline points="8,36 18,36 22,22 28,46 34,28 40,40 46,36 56,36" stroke="#d2bbff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <polyline points="8,36 18,36 22,22 28,46 34,28 40,40 46,36 56,36" stroke="#a7b2f7" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
 </svg>`;
 
 // Plain icons: small padding. Maskable: content inside the 80% safe zone.
