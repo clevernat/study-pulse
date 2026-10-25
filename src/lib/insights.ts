@@ -1,11 +1,17 @@
 // Study insights: targets, time per topic, focus ratings, the weekly review and
 // test results compared with hours studied. Pure functions on sessions (no Firestore).
-import type { Session, Subject, TestResult } from "@/types";
+import type { Goal, Session, Subject, TestResult } from "@/types";
 import { addDays, mondayOf, weekdayOf, WEEKDAYS } from "./timetable";
 import { computeStreak, computeLongestStreak } from "./streakLogic";
 
 const sum = (list: Session[]) => list.reduce((n, s) => n + s.durationMinutes, 0);
 const inRange = (s: Session, from: string, to: string) => s.date >= from && s.date <= to;
+
+/** Hours studied toward a goal: its subject's sessions from when it was made to its deadline. */
+export function goalHours(goal: Goal, sessions: Session[]): number {
+  if (!goal.subjectId) return 0;
+  return sum(sessions.filter((s) => s.subjectId === goal.subjectId && s.date >= goal.createdAt && s.date <= goal.deadline)) / 60;
+}
 
 // ── Targets ────────────────────────────────────────────────────────────────
 

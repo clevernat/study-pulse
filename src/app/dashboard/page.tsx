@@ -14,6 +14,7 @@ import { toCsv, downloadText } from "@/lib/csv";
 import type { HeatmapCell, Session, Subject, Task } from "@/types";
 import StatRow from "@/components/ui/StatRow";
 import FocusBadge from "@/components/ui/FocusBadge";
+import GoalsAhead from "@/components/dashboard/GoalsAhead";
 
 function buildHeatmap(sessions: Session[]): HeatmapCell[] {
   const minutesByDate: Record<string, number> = {};
@@ -427,6 +428,9 @@ export default function DashboardPage() {
         { label: "Studied this week", value: formatSmartDuration(Math.round(weeklyHours * 60)) },
         { label: "Daily average this week", value: formatSmartDuration(Math.round(dailyAvg * 60)) },
       ]} />
+
+      {/* Strengths and goals ahead */}
+      <GoalsAhead sessions={sessions} subjects={subjects} />
 
       {/* Exam countdown */}
       <ExamCountdownCard subjects={subjects} tasks={tasks} />

@@ -21,7 +21,7 @@ export default function TopBar() {
   // The page itself is named by the tabs below; the bar names the section.
   const title = sectionFor(pathname)?.label ?? "StudyPulse";
 
-  const { user, logOut } = useAuth();
+  const { user, logOut, isAdmin } = useAuth();
   const displayName = user?.displayName ?? user?.email?.split("@")[0] ?? "User";
   const initials = displayName.slice(0, 2).toUpperCase();
 
@@ -107,6 +107,12 @@ export default function TopBar() {
                   <p className="text-[14px] font-semibold text-on-surface truncate">{displayName}</p>
                   <p className="text-[12px] text-on-surface-variant truncate">{user?.email}</p>
                 </div>
+                {isAdmin && (
+                  <Link role="menuitem" href="/admin" data-testid="account-admin"
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg text-[14px] text-on-surface hover:bg-surface-container-high">
+                    <span className="material-symbols-outlined text-[18px] text-on-surface-variant">admin_panel_settings</span>Admin
+                  </Link>
+                )}
                 <Link role="menuitem" href="/settings" data-testid="account-settings"
                   className="flex items-center gap-3 px-3 py-2 rounded-lg text-[14px] text-on-surface hover:bg-surface-container-high">
                   <span className="material-symbols-outlined text-[18px] text-on-surface-variant">settings</span>Settings

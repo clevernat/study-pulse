@@ -52,3 +52,6 @@ next-env.d.ts
 
 # Cloudflare Worker local cache
 /worker/.wrangler/
+
+# test logins made by scripts/test-accounts.mjs
+*.local.md

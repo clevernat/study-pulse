@@ -4,9 +4,10 @@ export const PROJECT = "demo-studypulse";
 const AUTH = "http://127.0.0.1:9099";
 const FS = "http://127.0.0.1:8080";
 
-/** Creates a fresh emulator user with a unique email and returns its credentials. */
-export async function createUser(prefix = "e2e") {
-  const email = `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@studypulse.test`;
+/** Creates a fresh emulator user with a unique email and returns its credentials.
+ *  `role` makes them a member (StudyPulse is invite only); null = not a member. */
+export async function createUser(prefix = "e2e", role: "user" | "admin" | null = "user") {
+  const email = `${prefix.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@studypulse.test`;
   const password = "Test1234!";
   const res = await fetch(`${AUTH}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=demo-api-key`, {
     method: "POST",
@@ -15,12 +16,13 @@ export async function createUser(prefix = "e2e") {
   });
   if (!res.ok) throw new Error(`createUser failed: ${res.status} ${await res.text()}`);
   const json = (await res.json()) as { localId: string };
+  if (role) await seedTop(`members/${json.localId}`, { email, name: prefix, role, joinedAt: Date.now() });
   return { email, password, uid: json.localId };
 }
 
 /** Signs in through the real login form and waits for the Today page (home). */
-export async function login(page: Page, prefix?: string) {
-  const user = await createUser(prefix);
+export async function login(page: Page, prefix?: string, role: "user" | "admin" = "user") {
+  const user = await createUser(prefix, role);
   await page.goto("/login/");
   await page.getByTestId("login-email").fill(user.email);
   await page.getByTestId("login-password").fill(user.password);
@@ -53,9 +55,14 @@ function toFs(v: unknown): FsValue {
 
 /** Test setup only: writes a document straight into the emulator (admin access, skips rules). */
 export async function seedDoc(uid: string, col: string, data: Record<string, unknown>, id?: string) {
-  const base = `${FS}/v1/projects/${PROJECT}/databases/(default)/documents/users/${uid}/${col}`;
-  const res = await fetch(id ? `${base}/${id}` : base, {
-    method: id ? "PATCH" : "POST",
+  await seedTop(`users/${uid}/${col}${id ? `/${id}` : ""}`, data, !id);
+}
+
+/** Test setup only: writes any document path (or adds to a collection when `add`), skipping rules. */
+export async function seedTop(path: string, data: Record<string, unknown>, add = false) {
+  const base = `${FS}/v1/projects/${PROJECT}/databases/(default)/documents/${path}`;
+  const res = await fetch(base, {
+    method: add ? "POST" : "PATCH",
     headers: { "Content-Type": "application/json", Authorization: "Bearer owner" },
     body: JSON.stringify({ fields: (toFs(data).mapValue as { fields: unknown }).fields }),
   });

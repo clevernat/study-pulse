@@ -1,13 +1,15 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { SECTIONS, SETTINGS, matches, sectionFor, testId, type NavSection } from "./nav";
+import { ADMIN, SECTIONS, SETTINGS, matches, sectionFor, testId, type NavSection } from "./nav";
+import { useAuth } from "@/context/AuthContext";
 
 // Phone bar: the 4 sections, with the timer as the big button in the middle.
 const TIMER = { href: "/timer", label: "Timer", icon: "timer" };
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { isAdmin } = useAuth();
   const current = sectionFor(pathname)?.key;
   const onTimer = matches(pathname, TIMER.href);
 
@@ -69,6 +71,7 @@ export default function Sidebar() {
             <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
             Start studying
           </Link>
+          {isAdmin && sideLink(ADMIN)}
           {sideLink(SETTINGS)}
         </div>
       </aside>

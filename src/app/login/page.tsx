@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -9,7 +9,11 @@ function friendlyError(code: string): string {
     case "auth/invalid-credential":
     case "auth/wrong-password":
     case "auth/user-not-found":
-      return "Invalid email or password. Please try again.";
+      return "Wrong email, username or password. Please try again.";
+    case "app/bad-username":
+      return "Username: 3 to 20 letters, numbers, dots or underscores.";
+    case "app/username-taken":
+      return "That username is taken. Try another one.";
     case "auth/email-already-in-use":
       return "An account with this email already exists.";
     case "auth/weak-password":
@@ -34,6 +38,14 @@ export default function LoginPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
+
+  // Invite links open the sign-up tab with the email filled in: /login?mode=signup&email=...
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    if (q.get("mode") === "signup") setMode("signup");
+    if (q.get("email")) setEmail(q.get("email")!);
+  }, []);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -48,7 +60,7 @@ export default function LoginPage() {
       if (mode === "signin") {
         await signIn(email, password);
       } else {
-        await signUp(email, password);
+        await signUp(email, username, password);
       }
       router.push("/");
     } catch (err: unknown) {
@@ -129,25 +141,49 @@ export default function LoginPage() {
           {/* Form */}
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div>
-              <label className="text-on-surface-variant text-sm font-inter mb-1 block">
-                Email
+              <label htmlFor="login-email" className="text-on-surface-variant text-sm font-inter mb-1 block">
+                {mode === "signin" ? "Email or username" : "Email"}
               </label>
               <input
+                id="login-email"
                 data-testid="login-email"
-                autoComplete="email"
-                type="email"
+                autoComplete={mode === "signin" ? "username" : "email"}
+                type={mode === "signin" ? "text" : "email"}
+                autoCapitalize="none"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder={mode === "signin" ? "you@example.com or your_username" : "you@example.com"}
                 required
                 className="bg-surface-container-lowest border border-outline-variant rounded-lg px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm placeholder:text-on-surface-variant/40"
               />
             </div>
+            {mode === "signup" && (
+              <div>
+                <label htmlFor="login-username" className="text-on-surface-variant text-sm font-inter mb-1 block">
+                  Username
+                </label>
+                <input
+                  id="login-username"
+                  data-testid="login-username"
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="e.g. ama_k"
+                  required
+                  pattern="@?[A-Za-z0-9_.]{3,20}"
+                  title="3 to 20 letters, numbers, dots or underscores"
+                  className="bg-surface-container-lowest border border-outline-variant rounded-lg px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm placeholder:text-on-surface-variant/40"
+                />
+                <p className="text-xs text-on-surface-variant mt-1">You can sign in with it later instead of your email.</p>
+              </div>
+            )}
             <div>
-              <label className="text-on-surface-variant text-sm font-inter mb-1 block">
+              <label htmlFor="login-password" className="text-on-surface-variant text-sm font-inter mb-1 block">
                 Password
               </label>
               <input
+                id="login-password"
                 data-testid="login-password"
                 autoComplete={mode === "signup" ? "new-password" : "current-password"}
                 type="password"
@@ -202,6 +238,11 @@ export default function LoginPage() {
             </svg>
             Continue with Google
           </button>
+          {mode === "signup" && (
+            <p className="text-center text-xs text-on-surface-variant mt-4">
+              StudyPulse is invite only. Use the email your invite was sent to.
+            </p>
+          )}
         </div>
 
         {/* Stats row */}
@@ -209,7 +250,7 @@ export default function LoginPage() {
           {[
             { stat: "Free", label: "No paid plan" },
             { stat: "Offline", label: "Works anywhere" },
-            { stat: "Private", label: "Your data only" },
+            { stat: "Invite only", label: "Private group" },
           ].map(({ stat, label }) => (
             <div key={label} className="text-center">
               <div className="font-jetbrains font-semibold text-primary text-sm">{stat}</div>

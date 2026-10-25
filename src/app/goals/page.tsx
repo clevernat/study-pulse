@@ -14,6 +14,7 @@ import GoalModal, { typeColor } from "@/components/ui/GoalModal";
 import { formatHours } from "@/lib/dateUtils";
 import { localDateStr } from "@/lib/dateUtils";
 import { Goal, Subject, Session } from "@/types";
+import { goalHours } from "@/lib/insights";
 
 function daysUntil(dateStr: string): number {
   const today = new Date();
@@ -124,17 +125,7 @@ export default function GoalsPage() {
   // ── Live progress ──────────────────────────────────────────────────────────
   const hoursPerGoal = useMemo(() => {
     const map: Record<string, number> = {};
-    for (const goal of goals) {
-      if (!goal.subjectId) { map[goal.id] = 0; continue; }
-      const mins = sessions
-        .filter((s) =>
-          s.subjectId === goal.subjectId &&
-          s.date >= goal.createdAt &&
-          s.date <= goal.deadline
-        )
-        .reduce((sum, s) => sum + s.durationMinutes, 0);
-      map[goal.id] = mins / 60; // exact; formatHours() rounds for display
-    }
+    for (const goal of goals) map[goal.id] = goalHours(goal, sessions); // exact; formatHours() rounds for display
     return map;
   }, [goals, sessions]);
 

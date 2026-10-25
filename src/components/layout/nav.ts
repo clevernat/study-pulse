@@ -39,6 +39,12 @@ export const SETTINGS: NavSection = {
   key: "settings", label: "Settings", icon: "settings", href: "/settings", pages: [{ href: "/settings", label: "Settings" }],
 };
 
+/** Only admins see this section (link in the sidebar and the account menu). */
+export const ADMIN: NavSection = {
+  key: "admin", label: "Admin", icon: "admin_panel_settings", href: "/admin",
+  pages: [{ href: "/admin", label: "Team" }, { href: "/admin/people", label: "People" }],
+};
+
 const clean = (pathname: string) => (pathname.length > 1 && pathname.endsWith("/") ? pathname.slice(0, -1) : pathname);
 
 /** True when `pathname` is `href` or a page below it (/flashcards/deck is under /flashcards). */
@@ -48,7 +54,7 @@ export function matches(pathname: string, href: string): boolean {
 }
 
 export function sectionFor(pathname: string): NavSection | undefined {
-  return [...SECTIONS, SETTINGS].find((s) => s.pages.some((pg) => matches(pathname, pg.href)));
+  return [...SECTIONS, SETTINGS, ADMIN].find((s) => s.pages.some((pg) => matches(pathname, pg.href)));
 }
 
 export function pageFor(pathname: string): NavPage | undefined {
