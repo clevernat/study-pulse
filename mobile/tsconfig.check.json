@@ -1,0 +1,19 @@
+{
+  // Type check for `npm run typecheck`. Shared files in ../src resolve packages from
+  // ../node_modules by default; point them at this app's copies (as Metro does).
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "~/*": ["./src/*"],
+      "@/*": ["../src/*"],
+      "react": ["./node_modules/@types/react"],
+      "react/*": ["./node_modules/@types/react/*"],
+      "react-native": ["./node_modules/react-native/types_generated/index.d.ts"],
+      "expo-*": ["./node_modules/expo-*"],
+      "@react-native-async-storage/*": ["./node_modules/@react-native-async-storage/*"],
+      "firebase/*": ["./node_modules/firebase/*"],
+      "zustand": ["./node_modules/zustand"],
+      "zustand/*": ["./node_modules/zustand/*"]
+    }
+  }
+}

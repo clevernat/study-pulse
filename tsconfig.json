@@ -36,6 +36,9 @@
   ],
   "exclude": [
     "node_modules",
-    "functions"
+    "functions",
+    "mobile",
+    "**/*.native.ts",
+    "**/*.native.tsx"
   ]
 }
