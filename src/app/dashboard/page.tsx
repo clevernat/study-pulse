@@ -156,14 +156,14 @@ function Heatmap({ sessions }: { sessions: Session[] }) {
   const [hover, setHover] = useState<{ idx: number; x: number; y: number } | null>(null);
 
   const totalDays = cells.filter((c) => c.minutes > 0).length;
-  const totalHours = (cells.reduce((s, c) => s + c.minutes, 0) / 60).toFixed(1);
+  const totalMinutes = cells.reduce((s, c) => s + c.minutes, 0);
 
   return (
     <div className="glass-card p-6 flex flex-col gap-4 overflow-hidden relative">
       <div>
         <h2 className="font-grotesk font-bold text-lg text-on-surface">Last 90 days</h2>
         <p className="text-xs text-on-surface-variant mt-0.5">
-          {totalDays} active days · {totalHours}h total
+          {totalDays} active day{totalDays === 1 ? "" : "s"} · {formatSmartDuration(totalMinutes)} total
         </p>
       </div>
       <div className="overflow-x-auto">

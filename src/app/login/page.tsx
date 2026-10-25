@@ -19,7 +19,10 @@ function friendlyError(code: string): string {
     case "auth/too-many-requests":
       return "Too many attempts. Please try again later.";
     case "auth/popup-closed-by-user":
+    case "auth/cancelled-popup-request":
       return "Google sign-in was cancelled.";
+    case "auth/popup-blocked":
+      return "Your browser blocked the Google sign-in window. Allow pop-ups for this site, then try again.";
     case "auth/network-request-failed":
       return "Network error. Please check your connection.";
     default:
