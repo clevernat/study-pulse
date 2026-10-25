@@ -15,6 +15,13 @@ interface Props {
 /** Topics of one subject: add, check off, link to an exam, delete. */
 export default function TopicList({ uid, subjectId, topics, exams, barColor, minutesByTopic }: Props) {
   const [title, setTitle] = useState("");
+  /** Topic being renamed and its new title */
+  const [renaming, setRenaming] = useState<{ id: string; title: string } | null>(null);
+
+  function saveRename() {
+    if (renaming && renaming.title.trim()) updateItem<Topic>(uid, "topics", renaming.id, { title: renaming.title.trim().slice(0, 200) });
+    setRenaming(null);
+  }
   const list = topics.filter((t) => t.subjectId === subjectId).sort((a, b) => a.order - b.order);
   const prog = topicProgress(topics, subjectId);
   const subjectExams = exams.filter((e) => e.subjectId === subjectId);
@@ -58,7 +65,29 @@ export default function TopicList({ uid, subjectId, topics, exams, barColor, min
               >
                 {t.done && <span className="material-symbols-outlined text-on-primary text-[14px]">check</span>}
               </button>
-              <span className={`flex-1 min-w-0 text-sm ${t.done ? "line-through text-on-surface-variant" : "text-on-surface"}`}>{t.title}</span>
+              {renaming?.id === t.id ? (
+                <input
+                  data-testid="topic-rename-input"
+                  aria-label={`New name for ${t.title}`}
+                  autoFocus
+                  value={renaming.title}
+                  onChange={(e) => setRenaming({ id: t.id, title: e.target.value })}
+                  onKeyDown={(e) => { if (e.key === "Enter") saveRename(); if (e.key === "Escape") setRenaming(null); }}
+                  onBlur={saveRename}
+                  maxLength={200}
+                  className="flex-1 min-w-0 bg-surface-container-lowest border border-primary/60 rounded-lg px-2 py-1 text-sm text-on-surface"
+                />
+              ) : (
+                <button
+                  type="button"
+                  data-testid="topic-rename"
+                  onClick={() => setRenaming({ id: t.id, title: t.title })}
+                  title="Rename"
+                  className={`flex-1 min-w-0 text-left text-sm hover:text-primary ${t.done ? "line-through text-on-surface-variant" : "text-on-surface"}`}
+                >
+                  {t.title}
+                </button>
+              )}
               {minutesByTopic && (
                 <span data-testid="topic-minutes" className="font-jetbrains text-xs text-on-surface-variant whitespace-nowrap" title="Time studied on this topic">
                   {minutesByTopic[t.id] ? formatSmartDuration(minutesByTopic[t.id]) : "–"}

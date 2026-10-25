@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useCollection } from "@/lib/firebase/useCollection";
-import { addItem, deleteItem } from "@/lib/firebase/firestore";
+import { addItem, deleteItem, updateItem } from "@/lib/firebase/firestore";
 import { resultsWithEffort, effortCorrelation, effortVerdict, RESULT_WINDOW_DAYS } from "@/lib/insights";
 import { formatSmartDuration, localDateStr } from "@/lib/dateUtils";
 import { inputCls, secondaryBtnCls } from "@/components/ui/Field";
@@ -15,6 +15,8 @@ export default function ResultsPanel({ uid, subjectId, sessions, barColor }: { u
   const [score, setScore] = useState("");
   const [max, setMax] = useState("100");
   const [error, setError] = useState("");
+  /** Result being edited in the form (null = the form adds a new one) */
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const points = resultsWithEffort(results, sessions, subjectId);
   const verdict = effortVerdict(effortCorrelation(points), points.length);
@@ -26,8 +28,18 @@ export default function ResultsPanel({ uid, subjectId, sessions, barColor }: { u
     if (isNaN(sc) || isNaN(mx) || mx <= 0 || sc < 0 || sc > mx) { setError("Enter a score between 0 and the maximum."); return; }
     if (!date) { setError("Pick the date of the test."); return; }
     setError("");
-    await addItem<TestResult>(uid, "results", { subjectId, title: title.trim() || "Practice test", date, score: sc, maxScore: mx, createdAt: Date.now() });
-    setTitle(""); setScore("");
+    const fields = { title: title.trim() || "Practice test", date, score: sc, maxScore: mx };
+    const id = editingId;
+    cancelEdit(); // clear first, so the next result can be typed while this one saves
+    if (id) await updateItem<TestResult>(uid, "results", id, fields);
+    else await addItem<TestResult>(uid, "results", { subjectId, ...fields, createdAt: Date.now() });
+  }
+
+  function startEdit(r: TestResult) {
+    setEditingId(r.id); setTitle(r.title); setDate(r.date); setScore(String(r.score)); setMax(String(r.maxScore)); setError("");
+  }
+  function cancelEdit() {
+    setEditingId(null); setTitle(""); setScore(""); setMax("100"); setDate(localDateStr());
   }
 
   return (
@@ -54,8 +66,11 @@ export default function ResultsPanel({ uid, subjectId, sessions, barColor }: { u
           <span className="text-xs text-on-surface-variant font-bold">Out of</span>
           <input data-testid="result-max" className={`${inputCls} w-20`} type="number" step="any" min="1" value={max} onChange={(e) => setMax(e.target.value)} />
         </label>
-        <button data-testid="result-add" type="submit" className={secondaryBtnCls}><span className="material-symbols-outlined text-[18px]">add</span>Add</button>
+        <button data-testid="result-add" type="submit" className={secondaryBtnCls}>
+          <span aria-hidden="true" className="material-symbols-outlined text-[18px]">{editingId ? "check" : "add"}</span>{editingId ? "Save" : "Add"}
+        </button>
       </form>
+      {editingId && <button type="button" onClick={cancelEdit} className="text-xs text-on-surface-variant underline underline-offset-2 self-start -mt-2">Cancel editing</button>}
       {error && <p role="alert" className="text-sm text-error">{error}</p>}
 
       {points.length === 0 ? (
@@ -70,7 +85,10 @@ export default function ResultsPanel({ uid, subjectId, sessions, barColor }: { u
                   <span className="text-on-surface flex-1 min-w-0 truncate">{r.title}</span>
                   <span className="text-xs text-on-surface-variant font-jetbrains">{r.date}</span>
                   <span className="font-jetbrains font-semibold text-on-surface w-28 text-right">{r.score}/{r.maxScore} · {pct}%</span>
-                  <button onClick={() => deleteItem(uid, "results", r.id)} aria-label={`Delete ${r.title}`} className="text-on-surface-variant/40 hover:text-error p-1">
+                  <button onClick={() => startEdit(r)} data-testid="result-edit" aria-label={`Edit ${r.title}`} className="text-on-surface-variant/60 hover:text-primary p-1">
+                    <span aria-hidden="true" className="material-symbols-outlined text-[16px]">edit</span>
+                  </button>
+                  <button onClick={() => { if (editingId === r.id) cancelEdit(); deleteItem(uid, "results", r.id); }} aria-label={`Delete ${r.title}`} data-testid="result-delete" className="text-on-surface-variant/40 hover:text-error p-1">
                     <span className="material-symbols-outlined text-[16px]">delete_outline</span>
                   </button>
                 </div>

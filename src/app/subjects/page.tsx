@@ -528,7 +528,7 @@ export default function SubjectsPage() {
       <ConfirmModal
         open={!!confirmDeleteId}
         title="Delete Subject"
-        description={`Delete "${subjectToDelete?.name ?? "this subject"}"? Its sessions, goals, topics, exams, classes and flashcards will be deleted. Tasks stay, without a subject.`}
+        description={`Delete "${subjectToDelete?.name ?? "this subject"}"? Its sessions, goals, topics, exams, classes, test results and flashcards will be deleted. Tasks and study blocks stay, without a subject.`}
         confirmLabel="Delete"
         cancelLabel="Cancel"
         destructive

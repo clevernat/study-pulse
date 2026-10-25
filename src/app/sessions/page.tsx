@@ -9,6 +9,7 @@ import { localDateStr, daysAgoStr } from "@/lib/dateUtils";
 import type { Session, Subject } from "@/types";
 import { averageRating } from "@/lib/insights";
 import FocusBadge, { ratingColor } from "@/components/ui/FocusBadge";
+import EditSessionModal from "@/components/ui/EditSessionModal";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -60,10 +61,11 @@ interface DayGroupProps {
   defaultOpen: boolean;
   subjectById: Map<string, Subject>;
   onDeleteSession: (session: Session) => void;
+  onEditSession: (session: Session) => void;
   deletingId: string | null;
 }
 
-function DayGroup({ date, sessions, label, defaultOpen, subjectById, onDeleteSession, deletingId }: DayGroupProps) {
+function DayGroup({ date, sessions, label, defaultOpen, subjectById, onDeleteSession, onEditSession, deletingId }: DayGroupProps) {
   const [open, setOpen] = useState(defaultOpen);
   const [showAll, setShowAll] = useState(false);
 
@@ -155,6 +157,14 @@ function DayGroup({ date, sessions, label, defaultOpen, subjectById, onDeleteSes
                   </span>
                   <FocusBadge session={session} />
                   <button
+                    onClick={() => onEditSession(session)}
+                    data-testid="session-edit"
+                    className="text-on-surface-variant/60 hover:text-primary transition-colors p-1 rounded-lg"
+                    aria-label={`Edit session ${displayName} ${session.startTime}`}
+                  >
+                    <span aria-hidden="true" className="material-symbols-outlined text-[16px]">edit</span>
+                  </button>
+                  <button
                     onClick={() => onDeleteSession(session)}
                     disabled={deletingId === session.id}
                     className="text-on-surface-variant/40 hover:text-error transition-colors p-1 rounded-lg hover:bg-error/10"
@@ -193,6 +203,7 @@ export default function SessionsPage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [confirmSession, setConfirmSession] = useState<Session | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<Session | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -304,10 +315,13 @@ export default function SessionsPage() {
             defaultOpen={date === todayStr || (idx === 0 && !sortedDates.includes(todayStr))}
             subjectById={subjectById}
             onDeleteSession={setConfirmSession}
+            onEditSession={setEditing}
             deletingId={deletingId}
           />
         ))}
       </div>
+
+      {editing && user && <EditSessionModal uid={user.uid} session={editing} subjects={subjects} onClose={() => setEditing(null)} />}
 
       <ConfirmModal
         open={!!confirmSession}

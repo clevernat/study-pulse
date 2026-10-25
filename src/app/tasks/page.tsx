@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { subscribeTasks, subscribeSubjects, addTask, updateTask, deleteTask } from "@/lib/firebase/firestore";
+import { subscribeTasks, subscribeSubjects, addTask, updateTask, updateItem, deleteTask } from "@/lib/firebase/firestore";
 import { getColor } from "@/lib/colorPalette";
 import { localDateStr } from "@/lib/dateUtils";
 import ConfirmModal from "@/components/ui/ConfirmModal";
@@ -30,6 +30,8 @@ export default function TasksPage() {
   const [kindFilter, setKindFilter] = useState<TaskKind | "">("");
   const { items: exams } = useCollection<Exam>("exams");
   const [showForm, setShowForm] = useState(false);
+  /** Task being edited in the form (null = the form adds a new task) */
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -85,12 +87,47 @@ export default function TasksPage() {
     done:    tasks.filter((t) => t.completed).length,
   }), [tasks, today]);
 
+  function resetForm() {
+    setTitle(""); setSubjectId(""); setDueDate(""); setPriority(undefined); setEstMins("");
+    setKind("task"); setDueTime(""); setExamId(""); setRepeatDays(""); setReminder("");
+    setEditingId(null);
+    setShowForm(false);
+  }
+
+  function startEdit(task: Task) {
+    setTitle(task.title); setSubjectId(task.subjectId ?? ""); setDueDate(task.dueDate ?? "");
+    setPriority(task.priority); setEstMins(task.estimatedMinutes?.toString() ?? ""); setKind(kindOf(task));
+    setDueTime(task.dueTime ?? ""); setExamId(task.examId ?? ""); setRepeatDays(task.repeatAfterDays?.toString() ?? "");
+    setReminder(task.reminderMinutesBefore?.toString() ?? "");
+    setEditingId(task.id);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     if (!user || !title.trim()) return;
     setSaving(true);
     const sub = subjects.find((s) => s.id === subjectId);
     try {
+      if (editingId) {
+        // Empty fields are removed from the task (updateItem deletes undefined values).
+        await updateItem<Task>(user.uid, "tasks", editingId, {
+          title: title.trim(),
+          subjectId: sub?.id,
+          subjectName: sub?.name,
+          dueDate: dueDate || undefined,
+          priority: priority || undefined,
+          estimatedMinutes: estMins && !isNaN(parseInt(estMins)) ? parseInt(estMins) : undefined,
+          kind,
+          dueTime: dueDate && dueTime ? dueTime : undefined,
+          examId: examId || undefined,
+          repeatAfterDays: repeatDays && parseInt(repeatDays) > 0 ? Math.min(365, parseInt(repeatDays)) : undefined,
+          reminderMinutesBefore: dueDate && reminder !== "" ? parseInt(reminder) : undefined,
+        });
+        resetForm();
+        return;
+      }
       await addTask(user.uid, {
         uid: user.uid,
         title: title.trim(),
@@ -106,9 +143,7 @@ export default function TasksPage() {
         ...(dueDate && reminder !== "" ? { reminderMinutesBefore: parseInt(reminder) } : {}),
         createdAt: new Date().toISOString(),
       });
-      setTitle(""); setSubjectId(""); setDueDate(""); setPriority(undefined); setEstMins("");
-      setKind("task"); setDueTime(""); setExamId(""); setRepeatDays(""); setReminder("");
-      setShowForm(false);
+      resetForm();
     } finally {
       setSaving(false);
     }
@@ -160,7 +195,7 @@ export default function TasksPage() {
       <div className="flex items-center justify-between">
         <p className="text-sm text-outline">{counts.all} open · {counts.done} done</p>
         <button
-          onClick={() => setShowForm((v) => !v)}
+          onClick={() => (showForm ? resetForm() : setShowForm(true))}
           data-testid="task-new"
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-container text-on-primary-container font-bold font-inter text-sm hover:opacity-90 active:scale-95 transition-all"
         >
@@ -172,7 +207,7 @@ export default function TasksPage() {
       {/* Add form */}
       {showForm && (
         <form onSubmit={handleAdd} className="glass-card p-5 flex flex-col gap-4">
-          <h3 className="font-grotesk font-bold text-on-surface">New task</h3>
+          <h3 className="font-grotesk font-bold text-on-surface">{editingId ? "Edit task" : "New task"}</h3>
 
           <div className="flex gap-2" role="radiogroup" aria-label="Kind">
             {TASK_KINDS.map((k) => (
@@ -297,14 +332,14 @@ export default function TasksPage() {
           </div>
 
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={() => setShowForm(false)}
+            <button type="button" onClick={resetForm}
               className="flex-1 py-2.5 rounded-xl border border-outline-variant text-on-surface-variant hover:text-on-surface transition-all font-inter text-sm font-semibold">
               Cancel
             </button>
             <button type="submit" data-testid="task-save" disabled={!title.trim() || saving}
               className="flex-1 py-2.5 rounded-xl bg-primary-container text-on-primary-container font-bold font-inter text-sm hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
               {saving && <span className="w-4 h-4 rounded-full border-2 border-on-primary-container border-t-transparent animate-spin" />}
-              Add Task
+              {editingId ? "Save changes" : "Add Task"}
             </button>
           </div>
         </form>
@@ -434,6 +469,16 @@ export default function TasksPage() {
                   )}
                 </div>
               </div>
+
+              {/* Edit */}
+              <button
+                onClick={() => startEdit(task)}
+                data-testid="task-edit"
+                className="text-on-surface-variant/60 hover:text-primary transition-colors p-1 flex-shrink-0"
+                aria-label={`Edit ${task.title}`}
+              >
+                <span aria-hidden="true" className="material-symbols-outlined text-[18px]">edit</span>
+              </button>
 
               {/* Delete */}
               <button
