@@ -74,7 +74,9 @@ export default function TimerSync() {
     if (!hasHydrated) return;
     if (!user) return;
     if (ownerUid && ownerUid !== user.uid) {
-      // Different account — wipe state so the new user starts fresh.
+      // Different account — wipe state so the new user starts fresh
+      // (the old account's focus is not saved for the new one).
+      focusStartMsRef.current = null;
       setPreset(pomodoroLength);
       setSubject("", "Select a Subject");
     }
@@ -109,7 +111,13 @@ export default function TimerSync() {
   // Pause-aware focus tracking.
   useEffect(() => {
     if (!applyingRemoteRef.current && mode === "focus") {
-      if (state === "running" && prevStateRef.current === "paused") {
+      if (state === "idle" && (prevStateRef.current === "running" || prevStateRef.current === "paused")) {
+        // Stopped early (Reset, or new focus lengths): keep the time already studied.
+        if (focusStartMsRef.current !== null) saveSession(60);
+        focusStartMsRef.current = null;
+        focusPausedMsRef.current = 0;
+        focusPauseStartMsRef.current = null;
+      } else if (state === "running" && prevStateRef.current === "paused") {
         if (focusPauseStartMsRef.current !== null) {
           focusPausedMsRef.current += Date.now() - focusPauseStartMsRef.current;
           focusPauseStartMsRef.current = null;
@@ -130,7 +138,8 @@ export default function TimerSync() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, mode]);
 
-  const saveSession = useCallback(async () => {
+  /** Saves the current focus as a session. `minSecs`: skip it when less was studied (early stops). */
+  const saveSession = useCallback(async (minSecs = 0) => {
     if (!user) return;
     // Only the device that started the focus session saves it.
     // This prevents duplicate sessions when multiple devices run the same timer.
@@ -145,7 +154,9 @@ export default function TimerSync() {
 
     const now = new Date();
     const plannedSecs = sessionTotalSecondsRef.current;
-    const pausedMs = focusPausedMsRef.current;
+    // A pause still going on (stopped while paused) is not study time either.
+    const pausedMs = focusPausedMsRef.current +
+      (focusPauseStartMsRef.current !== null ? Date.now() - focusPauseStartMsRef.current : 0);
     const totalElapsedMs = focusStartMsRef.current
       ? Date.now() - focusStartMsRef.current
       : plannedSecs * 1000;
@@ -153,6 +164,7 @@ export default function TimerSync() {
       Math.max(0, (totalElapsedMs - pausedMs) / 1000),
       plannedSecs
     );
+    if (studiedSecs < minSecs) return;
     const durationMinutes = Math.max(1, Math.round(studiedSecs / 60));
     const focusScore =
       plannedSecs > 0

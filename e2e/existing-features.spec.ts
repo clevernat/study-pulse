@@ -77,3 +77,32 @@ test("old features: Pomodoro timer, floating timer on other pages, reflection af
   await page.goto("/sessions/");
   await expect(page.locator("main")).toContainText("Physics");
 });
+
+test("timer: stopping a focus early with Reset keeps the time studied (not under 1 minute)", async ({ page }) => {
+  await page.clock.install();
+  await login(page, "earlystop");
+  await addSubject(page, "Chemistry");
+  await page.goto("/timer/");
+  await page.getByText("Select a Subject").first().click();
+  await page.getByText("Chemistry").last().click();
+
+  // A misclick (a few seconds) is not saved.
+  await page.getByTestId("timer-start").click();
+  await page.clock.fastForward("00:20");
+  await page.getByRole("button", { name: "Reset" }).click();
+  await expect(page.getByText("What did you work on? What did you get done?")).toBeHidden();
+
+  // 10 minutes of a 25-minute focus, then Reset: saved as 10 min.
+  await page.getByTestId("timer-start").click();
+  await page.clock.fastForward("10:00");
+  await page.getByRole("button", { name: "Reset" }).click();
+  await expect(page.getByText("What did you work on? What did you get done?")).toBeVisible({ timeout: 15_000 });
+  await page.getByPlaceholder(/Finished the intro section/).fill("Acids and bases, 12 problems");
+  await page.getByRole("button", { name: "Save Reflection" }).click();
+  await expect(page.getByText("What did you work on? What did you get done?")).toBeHidden(); // saved
+  await page.goto("/sessions/");
+  await expect(page.locator("main")).toContainText("Chemistry");
+  await expect(page.locator("main")).toContainText("10 min");
+  // The reflection is shown with the session.
+  await expect(page.getByTestId("session-notes")).toHaveText("Acids and bases, 12 problems");
+});

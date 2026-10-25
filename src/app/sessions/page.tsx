@@ -133,7 +133,13 @@ function DayGroup({ date, sessions, label, defaultOpen, subjectById, onDeleteSes
                           {session.pomodoroCount} pomodoro{session.pomodoroCount > 1 ? "s" : ""}
                         </span>
                       )}
+                      {session.sessionType && (
+                        <span className="text-xs text-on-surface-variant">{session.sessionType}</span>
+                      )}
                     </div>
+                    {session.notes && (
+                      <p data-testid="session-notes" className="text-xs text-on-surface-variant mt-1 break-words">{session.notes}</p>
+                    )}
                   </div>
                 </div>
 
