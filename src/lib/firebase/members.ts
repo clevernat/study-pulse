@@ -1,6 +1,6 @@
 // Who may use StudyPulse: members, invites, usernames and progress summaries.
 // Rules in firestore.rules enforce all of this; these are the app's helpers.
-import { db } from "./config";
+import { auth, db } from "./config";
 import { collection, deleteDoc, doc, getDoc, onSnapshot, setDoc, updateDoc, writeBatch, type Unsubscribe } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import type { Invite, Member, Progress, Role } from "@/types";
@@ -92,3 +92,19 @@ export async function removeMember(m: Member): Promise<void> {
 }
 
 export const saveProgress = (uid: string, p: Omit<Progress, "id">) => queue(setDoc(doc(db, "progress", uid), p));
+
+/** Google Apps Script web app that emails invites from the owner's Gmail (scripts/invite-mailer.gs). */
+const MAIL_URL = process.env.NEXT_PUBLIC_INVITE_MAIL_URL ?? "";
+export const canEmailInvites = MAIL_URL !== "";
+
+/** Emails the sign-up link to someone already on the invite list. True when sent. */
+export async function emailInvite(email: string): Promise<boolean> {
+  try {
+    const idToken = await auth.currentUser?.getIdToken();
+    // Plain-text body: no CORS preflight, which Apps Script cannot answer.
+    const res = await fetch(MAIL_URL, { method: "POST", body: JSON.stringify({ idToken, email: lower(email), site: window.location.origin }) });
+    return ((await res.json()) as { ok?: boolean }).ok === true;
+  } catch {
+    return false;
+  }
+}

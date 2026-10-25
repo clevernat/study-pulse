@@ -120,8 +120,14 @@ test("admin: team progress, one person's details, invite, change role, remove", 
   const newEmail = `${unique("efua")}@studypulse.test`;
   await page.getByTestId("invite-email").fill(newEmail);
   await page.getByTestId("invite-role-admin").click();
+  // The invite email goes through the Gmail script; here a fake one answers.
+  const mails: { idToken: string; email: string; site: string }[] = [];
+  await page.route("**/__mail", async (route) => { mails.push(JSON.parse(route.request().postData() ?? "{}")); await route.fulfill({ json: { ok: true } }); });
   await page.getByTestId("invite-send").click();
   await expect(page.getByTestId("invite-done")).toContainText(newEmail);
+  await expect(page.getByTestId("invite-mail-status")).toContainText("We emailed them the sign-up link");
+  expect(mails[0]).toMatchObject({ email: newEmail, site: "http://localhost:5050" });
+  expect(mails[0].idToken.split(".")).toHaveLength(3);
   await expect(page.getByTestId("invite-item").filter({ hasText: newEmail })).toContainText("Admin");
   await expect.poll(async () => (await getDocJson(`invites/${newEmail}`))?.role?.stringValue).toBe("admin");
 

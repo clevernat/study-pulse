@@ -6,7 +6,7 @@ import { Avatar } from "@/components/admin/charts";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { inputCls, primaryBtnCls } from "@/components/ui/Field";
 import { useAuth } from "@/context/AuthContext";
-import { OWNER_EMAIL, cancelInvite, invite, removeMember, setRole } from "@/lib/firebase/members";
+import { OWNER_EMAIL, canEmailInvites, cancelInvite, emailInvite, invite, removeMember, setRole } from "@/lib/firebase/members";
 import type { Member, Role } from "@/types";
 
 const ROLES: { value: Role; label: string; icon: string; text: string }[] = [
@@ -48,6 +48,14 @@ function PeoplePage() {
   const [error, setError] = useState("");
   const [justInvited, setJustInvited] = useState("");
   const [removing, setRemoving] = useState<Member | null>(null);
+  /** Email status per invited address */
+  const [mail, setMail] = useState<Record<string, "sending" | "sent" | "failed">>({});
+
+  async function sendMail(em: string) {
+    setMail((m) => ({ ...m, [em]: "sending" }));
+    const ok = await emailInvite(em);
+    setMail((m) => ({ ...m, [em]: ok ? "sent" : "failed" }));
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -58,6 +66,7 @@ function PeoplePage() {
     await invite(em, role, user!.email ?? "");
     setJustInvited(em);
     setEmail("");
+    if (canEmailInvites) await sendMail(em);
   }
 
   if (loading) return <div className="flex justify-center h-64 items-center"><div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" /></div>;
@@ -91,7 +100,14 @@ function PeoplePage() {
         </form>
         {justInvited && (
           <div role="status" data-testid="invite-done" className="rounded-xl bg-secondary/10 border border-secondary/25 p-3 text-sm text-on-surface flex flex-col gap-1">
-            <span><b>{justInvited}</b> is invited. Send them this link. They can sign up with Google or with email, username and password.</span>
+            <span data-testid="invite-mail-status">
+              <b>{justInvited}</b> is invited.{" "}
+              {mail[justInvited] === "sending" ? "Sending the invite email…"
+                : mail[justInvited] === "sent" ? "We emailed them the sign-up link (it may land in spam)."
+                : mail[justInvited] === "failed" ? "The email could not be sent. Copy the link below and send it yourself."
+                : "Send them this link."}{" "}
+              They can sign up with Google or with email, username and password.
+            </span>
             <CopyButton text={signUpLink(justInvited)} />
           </div>
         )}
@@ -109,6 +125,12 @@ function PeoplePage() {
                   <p className="text-sm text-on-surface truncate">{i.email}</p>
                   <p className="text-xs text-on-surface-variant">{i.role === "admin" ? "Admin" : "Member"} · invited {new Date(i.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
                 </div>
+                {canEmailInvites && (
+                  <button onClick={() => sendMail(i.email)} disabled={mail[i.email] === "sending"} data-testid="invite-resend" className="inline-flex items-center gap-1 text-xs text-primary hover:underline disabled:opacity-50">
+                    <span aria-hidden="true" className="material-symbols-outlined text-[15px]">{mail[i.email] === "sent" ? "mark_email_read" : mail[i.email] === "failed" ? "error" : "send"}</span>
+                    {mail[i.email] === "sending" ? "Sending…" : mail[i.email] === "sent" ? "Sent" : mail[i.email] === "failed" ? "Failed, retry" : "Email again"}
+                  </button>
+                )}
                 <CopyButton text={signUpLink(i.email)} label="Copy link" />
                 <button onClick={() => cancelInvite(i.email)} aria-label={`Cancel invite for ${i.email}`} data-testid="invite-cancel" className="text-xs text-on-surface-variant hover:text-error">Cancel</button>
               </li>
