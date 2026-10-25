@@ -9,6 +9,7 @@ import InstallCard from "@/components/settings/InstallCard";
 import RemindersCard from "@/components/settings/RemindersCard";
 import CalendarFeedCard from "@/components/settings/CalendarFeedCard";
 import PhonePasswordCard from "@/components/settings/PhonePasswordCard";
+import { TargetSettingsCard } from "@/components/ui/StudyTarget";
 import type { Session } from "@/types";
 import { localDateStr } from "@/lib/dateUtils";
 import { toCsv, downloadText as download } from "@/lib/csv";
@@ -190,15 +191,15 @@ export default function SettingsPage() {
 
   function handleExportCSV() {
     const data = getFilteredSessions();
-    const header = ["Date", "Subject", "Session Type", "Duration (min)", "Focus Score", "Start", "End", "Notes"];
-    const rows = data.map((s) => [s.date, s.subjectName, s.sessionType ?? "Deep Work", s.durationMinutes, s.focusScore, s.startTime, s.endTime, s.notes ?? ""]);
+    const header = ["Date", "Subject", "Topic", "Session Type", "Duration (min)", "Focus Rating", "Focus Score", "Distractions", "Start", "End", "Notes"];
+    const rows = data.map((s) => [s.date, s.subjectName, s.topicTitle ?? "", s.sessionType ?? "Deep Work", s.durationMinutes, s.focusRating ?? "", s.focusScore, s.distractions ?? 0, s.startTime, s.endTime, s.notes ?? ""]);
     download(toCsv([header, ...rows]), "studypulse-sessions.csv", "text/csv");
   }
 
   function handleExportExcel() {
     const data = getFilteredSessions();
-    const header = ["Date","Subject","Session Type","Duration (min)","Focus Score","Start","End","Notes"];
-    const rows = data.map((s) => [s.date, s.subjectName, s.sessionType ?? "Deep Work", s.durationMinutes, s.focusScore, s.startTime, s.endTime, s.notes ?? ""]);
+    const header = ["Date","Subject","Topic","Session Type","Duration (min)","Focus Rating","Focus Score","Distractions","Start","End","Notes"];
+    const rows = data.map((s) => [s.date, s.subjectName, s.topicTitle ?? "", s.sessionType ?? "Deep Work", s.durationMinutes, s.focusRating ?? "", s.focusScore, s.distractions ?? 0, s.startTime, s.endTime, s.notes ?? ""]);
     const tableHtml = `<table><tr>${header.map(h => `<th>${h}</th>`).join("")}</tr>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join("")}</tr>`).join("")}</table>`;
     download("﻿" + tableHtml, "studypulse-sessions.xls", "application/vnd.ms-excel");
   }
@@ -305,6 +306,8 @@ export default function SettingsPage() {
           />
         </div>
       </div>
+
+      <TargetSettingsCard />
 
       <InstallCard />
       <PhonePasswordCard />

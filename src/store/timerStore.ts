@@ -37,6 +37,14 @@ interface TimerStore {
   totalPomodoros: number;
   selectedSubjectId: string;
   selectedSubjectName: string;
+  /** Optional topic of the subject ("" = none). Cleared when the subject changes. */
+  selectedTopicId: string;
+  selectedTopicTitle: string;
+  setTopic: (id: string, title: string) => void;
+  /** "I got distracted" presses during the current focus */
+  distractions: number;
+  addDistraction: () => void;
+  resetDistractions: () => void;
   sessionType: string;
   setSessionType: (type: string) => void;
 
@@ -79,6 +87,12 @@ export const useTimerStore = create<TimerStore>()(
       totalPomodoros: 4,
       selectedSubjectId: "",
       selectedSubjectName: "Select a Subject",
+      selectedTopicId: "",
+      selectedTopicTitle: "",
+      setTopic: (id, title) => set({ selectedTopicId: id, selectedTopicTitle: title }),
+      distractions: 0,
+      addDistraction: () => set((s) => ({ distractions: s.distractions + 1 })),
+      resetDistractions: () => set({ distractions: 0 }),
       sessionType: "Deep Work",
       setSessionType: (type) => set({ sessionType: type }),
       pomodoroLength: 25,
@@ -136,7 +150,7 @@ export const useTimerStore = create<TimerStore>()(
         _interval = setInterval(() => get().tick(), 500);
       },
 
-      setSubject: (id, name) => set((s) => ({ selectedSubjectId: id, selectedSubjectName: name, ...(id !== s.selectedSubjectId ? { activeBlockId: "" } : {}) })),
+      setSubject: (id, name) => set((s) => ({ selectedSubjectId: id, selectedSubjectName: name, ...(id !== s.selectedSubjectId ? { activeBlockId: "", selectedTopicId: "", selectedTopicTitle: "" } : {}) })),
       activeBlockId: "",
       setActiveBlock: (id) => set({ activeBlockId: id }),
 
@@ -285,6 +299,8 @@ export const useTimerStore = create<TimerStore>()(
         state: s.state, mode: s.mode, secondsRemaining: s.secondsRemaining, totalSeconds: s.totalSeconds,
         pomodoroIndex: s.pomodoroIndex, totalPomodoros: s.totalPomodoros,
         selectedSubjectId: s.selectedSubjectId, selectedSubjectName: s.selectedSubjectName,
+        selectedTopicId: s.selectedTopicId, selectedTopicTitle: s.selectedTopicTitle,
+        distractions: s.distractions,
         sessionType: s.sessionType,
         activeBlockId: s.activeBlockId,
         pomodoroLength: s.pomodoroLength, shortBreak: s.shortBreak, longBreak: s.longBreak,

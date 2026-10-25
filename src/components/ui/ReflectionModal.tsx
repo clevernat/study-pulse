@@ -5,29 +5,41 @@ import { useAuth } from "@/context/AuthContext";
 import { useReflectionStore } from "@/store/reflectionStore";
 import { updateSession } from "@/lib/firebase/firestore";
 
+/** Answers to "How focused were you?" (stored as focusRating 1–5 on the session). */
+export const FOCUS_RATINGS = [
+  { value: 1, label: "Very distracted" },
+  { value: 2, label: "Often distracted" },
+  { value: 3, label: "Okay" },
+  { value: 4, label: "Focused" },
+  { value: 5, label: "Deep focus" },
+];
+
 export default function ReflectionModal() {
   const { user } = useAuth();
   const { show, sessionId, subjectName, close } = useReflectionStore();
   const [notes, setNotes] = useState("");
+  const [rating, setRating] = useState(0);
   const [saving, setSaving] = useState(false);
 
   if (!show) return null;
 
   const handleSave = async () => {
-    if (!user || !sessionId || !notes.trim()) { close(); setNotes(""); return; }
+    if (!user || !sessionId || (!notes.trim() && !rating)) { handleSkip(); return; }
     setSaving(true);
     try {
-      await updateSession(user.uid, sessionId, { notes: notes.trim() });
+      await updateSession(user.uid, sessionId, {
+        ...(notes.trim() ? { notes: notes.trim() } : {}),
+        ...(rating ? { focusRating: rating } : {}),
+      });
     } catch {
       // fail silently — reflection is optional
     } finally {
       setSaving(false);
-      close();
-      setNotes("");
+      handleSkip();
     }
   };
 
-  const handleSkip = () => { close(); setNotes(""); };
+  function handleSkip() { close(); setNotes(""); setRating(0); }
 
   return (
     <div className="fixed inset-0 z-[250] flex items-center justify-center p-4">
@@ -55,6 +67,30 @@ export default function ReflectionModal() {
           </button>
         </div>
 
+        {/* Focus rating */}
+        <div className="flex flex-col gap-2">
+          <p id="focus-rating-label" className="text-sm text-on-surface-variant font-inter">How focused were you?</p>
+          <div role="radiogroup" aria-labelledby="focus-rating-label" className="grid grid-cols-5 gap-1.5">
+            {FOCUS_RATINGS.map((r) => (
+              <button
+                key={r.value}
+                type="button"
+                role="radio"
+                aria-checked={rating === r.value}
+                aria-label={`${r.value}: ${r.label}`}
+                data-testid={`focus-rating-${r.value}`}
+                onClick={() => setRating(r.value)}
+                className={`rounded-xl border py-2 flex flex-col items-center gap-0.5 transition-all ${
+                  rating === r.value ? "bg-primary/20 border-primary text-primary" : "border-outline-variant text-on-surface-variant hover:border-primary/50 hover:text-on-surface"
+                }`}
+              >
+                <span className="font-jetbrains font-bold text-base">{r.value}</span>
+                <span className="text-[10px] leading-tight text-center">{r.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Textarea */}
         <div className="flex flex-col gap-2">
           <p className="text-sm text-on-surface-variant font-inter">
@@ -64,9 +100,8 @@ export default function ReflectionModal() {
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="e.g. Finished the intro section, still need to add citations tomorrow…"
-            rows={4}
+            rows={3}
             maxLength={500}
-            autoFocus
             className="bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm placeholder:text-on-surface-variant/40 resize-none"
           />
           <p className="text-xs text-on-surface-variant/50 text-right">{notes.length}/500</p>
@@ -82,7 +117,7 @@ export default function ReflectionModal() {
           </button>
           <button
             onClick={handleSave}
-            disabled={saving || !notes.trim()}
+            disabled={saving || (!notes.trim() && !rating)}
             className="flex-1 py-2.5 rounded-xl bg-primary-container text-on-primary-container font-bold font-inter text-sm hover:opacity-90 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {saving && <span className="w-4 h-4 rounded-full border-2 border-on-primary-container border-t-transparent animate-spin" />}

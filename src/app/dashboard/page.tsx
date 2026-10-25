@@ -13,6 +13,7 @@ import { useCollection } from "@/lib/firebase/useCollection";
 import { toCsv, downloadText } from "@/lib/csv";
 import type { HeatmapCell, Session, Subject, Task } from "@/types";
 import StatRow from "@/components/ui/StatRow";
+import FocusBadge from "@/components/ui/FocusBadge";
 
 function buildHeatmap(sessions: Session[]): HeatmapCell[] {
   const minutesByDate: Record<string, number> = {};
@@ -40,12 +41,6 @@ function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   return m === 0 ? `${h} hr` : `${h}h ${m}m`;
-}
-
-function focusColor(score: number): string {
-  if (score >= 90) return "text-secondary";
-  if (score >= 80) return "text-tertiary";
-  return "text-error";
 }
 
 function heatIntensityClass(intensity: HeatmapCell["intensity"]): string {
@@ -262,8 +257,8 @@ function RecentSessions({ sessions, subjectById }: { sessions: Session[]; subjec
   const displayed = [...sessions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
 
   function handleExport() {
-    const header = ["Date", "Subject", "Duration (min)", "Focus Score", "Notes"];
-    const rows = sessions.map((s) => [s.date, s.subjectName, s.durationMinutes, s.focusScore, s.notes ?? ""]);
+    const header = ["Date", "Subject", "Topic", "Duration (min)", "Focus Rating", "Focus Score", "Distractions", "Notes"];
+    const rows = sessions.map((s) => [s.date, s.subjectName, s.topicTitle ?? "", s.durationMinutes, s.focusRating ?? "", s.focusScore, s.distractions ?? 0, s.notes ?? ""]);
     downloadText(toCsv([header, ...rows]), "study-sessions.csv", "text/csv");
   }
 
@@ -281,7 +276,7 @@ function RecentSessions({ sessions, subjectById }: { sessions: Session[]; subjec
             <tr className="border-b border-outline-variant">
               <th className="text-left text-xs text-on-surface-variant px-4 py-3">Subject</th>
               <th className="text-left text-xs text-on-surface-variant px-4 py-3">Duration</th>
-              <th className="text-left text-xs text-on-surface-variant px-4 py-3">Focus score</th>
+              <th className="text-left text-xs text-on-surface-variant px-4 py-3">Focus</th>
             </tr>
           </thead>
           <tbody>
@@ -293,9 +288,7 @@ function RecentSessions({ sessions, subjectById }: { sessions: Session[]; subjec
                 <td className="px-4 py-3 text-sm font-jetbrains text-on-surface-variant">
                   {formatDuration(session.durationMinutes)}
                 </td>
-                <td className={`px-4 py-3 text-sm font-jetbrains font-semibold ${focusColor(session.focusScore)}`}>
-                  {session.focusScore}%
-                </td>
+                <td className="px-4 py-3"><FocusBadge session={session} compact /></td>
               </tr>
               );
             })}

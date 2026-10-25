@@ -7,6 +7,8 @@ import ConfirmModal from "@/components/ui/ConfirmModal";
 import { getColor } from "@/lib/colorPalette";
 import { localDateStr, daysAgoStr } from "@/lib/dateUtils";
 import type { Session, Subject } from "@/types";
+import { averageRating } from "@/lib/insights";
+import FocusBadge, { ratingColor } from "@/components/ui/FocusBadge";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -17,12 +19,6 @@ function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   return m === 0 ? `${h} hr` : `${h}h ${m}m`;
-}
-
-function focusColorClass(score: number): string {
-  if (score >= 90) return "text-secondary bg-secondary/10 border-secondary/30";
-  if (score >= 80) return "text-tertiary bg-tertiary/10 border-tertiary/30";
-  return "text-error bg-error/10 border-error/30";
 }
 
 function dotHex(color: string): string {
@@ -72,7 +68,7 @@ function DayGroup({ date, sessions, label, defaultOpen, subjectById, onDeleteSes
   const [showAll, setShowAll] = useState(false);
 
   const minutes = sessions.reduce((acc, s) => acc + s.durationMinutes, 0);
-  const avgFocus = Math.round(sessions.reduce((acc, s) => acc + s.focusScore, 0) / sessions.length);
+  const avgFocus = averageRating(sessions);
   const sorted = [...sessions].sort((a, b) => b.startTime.localeCompare(a.startTime));
   const visible = showAll ? sorted : sorted.slice(0, SESSIONS_PER_DAY_PREVIEW);
   const hiddenCount = sorted.length - visible.length;
@@ -97,8 +93,10 @@ function DayGroup({ date, sessions, label, defaultOpen, subjectById, onDeleteSes
             <span>{sessions.length} session{sessions.length === 1 ? "" : "s"}</span>
             <span className="opacity-50">·</span>
             <span className="font-jetbrains">{formatDuration(minutes)}</span>
-            <span className="opacity-50">·</span>
-            <span className={`font-jetbrains ${focusColorClass(avgFocus).split(" ")[0]}`}>{avgFocus}%</span>
+            {avgFocus !== null && (<>
+              <span className="opacity-50">·</span>
+              <span className={`font-jetbrains ${ratingColor(avgFocus)}`}>focus {avgFocus}/5</span>
+            </>)}
           </div>
         </div>
       </button>
@@ -110,7 +108,6 @@ function DayGroup({ date, sessions, label, defaultOpen, subjectById, onDeleteSes
             const sub = subjectById.get(session.subjectId);
             const displayName = sub?.name ?? session.subjectName;
             const dotHexColor = dotHex(sub?.color ?? session.subjectColor);
-            const scoreClasses = focusColorClass(session.focusScore);
 
             return (
               <div
@@ -133,8 +130,17 @@ function DayGroup({ date, sessions, label, defaultOpen, subjectById, onDeleteSes
                           {session.pomodoroCount} pomodoro{session.pomodoroCount > 1 ? "s" : ""}
                         </span>
                       )}
+                      {session.topicTitle && (
+                        <span data-testid="session-topic" className="text-xs text-primary bg-primary/10 px-2 py-0.5 rounded">{session.topicTitle}</span>
+                      )}
                       {session.sessionType && (
                         <span className="text-xs text-on-surface-variant">{session.sessionType}</span>
+                      )}
+                      {!!session.distractions && (
+                        <span data-testid="session-distractions" className="text-xs text-on-surface-variant flex items-center gap-1">
+                          <span aria-hidden="true" className="material-symbols-outlined text-[14px]">notifications_paused</span>
+                          {session.distractions} distraction{session.distractions === 1 ? "" : "s"}
+                        </span>
                       )}
                     </div>
                     {session.notes && (
@@ -147,11 +153,7 @@ function DayGroup({ date, sessions, label, defaultOpen, subjectById, onDeleteSes
                   <span className="text-xs text-on-surface-variant font-inter">
                     {session.startTime} – {session.endTime}
                   </span>
-                  <div
-                    className={`font-jetbrains font-semibold text-sm px-3 py-1 rounded-full border ${scoreClasses}`}
-                  >
-                    {session.focusScore}%
-                  </div>
+                  <FocusBadge session={session} />
                   <button
                     onClick={() => onDeleteSession(session)}
                     disabled={deletingId === session.id}
@@ -227,10 +229,7 @@ export default function SessionsPage() {
 
   const totalSessions = filtered.length;
   const totalMinutes = filtered.reduce((acc, s) => acc + s.durationMinutes, 0);
-  const avgFocus =
-    filtered.length > 0
-      ? Math.round(filtered.reduce((acc, s) => acc + s.focusScore, 0) / filtered.length)
-      : 0;
+  const avgFocus = averageRating(filtered);
 
   const { sortedDates, grouped } = useMemo(() => {
     const map = new Map<string, Session[]>();
@@ -276,10 +275,10 @@ export default function SessionsPage() {
           <div className="text-xs text-on-surface-variant">Total time</div>
         </div>
         <div className="glass-card p-6 flex flex-col gap-1">
-          <div className={`font-jetbrains font-semibold text-2xl ${focusColorClass(avgFocus).split(" ")[0]}`}>
-            {avgFocus}%
+          <div className={`font-jetbrains font-semibold text-2xl ${ratingColor(avgFocus)}`}>
+            {avgFocus !== null ? `${avgFocus}/5` : "—"}
           </div>
-          <div className="text-xs text-on-surface-variant">Average focus</div>
+          <div className="text-xs text-on-surface-variant">Average focus (your 1–5 ratings)</div>
         </div>
       </div>
 

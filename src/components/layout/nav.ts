@@ -27,6 +27,7 @@ export const SECTIONS: NavSection[] = [
     key: "progress", label: "Progress", icon: "monitoring", href: "/dashboard",
     pages: [
       { href: "/dashboard", label: "Overview" },
+      { href: "/review", label: "Weekly review" },
       { href: "/reports", label: "Reports" },
       { href: "/sessions", label: "Sessions" },
       { href: "/goals", label: "Goals" },

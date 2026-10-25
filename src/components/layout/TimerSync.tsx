@@ -114,6 +114,7 @@ export default function TimerSync() {
       if (state === "idle" && (prevStateRef.current === "running" || prevStateRef.current === "paused")) {
         // Stopped early (Reset, or new focus lengths): keep the time already studied.
         if (focusStartMsRef.current !== null) saveSession(60);
+        useTimerStore.getState().resetDistractions();
         focusStartMsRef.current = null;
         focusPausedMsRef.current = 0;
         focusPauseStartMsRef.current = null;
@@ -123,6 +124,7 @@ export default function TimerSync() {
           focusPauseStartMsRef.current = null;
         }
       } else if (state === "running" && prevStateRef.current !== "running") {
+        useTimerStore.getState().resetDistractions(); // a new focus starts at 0
         startTimeRef.current = new Date().toTimeString().slice(0, 5);
         sessionTotalSecondsRef.current = totalSeconds;
         focusStartMsRef.current = Date.now();
@@ -195,7 +197,10 @@ export default function TimerSync() {
       endTime: now.toTimeString().slice(0, 5),
       notes: "",
       blockId: storeState.activeBlockId || undefined,
+      ...(storeState.selectedTopicId ? { topicId: storeState.selectedTopicId, topicTitle: storeState.selectedTopicTitle } : {}),
+      ...(storeState.distractions ? { distractions: storeState.distractions } : {}),
     };
+    storeState.resetDistractions();
     try {
       const sessionId = await addSession(user.uid, session);
       if (session.blockId) {
@@ -229,6 +234,8 @@ export default function TimerSync() {
       longBreak: s.longBreak,
       selectedSubjectId: s.selectedSubjectId,
       selectedSubjectName: s.selectedSubjectName,
+      selectedTopicId: s.selectedTopicId,
+      selectedTopicTitle: s.selectedTopicTitle,
       updatedAt: Date.now(),
       deviceId: DEVICE_ID,
       sessionOwnerDeviceId: sessionOwnerDeviceIdRef.current,
@@ -269,6 +276,8 @@ export default function TimerSync() {
         longBreak: remote.longBreak,
         selectedSubjectId: remote.selectedSubjectId,
         selectedSubjectName: remote.selectedSubjectName,
+        selectedTopicId: remote.selectedTopicId ?? "",
+        selectedTopicTitle: remote.selectedTopicTitle ?? "",
       });
       init();
     });

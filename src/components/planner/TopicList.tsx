@@ -3,12 +3,17 @@ import { useState } from "react";
 import { addItem, updateItem, deleteItem } from "@/lib/firebase/firestore";
 import { inputCls } from "@/components/ui/Field";
 import { topicProgress } from "@/lib/exams";
+import { formatSmartDuration } from "@/lib/dateUtils";
 import type { Exam, Topic } from "@/types";
 
-interface Props { uid: string; subjectId: string; topics: Topic[]; exams: Exam[]; barColor: string }
+interface Props {
+  uid: string; subjectId: string; topics: Topic[]; exams: Exam[]; barColor: string;
+  /** Minutes studied per topic id ("" = no topic); shown when given */
+  minutesByTopic?: Record<string, number>;
+}
 
 /** Topics of one subject: add, check off, link to an exam, delete. */
-export default function TopicList({ uid, subjectId, topics, exams, barColor }: Props) {
+export default function TopicList({ uid, subjectId, topics, exams, barColor, minutesByTopic }: Props) {
   const [title, setTitle] = useState("");
   const list = topics.filter((t) => t.subjectId === subjectId).sort((a, b) => a.order - b.order);
   const prog = topicProgress(topics, subjectId);
@@ -54,6 +59,11 @@ export default function TopicList({ uid, subjectId, topics, exams, barColor }: P
                 {t.done && <span className="material-symbols-outlined text-on-primary text-[14px]">check</span>}
               </button>
               <span className={`flex-1 min-w-0 text-sm ${t.done ? "line-through text-on-surface-variant" : "text-on-surface"}`}>{t.title}</span>
+              {minutesByTopic && (
+                <span data-testid="topic-minutes" className="font-jetbrains text-xs text-on-surface-variant whitespace-nowrap" title="Time studied on this topic">
+                  {minutesByTopic[t.id] ? formatSmartDuration(minutesByTopic[t.id]) : "–"}
+                </span>
+              )}
               {subjectExams.length > 0 && (
                 <select
                   aria-label="Exam for this topic"
@@ -71,6 +81,12 @@ export default function TopicList({ uid, subjectId, topics, exams, barColor }: P
             </li>
           ))}
         </ul>
+      )}
+      {minutesByTopic && list.length > 0 && (
+        <p className="text-xs text-on-surface-variant">
+          Time per topic comes from the timer (choose a topic before you start).
+          {minutesByTopic[""] ? ` ${formatSmartDuration(minutesByTopic[""])} without a topic.` : ""}
+        </p>
       )}
     </div>
   );

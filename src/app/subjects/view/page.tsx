@@ -10,7 +10,9 @@ import TopicList from "@/components/planner/TopicList";
 import ExamCard from "@/components/planner/ExamCard";
 import ExamModal from "@/components/planner/ExamModal";
 import { secondaryBtnCls } from "@/components/ui/Field";
-import type { Deck, Exam, Subject, Task, Topic } from "@/types";
+import type { Deck, Exam, Session, Subject, Task, Topic } from "@/types";
+import { minutesByTopic } from "@/lib/insights";
+import ResultsPanel from "@/components/planner/ResultsPanel";
 import DeckModal from "@/components/flashcards/DeckModal";
 
 function SubjectView() {
@@ -21,6 +23,7 @@ function SubjectView() {
   const { items: tasks } = useCollection<Task>("tasks");
   const [editing, setEditing] = useState<Exam | "new" | null>(null);
   const { items: decks } = useCollection<Deck>("decks");
+  const { items: sessions } = useCollection<Session>("sessions");
   const [newDeck, setNewDeck] = useState(false);
   const subject = subjects.find((s) => s.id === id);
   const today = localDateStr();
@@ -52,7 +55,9 @@ function SubjectView() {
         </div>
       </div>
 
-      <TopicList uid={uid} subjectId={id} topics={topics} exams={exams} barColor={c.bar} />
+      <TopicList uid={uid} subjectId={id} topics={topics} exams={exams} barColor={c.bar} minutesByTopic={minutesByTopic(sessions, id)} />
+
+      <ResultsPanel uid={uid} subjectId={id} sessions={sessions} barColor={c.bar} />
 
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">

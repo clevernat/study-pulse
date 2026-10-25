@@ -97,7 +97,7 @@ export async function updateSubject(
 }
 
 /** Collections whose documents belong to one subject (deleted with the subject). */
-export const SUBJECT_OWNED_COLLECTIONS = ["sessions", "goals", "topics", "exams", "classes", "decks", "notes"];
+export const SUBJECT_OWNED_COLLECTIONS = ["sessions", "goals", "topics", "exams", "classes", "decks", "notes", "results"];
 
 export async function deleteSubject(
   uid: string,
@@ -214,7 +214,7 @@ export async function deleteAllUserData(uid: string): Promise<void> {
   }
   const subcollections = [
     "sessions", "subjects", "goals", "tasks", "topics", "exams", "classes", "studyBlocks",
-    "habits", "decks", "notes", "cards", "reviewLogs", "reviewDays", "reminders", "devices", "preferences", "calendarFeed",
+    "habits", "decks", "notes", "cards", "reviewLogs", "reviewDays", "reminders", "devices", "preferences", "calendarFeed", "results",
   ];
   await Promise.all(
     subcollections.map(async (col) => {
@@ -265,6 +265,9 @@ export interface UserPrefs {
   remindersEnabled?: boolean;
   /** "HH:MM" daily summary, or "" for none */
   dailySummaryTime?: string;
+  /** Study targets in minutes (0 or missing = no target) */
+  dailyTargetMinutes?: number;
+  weeklyTargetMinutes?: number;
 }
 
 /** True when the document has usable timer lengths (it may only hold other settings). */

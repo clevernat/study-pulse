@@ -2,11 +2,11 @@
 // reminder notifications sent by the server (web push).
 // Pages: network first, cached copy when offline. Build files (/_next/static,
 // hashed names): cache first. Data offline is handled by Firestore (IndexedDB).
-const CACHE = "studypulse-v1";
+const CACHE = "studypulse-v2";
 const PAGES = [
   "/", "/login/", "/dashboard/", "/today/", "/calendar/", "/tasks/", "/exams/", "/timetable/", "/habits/",
   "/flashcards/", "/flashcards/deck/", "/flashcards/review/", "/flashcards/stats/", "/flashcards/import/",
-  "/timer/", "/subjects/", "/subjects/view/", "/sessions/", "/goals/", "/reports/", "/settings/",
+  "/timer/", "/subjects/", "/subjects/view/", "/sessions/", "/goals/", "/reports/", "/review/", "/settings/",
 ];
 const FILES = ["/manifest.webmanifest", "/favicon.svg", "/icons/icon-192.png", "/sql-wasm.wasm"];
 

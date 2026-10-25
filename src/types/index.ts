@@ -39,6 +39,7 @@ export interface Session {
   subjectName: string;
   subjectColor: string;
   durationMinutes: number;
+  /** Share of the planned focus time actually studied, 0–100 (100 = finished the Pomodoro) */
   focusScore: number;
   pomodoroCount: number;
   notes?: string;
@@ -48,6 +49,13 @@ export interface Session {
   /** Flashcard review sessions: deck and number of answers */
   deckId?: string;
   reviewCount?: number;
+  /** Topic of the subject studied (optional) */
+  topicId?: string;
+  topicTitle?: string;
+  /** "How focused were you?" 1–5, answered after the session (missing = not rated) */
+  focusRating?: number;
+  /** Times the "I got distracted" button was pressed during the focus */
+  distractions?: number;
   date: string;
   startTime: string;
   endTime: string;
@@ -133,6 +141,8 @@ export interface TimerSyncDoc {
   longBreak: number;
   selectedSubjectId: string;
   selectedSubjectName: string;
+  selectedTopicId?: string;
+  selectedTopicTitle?: string;
   updatedAt: number;
   /** Which browser tab/device last wrote — used to skip echoed-back writes */
   deviceId: string;
@@ -246,6 +256,18 @@ export interface Habit {
   archived?: boolean;
   /** "YYYY-MM-DD" → amount done that day (manual habits) */
   log: Record<string, number>;
+  createdAt: number;
+}
+
+/** A practice test, quiz or exam score for a subject (users/{uid}/results). */
+export interface TestResult {
+  id: string;
+  subjectId: string;
+  title: string;
+  /** "YYYY-MM-DD" */
+  date: string;
+  score: number;
+  maxScore: number;
   createdAt: number;
 }
 
