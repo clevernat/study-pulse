@@ -6,6 +6,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { AppSync } from "~/lib/app-sync";
+import { Loading } from "~/components/ui";
 import { Notifications } from "~/lib/notifications";
 import { colors } from "~/theme";
 
@@ -22,8 +23,9 @@ const theme = {
 
 function RootStack() {
   const { user, loading } = useAuth();
-  useEffect(() => { if (!loading) SplashScreen.hideAsync(); }, [loading]);
-  if (loading) return null;
+  // Hide the start screen as soon as the app runs; a dark spinner covers the short sign-in check.
+  useEffect(() => { SplashScreen.hideAsync().catch(() => undefined); }, []);
+  if (loading) return <Loading />;
   return (
     <>
       {user && <AppSync />}
