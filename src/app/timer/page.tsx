@@ -7,13 +7,15 @@ import { getColor } from "@/lib/colorPalette";
 import { useAuth } from "@/context/AuthContext";
 import { subscribeSubjects, subscribeSessions, subscribeGoals } from "@/lib/firebase/firestore";
 import { computeStreak } from "@/lib/streakLogic";
-import { localDateStr, daysAgoStr } from "@/lib/dateUtils";
+import { localDateStr, daysAgoStr, formatSmartDuration } from "@/lib/dateUtils";
+import { useStudyTargets } from "@/lib/firebase/useStudyTargets";
 import { togglePiPTimer, isPiPSupported, isPiPOpen } from "@/lib/pipTimer";
 import type { Subject, Session, Goal } from "@/types";
 import { requestNotificationPermission } from "@/lib/sounds";
 import { useCollection } from "@/lib/firebase/useCollection";
 import { blockMinutes } from "@/lib/calendar";
-import type { StudyBlock } from "@/types";
+import type { StudyBlock, Topic } from "@/types";
+import TopicSelect from "@/components/ui/TopicSelect";
 
 const BREAK_SUGGESTIONS = [
   { icon: "directions_walk", title: "Take a short walk", desc: "Even 5 minutes outside resets your focus." },
@@ -117,6 +119,11 @@ function TimerPageInner() {
 
   const { user } = useAuth();
   const activeBlockId = useTimerStore((s) => s.activeBlockId);
+  const selectedTopicId = useTimerStore((s) => s.selectedTopicId);
+  const setTopic = useTimerStore((s) => s.setTopic);
+  const distractions = useTimerStore((s) => s.distractions);
+  const addDistraction = useTimerStore((s) => s.addDistraction);
+  const { items: topics } = useCollection<Topic>("topics");
   const setActiveBlock = useTimerStore((s) => s.setActiveBlock);
   const { items: blocks } = useCollection<StudyBlock>("studyBlocks");
   const searchParams = useSearchParams();
@@ -186,8 +193,10 @@ function TimerPageInner() {
     .reduce((sum, s) => sum + s.durationMinutes, 0);
   const todayHours = todayMinutes / 60;
 
-  const todayGoalHours = 8;
-  const todayProgress = Math.min(todayHours / todayGoalHours, 1);
+  // Your own target (Settings or Today): the daily one, else a seventh of the weekly one.
+  const targets = useStudyTargets();
+  const dayTargetMin = targets.daily || (targets.weekly ? Math.round(targets.weekly / 7) : 0);
+  const todayProgress = dayTargetMin ? Math.min(todayMinutes / dayTargetMin, 1) : 0;
 
   // Productivity: compare this week vs last week hours
   // Last 7 days (today included) vs the 7 days before. Compare local date strings.
@@ -333,6 +342,15 @@ function TimerPageInner() {
         )}
       </div>
 
+      {/* Topic of the subject (optional) */}
+      {hasSubject && (
+        <div className="w-full flex flex-col gap-1.5">
+          <span className="text-xs font-semibold text-on-surface-variant">Topic</span>
+          <TopicSelect subjectId={selectedSubjectId} topics={topics} value={selectedTopicId} testId="timer-topic"
+            onChange={(t) => setTopic(t?.id ?? "", t?.title ?? "")} />
+        </div>
+      )}
+
       {/* No active goal banner */}
       {hasSubject && !hasActiveGoal && (
         <div className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-tertiary/10 border border-tertiary/30">
@@ -415,6 +433,21 @@ function TimerPageInner() {
           />
         )}
       </div>
+
+      {/* Distraction counter: one tap each time your mind wanders during a focus */}
+      {mode === "focus" && state !== "idle" && (
+        <button
+          data-testid="timer-distracted"
+          type="button"
+          onClick={addDistraction}
+          className="flex items-center gap-2 px-4 py-2 rounded-full border border-outline-variant text-sm text-on-surface-variant hover:border-tertiary/60 hover:text-tertiary active:scale-95 transition-all"
+          aria-label={`I got distracted. ${distractions} so far in this focus`}
+        >
+          <span aria-hidden="true" className="material-symbols-outlined text-[18px]">notifications_paused</span>
+          I got distracted
+          <span data-testid="timer-distractions" className="font-jetbrains font-bold text-on-surface bg-surface-container px-2 rounded-full">{distractions}</span>
+        </button>
+      )}
 
       {/* Controls */}
       <div className="flex items-center gap-5 justify-center">
@@ -557,9 +590,16 @@ function TimerPageInner() {
               </>
             )}
           </div>
-          <div className="h-1.5 rounded-full bg-surface-container overflow-hidden">
-            <div className="h-full rounded-full transition-all" style={{ width: `${todayProgress * 100}%`, background: "linear-gradient(to right,#5ed8a9,#3fbe90)" }} />
-          </div>
+          {dayTargetMin ? (
+            <>
+              <div className="h-1.5 rounded-full bg-surface-container overflow-hidden">
+                <div className="h-full rounded-full transition-all" style={{ width: `${todayProgress * 100}%`, background: "linear-gradient(to right,#5ed8a9,#3fbe90)" }} />
+              </div>
+              <p data-testid="timer-target" className="text-[11px] text-on-surface-variant">of {formatSmartDuration(dayTargetMin)} target</p>
+            </>
+          ) : (
+            <a href="/today" className="text-[11px] text-on-surface-variant underline underline-offset-2">Set a target</a>
+          )}
         </div>
 
         {/* Productivity */}

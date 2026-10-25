@@ -3,6 +3,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { subscribeSessions, subscribeSubjects } from "@/lib/firebase/firestore";
+import { averageRating, focusTrend } from "@/lib/insights";
+import { ratingColor } from "@/components/ui/FocusBadge";
 import { localDateStr, formatSmartDuration } from "@/lib/dateUtils";
 import { getColor } from "@/lib/colorPalette";
 import type { Session, Subject } from "@/types";
@@ -88,18 +90,16 @@ export default function ReportsPage() {
   // ── Top Stats ────────────────────────────────────────────────────────────────
   const totalMinutes = sessions.reduce((sum, s) => sum + s.durationMinutes, 0);
   const sessionCount = sessions.length;
-  const avgFocusScore = sessions.length > 0
-    ? Math.round(sessions.reduce((sum, s) => sum + s.focusScore, 0) / sessions.length)
-    : 0;
+  // Average of the "How focused were you? 1–5" answers (null when nothing is rated yet).
+  const avgRating = averageRating(sessions);
 
   // Aggregate by subjectId for distribution + best-subject
   const subjectAgg = useMemo(() => {
-    const m: Record<string, { id: string; minutes: number; focusSum: number; count: number }> = {};
+    const m: Record<string, { id: string; minutes: number; count: number }> = {};
     for (const s of sessions) {
       if (!s.subjectId) continue;
-      if (!m[s.subjectId]) m[s.subjectId] = { id: s.subjectId, minutes: 0, focusSum: 0, count: 0 };
+      if (!m[s.subjectId]) m[s.subjectId] = { id: s.subjectId, minutes: 0, count: 0 };
       m[s.subjectId].minutes += s.durationMinutes;
-      m[s.subjectId].focusSum += s.focusScore;
       m[s.subjectId].count += 1;
     }
     return Object.values(m).filter((e) => subjectById.has(e.id)).sort((a, b) => b.minutes - a.minutes);
@@ -131,7 +131,7 @@ export default function ReportsPage() {
       const m = timeToMinutes(s.startTime);
       const bucket = m >= 5 * 60 && m < 12 * 60 ? "Morning" : m >= 12 * 60 && m < 17 * 60 ? "Afternoon" : m >= 17 * 60 && m < 21 * 60 ? "Evening" : "Night";
       buckets[bucket] += s.durationMinutes;
-      focusByBucket[bucket as keyof typeof focusByBucket].push(s.focusScore);
+      if (s.focusRating) focusByBucket[bucket as keyof typeof focusByBucket].push(s.focusRating);
     }
     const topBucket = (Object.entries(buckets) as [string, number][]).sort((a, b) => b[1] - a[1])[0];
     const bestFocusBucket = (Object.entries(focusByBucket) as [string, number[]][])
@@ -272,21 +272,20 @@ export default function ReportsPage() {
   const hasHeatmapData = heatmapData.flat().some((c) => c.minutes > 0);
   const [heatHover, setHeatHover] = useState<{ row: number; col: number } | null>(null);
 
-  // ── Focus score by day of week ────────────────────────────────────────────
+  // ── Focus rating (1–5) by day of week ─────────────────────────────────────
   const focusByDay = useMemo(() => {
-    const sums = Array(7).fill(0);
-    const counts = Array(7).fill(0);
+    const byDay: Session[][] = Array.from({ length: 7 }, () => []);
     for (const s of sessions) {
+      if (!s.focusRating) continue;
       const dow = new Date(s.date + "T12:00:00").getDay();
-      const idx = dow === 0 ? 6 : dow - 1;
-      sums[idx] += s.focusScore;
-      counts[idx]++;
+      byDay[dow === 0 ? 6 : dow - 1].push(s);
     }
-    return sums.map((sum, i) => ({
-      score: counts[i] > 0 ? Math.round(sum / counts[i]) : 0,
-      count: counts[i],
-    }));
+    return byDay.map((list) => ({ score: averageRating(list) ?? 0, count: list.length }));
   }, [sessions]);
+
+  // ── Focus trend: average rating per week, last 8 weeks ───────────────────
+  const ratingTrend = useMemo(() => focusTrend(allSessions, localDateStr(), 8), [allSessions]);
+  const hasRatingTrend = ratingTrend.some((w) => w.rating !== null);
 
   const hasFocusData = focusByDay.some((d) => d.score > 0);
   const [focusHover, setFocusHover] = useState<number | null>(null);
@@ -300,13 +299,14 @@ export default function ReportsPage() {
           id: e.id,
           name: sub?.name ?? "—",
           color: getColor(sub?.color ?? "violet").dot,
-          avgFocus: e.count > 0 ? Math.round(e.focusSum / e.count) : 0,
+          avgFocus: averageRating(sessions.filter((s) => s.subjectId === e.id)) ?? 0,
           minutes: e.minutes,
         };
       })
+      .filter((x) => x.avgFocus > 0)
       .sort((a, b) => b.avgFocus - a.avgFocus)
       .slice(0, 6);
-  }, [subjectAgg, subjectById]);
+  }, [subjectAgg, subjectById, sessions]);
 
   const hasSubjectFocus = subjectFocus.length > 0;
 
@@ -336,7 +336,7 @@ export default function ReportsPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Total Study Time" value={loading ? "—" : formatSmartDuration(totalMinutes)} hint="All logged sessions" />
         <StatCard label="Sessions" value={loading ? "—" : String(sessionCount)} hint="This period" />
-        <StatCard label="Avg Focus" value={loading ? "—" : sessions.length > 0 ? `${avgFocusScore}%` : "—"} hint={avgFocusScore >= 90 ? "Excellent" : avgFocusScore >= 75 ? "Good" : sessions.length > 0 ? "Keep going" : "No data"} accent />
+        <StatCard label="Avg Focus" value={loading ? "—" : avgRating !== null ? `${avgRating}/5` : "—"} hint={avgRating === null ? "Rate sessions after each focus" : avgRating >= 4 ? "Focused" : avgRating >= 3 ? "Okay" : "Often distracted"} accent />
         <StatCard label="Best Subject" value={loading ? "—" : bestSubject ? bestSubject.name : "—"} hint={bestSubject ? `${bestSubject.label} logged` : "No sessions yet"} />
       </div>
 
@@ -347,7 +347,7 @@ export default function ReportsPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <InsightCard icon="calendar_today" iconClass="text-primary" label="Most productive day" value={insights.bestDow.day} sub={`${insights.bestDow.minutes} min · ${insights.bestDow.count} session${insights.bestDow.count === 1 ? "" : "s"}`} />
             <InsightCard icon="schedule" iconClass="text-secondary" label="Top time of day" value={insights.topBucket[0]} sub={`${insights.topBucket[1]} min total`} />
-            <InsightCard icon="psychology" iconClass="text-tertiary" label="Sharpest focus" value={insights.bestFocusBucket?.bucket ?? "—"} sub={insights.bestFocusBucket ? `${Math.round(insights.bestFocusBucket.avg)}% avg` : ""} />
+            <InsightCard icon="psychology" iconClass="text-tertiary" label="Sharpest focus" value={insights.bestFocusBucket?.bucket ?? "—"} sub={insights.bestFocusBucket ? `${Math.round(insights.bestFocusBucket.avg * 10) / 10}/5 avg` : "Rate your sessions"} />
             <InsightCard icon="timelapse" iconClass="text-primary" label="Avg session" value={`${insights.avgSessionMin} min`} sub={`across ${insights.uniqueDays} day${insights.uniqueDays === 1 ? "" : "s"}`} />
           </div>
         </div>
@@ -506,24 +506,24 @@ export default function ReportsPage() {
 
         {/* Focus by Day */}
         <div className="glass-card p-6 relative">
-          <h2 className="font-grotesk font-bold text-on-surface mb-1">Focus score by day</h2>
-          <p className="text-xs text-on-surface-variant mb-4">Avg focus % per weekday · hover a bar</p>
+          <h2 className="font-grotesk font-bold text-on-surface mb-1">Focus by day</h2>
+          <p className="text-xs text-on-surface-variant mb-4">Average focus rating (1–5) per weekday · hover a bar</p>
           {!hasFocusData ? <EmptyState /> : (
             <div>
               <div className="flex items-end gap-3 h-32 pl-7 relative">
                 {/* Y gridlines */}
                 <div className="absolute inset-0 flex flex-col justify-between pl-7 pr-0 pointer-events-none">
-                  {[100, 50, 0].map((v) => (
+                  {[5, 3, 0].map((v) => (
                     <div key={v} className="flex items-center gap-2">
-                      <span className="absolute -left-0 text-[9px] text-on-surface-variant font-jetbrains">{v}%</span>
+                      <span className="absolute -left-0 text-[9px] text-on-surface-variant font-jetbrains">{v}</span>
                       <div className="border-t border-outline-variant/30 flex-1 w-full" />
                     </div>
                   ))}
                 </div>
                 {focusByDay.map((d, i) => {
                   const score = d.score;
-                  const pct = (score / 100) * 100;
-                  const color = score === 0 ? "#292b30" : score >= 90 ? "#5ed8a9" : score >= 80 ? "#a7b2f7" : "#ffb95f";
+                  const pct = (score / 5) * 100;
+                  const color = score === 0 ? "#292b30" : score >= 4 ? "#5ed8a9" : score >= 3 ? "#a7b2f7" : "#ffb95f";
                   const isHover = focusHover === i;
                   return (
                     <div
@@ -558,7 +558,7 @@ export default function ReportsPage() {
               {focusHover !== null && focusByDay[focusHover].score > 0 && (
                 <div className="absolute top-4 right-4 bg-surface-container-lowest border border-primary/40 rounded-lg px-3 py-2 shadow-[0_4px_16px_rgba(0,0,0,0.5)] pointer-events-none">
                   <div className="text-[10px] text-on-surface-variant">{DAYS[focusHover]}</div>
-                  <div className="text-sm font-jetbrains font-semibold text-on-surface">{focusByDay[focusHover].score}%</div>
+                  <div className="text-sm font-jetbrains font-semibold text-on-surface">{focusByDay[focusHover].score}/5</div>
                   <div className="text-[10px] text-on-surface-variant">{focusByDay[focusHover].count} session{focusByDay[focusHover].count === 1 ? "" : "s"}</div>
                 </div>
               )}
@@ -567,12 +567,31 @@ export default function ReportsPage() {
         </div>
       </div>
 
+      {/* Focus trend */}
+      <div className="glass-card p-6" data-testid="focus-trend">
+        <h2 className="font-grotesk font-bold text-on-surface mb-1">Focus trend</h2>
+        <p className="text-xs text-on-surface-variant mb-4">Average focus rating (1–5) per week · last 8 weeks · from your answers after each session</p>
+        {!hasRatingTrend ? (
+          <p className="text-sm text-on-surface-variant">No ratings yet. After each focus session, answer &quot;How focused were you?&quot; to see your trend here.</p>
+        ) : (
+          <div className="flex items-end gap-2 h-36">
+            {ratingTrend.map((w) => (
+              <div key={w.weekStart} className="flex-1 flex flex-col items-center justify-end gap-1 h-full" title={`Week of ${w.weekStart}: ${w.rating ?? "no ratings"}${w.rated ? ` (${w.rated} rated)` : ""}`}>
+                <span className={`text-[11px] font-jetbrains ${ratingColor(w.rating)}`}>{w.rating ?? "–"}</span>
+                <div className="w-full rounded-t bg-primary/70" style={{ height: `${((w.rating ?? 0) / 5) * 100}%`, minHeight: w.rating ? 4 : 0 }} />
+                <span className="text-[10px] text-on-surface-variant font-jetbrains">{w.weekStart.slice(5).replace("-", "/")}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Row 3: Subject Focus + Heatmap (compact) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Subject Focus */}
         <div className="glass-card p-6">
           <h2 className="font-grotesk font-bold text-on-surface mb-1">Focus by Area</h2>
-          <p className="text-xs text-on-surface-variant mb-4">Which subjects you concentrate best in</p>
+          <p className="text-xs text-on-surface-variant mb-4">Average focus rating (1–5) per subject</p>
           {!hasSubjectFocus ? <EmptyState /> : (
             <div className="space-y-3">
               {subjectFocus.map((s) => (
@@ -582,10 +601,10 @@ export default function ReportsPage() {
                   <div className="flex-1 bg-surface-container h-2 rounded-full overflow-hidden">
                     <div
                       className="h-full rounded-full transition-all"
-                      style={{ width: `${s.avgFocus}%`, background: s.color }}
+                      style={{ width: `${(s.avgFocus / 5) * 100}%`, background: s.color }}
                     />
                   </div>
-                  <span className="font-jetbrains text-xs text-on-surface w-9 text-right">{s.avgFocus}%</span>
+                  <span className="font-jetbrains text-xs text-on-surface w-9 text-right">{s.avgFocus}/5</span>
                 </div>
               ))}
             </div>

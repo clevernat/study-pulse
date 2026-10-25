@@ -4,8 +4,11 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTimerStore } from "@/store/timerStore";
 import { getUserSubjects, addSession } from "@/lib/firebase/firestore";
-import type { Subject, Session } from "@/types";
+import type { Subject, Session, Topic } from "@/types";
 import { localDateStr } from "@/lib/dateUtils";
+import { useCollection } from "@/lib/firebase/useCollection";
+import TopicSelect from "@/components/ui/TopicSelect";
+import { FOCUS_RATINGS } from "@/components/ui/ReflectionModal";
 
 interface Props {
   onClose: () => void;
@@ -20,7 +23,9 @@ export default function LogSessionModal({ onClose, onSaved }: Props) {
   const [subjectId, setSubjectId] = useState(selectedSubjectId);
   const [hours, setHours] = useState("0");
   const [minutes, setMinutes] = useState("25");
-  const [focusScore, setFocusScore] = useState("85");
+  const [focusRating, setFocusRating] = useState(0);
+  const [topic, setTopic] = useState<Topic | null>(null);
+  const { items: topics } = useCollection<Topic>("topics");
   const [date, setDate] = useState(localDateStr());
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
@@ -45,8 +50,6 @@ export default function LogSessionModal({ onClose, onSaved }: Props) {
     if (isNaN(m) || m < 0 || m > 59) { setError("Minutes must be between 0 and 59."); return; }
     if (totalMinutes < 1) { setError("Duration must be at least 1 minute."); return; }
     if (!date) { setError("Please select a date."); return; }
-    const score = parseInt(focusScore);
-    if (isNaN(score) || score < 1 || score > 100) { setError("Focus score must be between 1 and 100."); return; }
     if (!user) return;
 
     setSaving(true);
@@ -58,7 +61,9 @@ export default function LogSessionModal({ onClose, onSaved }: Props) {
         subjectName: selectedSubject.name,
         subjectColor: selectedSubject.color ?? "violet",
         durationMinutes: totalMinutes,
-        focusScore: score,
+        focusScore: 100,
+        ...(focusRating ? { focusRating } : {}),
+        ...(topic && topic.subjectId === selectedSubject.id ? { topicId: topic.id, topicTitle: topic.title } : {}),
         pomodoroCount: Math.floor(totalMinutes / 25),
         date,
         startTime: new Date(now.getTime() - totalMinutes * 60_000).toTimeString().slice(0, 5),
@@ -134,6 +139,13 @@ export default function LogSessionModal({ onClose, onSaved }: Props) {
             )}
           </div>
 
+          {selectedSubject && (
+            <div>
+              <label className="text-on-surface-variant text-sm font-inter mb-1.5 block">Topic (optional)</label>
+              <TopicSelect subjectId={selectedSubject.id} topics={topics} value={topic?.id ?? ""} onChange={setTopic} testId="log-topic" />
+            </div>
+          )}
+
           {/* Duration */}
           <div>
             <label className="text-on-surface-variant text-sm font-inter mb-1.5 block">Duration</label>
@@ -182,24 +194,20 @@ export default function LogSessionModal({ onClose, onSaved }: Props) {
             />
           </div>
 
-          {/* Focus Score */}
+          {/* Focus rating */}
           <div>
-            <label className="text-on-surface-variant text-sm font-inter mb-1.5 flex items-center justify-between">
-              <span>Focus score</span>
-              <span className="font-jetbrains text-primary font-bold">{focusScore}%</span>
-            </label>
-            <input
-              type="range"
-              value={focusScore}
-              onChange={(e) => setFocusScore(e.target.value)}
-              min="1"
-              max="100"
-              className="w-full accent-primary"
-            />
-            <div className="flex justify-between text-xs text-on-surface-variant mt-1 font-inter">
-              <span>Distracted</span>
-              <span>Moderate</span>
-              <span>Deep focus</span>
+            <p id="log-focus-label" className="text-on-surface-variant text-sm font-inter mb-1.5">How focused were you? (optional)</p>
+            <div role="radiogroup" aria-labelledby="log-focus-label" className="grid grid-cols-5 gap-1.5">
+              {FOCUS_RATINGS.map((r) => (
+                <button key={r.value} type="button" role="radio" aria-checked={focusRating === r.value} aria-label={`${r.value}: ${r.label}`}
+                  onClick={() => setFocusRating(focusRating === r.value ? 0 : r.value)}
+                  className={`rounded-xl border py-2 flex flex-col items-center gap-0.5 transition-all ${
+                    focusRating === r.value ? "bg-primary/20 border-primary text-primary" : "border-outline-variant text-on-surface-variant hover:border-primary/50"
+                  }`}>
+                  <span className="font-jetbrains font-bold text-sm">{r.value}</span>
+                  <span className="text-[10px] leading-tight text-center">{r.label}</span>
+                </button>
+              ))}
             </div>
           </div>
 

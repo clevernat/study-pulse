@@ -1,4 +1,4 @@
-import { localDateStr, daysAgoStr } from "./dateUtils";
+import { localDateStr, daysAgoStr, formatSmartDuration } from "./dateUtils";
 
 describe("localDateStr", () => {
   it("uses the local calendar day, not UTC", () => {
@@ -13,5 +13,14 @@ describe("daysAgoStr", () => {
   });
   it("crosses month and year boundaries", () => {
     expect(daysAgoStr(1, new Date(2026, 0, 1, 8))).toBe("2025-12-31");
+  });
+});
+
+describe("formatSmartDuration", () => {
+  it("minutes under an hour, hours above (singular for exactly 1)", () => {
+    expect(formatSmartDuration(25)).toBe("25 min");
+    expect(formatSmartDuration(60)).toBe("1 hr");
+    expect(formatSmartDuration(90)).toBe("1.5 hrs");
+    expect(formatSmartDuration(120)).toBe("2 hrs");
   });
 });

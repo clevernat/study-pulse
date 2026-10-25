@@ -26,7 +26,7 @@ export function formatSmartDuration(minutes: number): string {
   if (minutes <= 0) return "0 min";
   if (minutes < 60) return `${minutes} min`;
   const h = minutes / 60;
-  return `${h % 1 === 0 ? h.toFixed(0) : h.toFixed(1)} hrs`;
+  return h === 1 ? "1 hr" : `${h % 1 === 0 ? h.toFixed(0) : h.toFixed(1)} hrs`;
 }
 
 /**

@@ -20,6 +20,8 @@ import { useHabitContext } from "@/lib/firebase/useHabitContext";
 import type { ClassItem } from "@/types";
 import { upcomingExams, daysUntil, countdownLabel, urgency, URGENCY_CLASSES } from "@/lib/exams";
 import StatRow from "@/components/ui/StatRow";
+import FocusBadge from "@/components/ui/FocusBadge";
+import { TargetCard } from "@/components/ui/StudyTarget";
 
 const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 };
 
@@ -91,12 +93,6 @@ export default function TodayPage() {
     return Math.ceil((new Date(deadline + "T00:00:00").getTime() - new Date(today + "T00:00:00").getTime()) / 86400000);
   }
 
-  function focusColor(score: number) {
-    if (score >= 90) return "text-secondary";
-    if (score >= 75) return "text-tertiary";
-    return "text-error";
-  }
-
   const PRIORITY_COLORS = {
     high:   { bg: "bg-error/10",     text: "text-error",     border: "border-error/30" },
     medium: { bg: "bg-tertiary/10",  text: "text-tertiary",  border: "border-tertiary/30" },
@@ -119,6 +115,8 @@ export default function TodayPage() {
         { label: "Tasks done today", value: `${tasksDone}/${tasksDone + tasksLeft}` },
         { label: "Open tasks", value: openCount },
       ]} />
+
+      <TargetCard sessions={sessions} />
 
       {/* Classes today (from the timetable) */}
       {(classesToday.length > 0 || holidayToday) && (
@@ -294,13 +292,13 @@ export default function TodayPage() {
                   {c && <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: c.dot }} />}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-inter font-medium text-on-surface truncate">{s.subjectName}</p>
-                    {s.sessionType && s.sessionType !== "Deep Work" && (
-                      <p className="text-[10px] text-on-surface-variant">{s.sessionType}</p>
+                    {(s.topicTitle || (s.sessionType && s.sessionType !== "Deep Work")) && (
+                      <p className="text-[10px] text-on-surface-variant">{[s.topicTitle, s.sessionType !== "Deep Work" && s.sessionType].filter(Boolean).join(" · ")}</p>
                     )}
                   </div>
                   <span className="text-xs font-jetbrains text-on-surface-variant">{s.startTime} – {s.endTime}</span>
                   <span className="text-xs font-jetbrains text-on-surface-variant">{formatSmartDuration(s.durationMinutes)}</span>
-                  <span className={`text-xs font-jetbrains font-bold ${focusColor(s.focusScore)}`}>{s.focusScore}%</span>
+                  <FocusBadge session={s} compact />
                 </div>
               );
             })}
