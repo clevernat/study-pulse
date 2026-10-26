@@ -139,7 +139,7 @@ export default function BlockModal({ uid, subjects, tasks, block, initial, onClo
         )}
         {error && <p className="text-error text-sm bg-error/10 border border-error/20 rounded-lg px-3 py-2">{error}</p>}
         <div className="flex gap-2 flex-wrap">
-          {block && <button type="button" onClick={remove} className={`${secondaryBtnCls} text-error`} aria-label="Delete block"><span className="material-symbols-outlined text-[18px]">delete</span></button>}
+          {block && <button type="button" onClick={remove} className={`${secondaryBtnCls} text-error`} aria-label="Delete block"><span aria-hidden="true" className="material-symbols-outlined text-[18px]">delete</span>Delete</button>}
           <button type="submit" data-testid="block-save" className={`${secondaryBtnCls} flex-1`}>Save</button>
           <button type="button" data-testid="block-start-timer" onClick={startNow} className={`${primaryBtnCls} flex-1`}>
             <span className="material-symbols-outlined text-[18px]">play_arrow</span>Start timer

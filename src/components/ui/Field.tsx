@@ -37,3 +37,13 @@ export const REMINDER_OPTIONS: { value: string; label: string }[] = [
   { value: "60", label: "1 hour before" },
   { value: "1440", label: "1 day before" },
 ];
+
+/** The Delete button at the bottom of an edit form: always labelled, so it is easy to find. */
+export function DeleteButton({ label, onClick, testId }: { label: string; onClick: () => void; testId?: string }) {
+  return (
+    <button type="button" onClick={onClick} data-testid={testId}
+      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-error/30 text-error font-inter text-sm font-semibold hover:bg-error/10 transition-colors">
+      <span aria-hidden="true" className="material-symbols-outlined text-[18px]">delete</span>{label}
+    </button>
+  );
+}

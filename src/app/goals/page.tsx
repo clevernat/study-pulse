@@ -546,6 +546,7 @@ export default function GoalsPage() {
           onClose={closeModal}
           onSave={handleSave}
           onUpdate={handleUpdate}
+          onDelete={editingGoal ? () => { setConfirmDeleteId(editingGoal.id); closeModal(); } : undefined}
         />
       )}
 

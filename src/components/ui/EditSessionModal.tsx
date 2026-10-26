@@ -7,11 +7,11 @@ import { toMinutes } from "@/lib/timetable";
 import { minutesToHHMM } from "@/lib/calendar";
 import TopicSelect from "@/components/ui/TopicSelect";
 import { FOCUS_RATINGS } from "@/components/ui/ReflectionModal";
-import { inputCls, primaryBtnCls, secondaryBtnCls } from "@/components/ui/Field";
+import { DeleteButton, inputCls, primaryBtnCls, secondaryBtnCls } from "@/components/ui/Field";
 import type { Session, Subject, Topic } from "@/types";
 
 /** Change any part of a saved session; the change is written to the database. */
-export default function EditSessionModal({ uid, session, subjects, onClose }: { uid: string; session: Session; subjects: Subject[]; onClose: () => void }) {
+export default function EditSessionModal({ uid, session, subjects, onClose, onDelete }: { uid: string; session: Session; subjects: Subject[]; onClose: () => void; onDelete?: () => void }) {
   const { items: topics } = useCollection<Topic>("topics");
   const [subjectId, setSubjectId] = useState(session.subjectId);
   const newSubject = useNewSubject((id) => { setSubjectId(id); setTopicId(""); });
@@ -119,6 +119,7 @@ export default function EditSessionModal({ uid, session, subjects, onClose }: { 
           <button type="button" onClick={onClose} className={`${secondaryBtnCls} flex-1`}>Cancel</button>
           <button type="submit" data-testid="edit-session-save" disabled={saving} className={`${primaryBtnCls} flex-1`}>{saving ? "Saving…" : "Save changes"}</button>
         </div>
+        {onDelete && <DeleteButton label="Delete this session" onClick={onDelete} testId="edit-session-delete" />}
       </form>
     </div>
   );

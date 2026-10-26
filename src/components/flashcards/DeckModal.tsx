@@ -63,7 +63,7 @@ export default function DeckModal({ uid, subjects, deck, onClose, defaultSubject
         </Field>
         {error && <p className="text-error text-sm bg-error/10 border border-error/20 rounded-lg px-3 py-2">{error}</p>}
         <div className="flex gap-2">
-          {deck && <button type="button" onClick={remove} className={`${secondaryBtnCls} text-error`} aria-label="Delete deck"><span className="material-symbols-outlined text-[18px]">delete</span></button>}
+          {deck && <button type="button" onClick={remove} className={`${secondaryBtnCls} text-error`} aria-label="Delete deck"><span aria-hidden="true" className="material-symbols-outlined text-[18px]">delete</span>Delete</button>}
           <button type="button" onClick={onClose} className={`${secondaryBtnCls} flex-1`}>Cancel</button>
           <button type="submit" data-testid="deck-save" className={`${primaryBtnCls} flex-1`}>{deck ? "Save" : "Create deck"}</button>
         </div>

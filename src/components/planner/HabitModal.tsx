@@ -82,7 +82,7 @@ export default function HabitModal({ uid, habit, onClose }: { uid: string; habit
         </div>
         {error && <p className="text-error text-sm bg-error/10 border border-error/20 rounded-lg px-3 py-2">{error}</p>}
         <div className="flex gap-2 flex-wrap">
-          {habit && <button type="button" onClick={remove} className={`${secondaryBtnCls} text-error`} aria-label="Delete habit"><span className="material-symbols-outlined text-[18px]">delete</span></button>}
+          {habit && <button type="button" onClick={remove} className={`${secondaryBtnCls} text-error`} aria-label="Delete habit"><span aria-hidden="true" className="material-symbols-outlined text-[18px]">delete</span>Delete</button>}
           {habit && (
             <button type="button" onClick={async () => { await updateItem<Habit>(uid, "habits", habit.id, { archived: !habit.archived }); onClose(); }} className={secondaryBtnCls}>
               {habit.archived ? "Restore" : "Archive"}

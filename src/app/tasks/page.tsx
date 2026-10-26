@@ -10,7 +10,7 @@ import ConfirmModal from "@/components/ui/ConfirmModal";
 import type { Task, Subject, Exam, TaskKind } from "@/types";
 import { useCollection } from "@/lib/firebase/useCollection";
 import { TASK_KINDS, kindOf, nextRepeat, dueKey } from "@/lib/tasks";
-import { REMINDER_OPTIONS } from "@/components/ui/Field";
+import { REMINDER_OPTIONS, DeleteButton } from "@/components/ui/Field";
 
 type FilterKind = "all" | "today" | "overdue" | "done";
 type SortKind  = "due" | "priority" | "created";
@@ -346,6 +346,7 @@ export default function TasksPage() {
               {editingId ? "Save changes" : "Add Task"}
             </button>
           </div>
+          {editingId && <DeleteButton label="Delete this task" onClick={() => { setConfirmId(editingId); resetForm(); }} testId="task-delete-in-form" />}
         </form>
       )}
 

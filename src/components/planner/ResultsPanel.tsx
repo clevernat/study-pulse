@@ -70,7 +70,12 @@ export default function ResultsPanel({ uid, subjectId, sessions, barColor }: { u
           <span aria-hidden="true" className="material-symbols-outlined text-[18px]">{editingId ? "check" : "add"}</span>{editingId ? "Save" : "Add"}
         </button>
       </form>
-      {editingId && <button type="button" onClick={cancelEdit} className="text-xs text-on-surface-variant underline underline-offset-2 self-start -mt-2">Cancel editing</button>}
+      {editingId && (
+        <div className="flex gap-4 -mt-2">
+          <button type="button" onClick={cancelEdit} className="text-xs text-on-surface-variant underline underline-offset-2">Cancel editing</button>
+          <button type="button" data-testid="result-delete-editing" onClick={() => { deleteItem(uid, "results", editingId); cancelEdit(); }} className="text-xs text-error underline underline-offset-2">Delete this result</button>
+        </div>
+      )}
       {error && <p role="alert" className="text-sm text-error">{error}</p>}
 
       {points.length === 0 ? (

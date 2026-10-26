@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useNewSubject } from "@/components/ui/NewSubject";
+import { DeleteButton } from "@/components/ui/Field";
 import { addGoal, updateGoal } from "@/lib/firebase/firestore";
 import type { Goal, Subject } from "@/types";
 import { localDateStr } from "@/lib/dateUtils";
@@ -33,6 +34,8 @@ interface GoalModalProps {
   onClose: () => void;
   onSave: (goal: Goal) => void;
   onUpdate: (goal: Goal) => void;
+  /** Edit mode: ask to delete this goal */
+  onDelete?: () => void;
 }
 
 export default function GoalModal({
@@ -43,6 +46,7 @@ export default function GoalModal({
   onClose,
   onSave,
   onUpdate,
+  onDelete,
 }: GoalModalProps) {
   const isEdit = !!editGoal;
   const locked = !!initialSubjectId && !isEdit;
@@ -286,6 +290,7 @@ export default function GoalModal({
               {isEdit ? "Save Changes" : locked ? "Set Goal & Study" : "Create Goal"}
             </button>
           </div>
+          {isEdit && onDelete && <DeleteButton label="Delete this goal" onClick={onDelete} testId="goal-delete" />}
         </form>
       </div>
     </div>

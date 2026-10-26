@@ -107,7 +107,7 @@ export default function ExamModal({ uid, subjects, exam, defaultSubjectId, onClo
         </Field>
         {error && <p className="text-error text-sm bg-error/10 border border-error/20 rounded-lg px-3 py-2">{error}</p>}
         <div className="flex gap-3">
-          {exam && <button type="button" onClick={remove} className={`${secondaryBtnCls} text-error`} aria-label="Delete exam"><span className="material-symbols-outlined text-[18px]">delete</span></button>}
+          {exam && <button type="button" onClick={remove} className={`${secondaryBtnCls} text-error`} aria-label="Delete exam"><span aria-hidden="true" className="material-symbols-outlined text-[18px]">delete</span>Delete</button>}
           <button type="button" onClick={onClose} className={`${secondaryBtnCls} flex-1`}>Cancel</button>
           <button data-testid="exam-save" type="submit" disabled={saving} className={`${primaryBtnCls} flex-1`}>{exam ? "Save" : "Add exam"}</button>
         </div>
