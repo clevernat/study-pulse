@@ -44,7 +44,7 @@ export function buildProgress(input: ProgressInput, today: string, now: number):
     subjects: subjects
       .map((sub) => {
         const list = sessions.filter((s) => s.subjectId === sub.id);
-        return { name: sub.name, color: sub.color, minutes: minutes(list), weekMinutes: review.subjects.find((r) => r.subjectId === sub.id)?.thisWeek ?? 0 };
+        return { name: sub.name, color: sub.color, minutes: minutes(list), weekMinutes: review.subjects.find((r) => r.subjectId === sub.id)?.thisWeek ?? 0, ...(sub.weeklyTargetMinutes ? { weeklyTarget: sub.weeklyTargetMinutes } : {}) };
       })
       .sort((a, b) => b.minutes - a.minutes)
       .slice(0, 6),

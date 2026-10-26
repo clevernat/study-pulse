@@ -1,6 +1,6 @@
 import {
   targetProgress, minutesByTopic, averageRating, focusTrend, distractionsPerHour,
-  weeklyReview, resultsWithEffort, effortCorrelation, effortVerdict,
+  weeklyReview, resultsWithEffort, effortCorrelation, effortVerdict, subjectTargets,
 } from "./insights";
 import type { Session, Subject, TestResult } from "@/types";
 
@@ -110,5 +110,18 @@ describe("results vs effort", () => {
     expect(effortVerdict(r, 3)).toMatch(/Clear link/);
     expect(effortCorrelation(pts.slice(0, 2))).toBeNull();
     expect(effortVerdict(null, 1)).toMatch(/Add 2 more results/);
+  });
+});
+
+describe("subjectTargets", () => {
+  it("counts only that subject's sessions, and skips subjects without a target", () => {
+    const math = { ...subject("math", "Math"), weeklyTargetMinutes: 300 };
+    const bio = { ...subject("bio", "Biology"), dailyTargetMinutes: 60 };
+    const sessions = [ses("2026-10-21", 30), ses("2026-10-20", 90), ses("2026-10-21", 45, { subjectId: "bio" })];
+    const t = subjectTargets(sessions, [math, bio, subject("art", "Art")], TODAY);
+    expect(t.map((x) => x.subject.name)).toEqual(["Biology", "Math"]);
+    expect(t[0].daily).toEqual({ target: 60, pct: 75, left: 15 });
+    expect(t[1].weekMinutes).toBe(120);
+    expect(t[1].weekly?.pct).toBe(40);
   });
 });

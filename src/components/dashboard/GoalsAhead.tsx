@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useCollection } from "@/lib/firebase/useCollection";
 import { useStudyTargets } from "@/lib/firebase/useStudyTargets";
 import { buildProgress, signals } from "@/lib/progress";
-import { goalHours, targetProgress } from "@/lib/insights";
+import { goalHours, subjectTargets, targetProgress } from "@/lib/insights";
 import { formatSmartDuration, localDateStr } from "@/lib/dateUtils";
 import { getColor } from "@/lib/colorPalette";
 import { Ring } from "@/components/admin/charts";
@@ -35,6 +35,7 @@ export default function GoalsAhead({ sessions, subjects }: { sessions: Session[]
     .filter((x) => x.hours < x.g.targetHours)
     .sort((a, b) => a.g.deadline.localeCompare(b.g.deadline))
     .slice(0, 4);
+  const perSubject = subjectTargets(sessions, subjects, today);
   const good = list.filter((s) => s.kind !== "watch");
   const watch = list.filter((s) => s.kind === "watch");
 
@@ -61,6 +62,21 @@ export default function GoalsAhead({ sessions, subjects }: { sessions: Session[]
           </div>
         ) : (
           <Link href="/today" className="text-sm text-primary underline underline-offset-2">Set a daily or weekly study target</Link>
+        )}
+        {perSubject.length > 0 && (
+          <ul data-testid="goals-subject-targets" className="flex flex-col gap-2">
+            {perSubject.map(({ subject, weekly, daily, weekMinutes, todayMinutes }) => {
+              const t = weekly ?? daily!;
+              const done = weekly ? weekMinutes : todayMinutes;
+              return (
+                <li key={subject.id} className="grid grid-cols-[minmax(0,7rem)_1fr_auto] items-center gap-3 text-sm">
+                  <span className="truncate text-on-surface">{subject.name}</span>
+                  <span className="h-2 rounded-full bg-[#292b30] overflow-hidden"><span className="block h-full rounded-full" style={{ width: `${t.pct}%`, background: getColor(subject.color).dot }} /></span>
+                  <span className="text-xs text-on-surface-variant whitespace-nowrap">{formatSmartDuration(done)} / {formatSmartDuration(t.target)} {weekly ? "this week" : "today"}</span>
+                </li>
+              );
+            })}
+          </ul>
         )}
         {active.length ? (
           <ul className="flex flex-col gap-3">

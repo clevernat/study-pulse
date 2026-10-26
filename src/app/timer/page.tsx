@@ -17,6 +17,7 @@ import { blockMinutes } from "@/lib/calendar";
 import type { StudyBlock, Topic } from "@/types";
 import TopicSelect from "@/components/ui/TopicSelect";
 import { useNewSubject } from "@/components/ui/NewSubject";
+import { targetProgress } from "@/lib/insights";
 
 const BREAK_SUGGESTIONS = [
   { icon: "directions_walk", title: "Take a short walk", desc: "Even 5 minutes outside resets your focus." },
@@ -232,6 +233,10 @@ function TimerPageInner() {
 
   const completedPomodoros = pomodoroIndex % totalPomodoros;
   const currentSubject = subjects.find((s) => s.id === selectedSubjectId);
+  // This subject's own target, if it has one
+  const subjectTarget = currentSubject && ((currentSubject.dailyTargetMinutes ?? 0) > 0 || (currentSubject.weeklyTargetMinutes ?? 0) > 0)
+    ? targetProgress(sessions.filter((s) => s.subjectId === currentSubject.id), localDateStr(), currentSubject.dailyTargetMinutes, currentSubject.weeklyTargetMinutes)
+    : null;
   const hasSubject = !!selectedSubjectId;
 
   const today = localDateStr();
@@ -573,6 +578,23 @@ function TimerPageInner() {
           </div>
         </div>
       </div>
+
+      {/* The selected subject's target */}
+      {currentSubject && subjectTarget && (
+        <div data-testid="timer-subject-target" className="w-full bg-surface-container-low border border-outline-variant rounded-xl p-3 flex flex-col gap-2">
+          <span className="text-[11px] text-on-surface-variant font-semibold flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full" style={{ background: getColor(currentSubject.color).dot }} />{currentSubject.name} target
+          </span>
+          {[subjectTarget.daily && { label: "Today", done: subjectTarget.todayMinutes, t: subjectTarget.daily },
+            subjectTarget.weekly && { label: "This week", done: subjectTarget.weekMinutes, t: subjectTarget.weekly }].filter(Boolean).map((row) => row && (
+            <div key={row.label} className="flex items-center gap-3 text-xs">
+              <span className="w-20 text-on-surface-variant">{row.label}</span>
+              <div className="flex-1 h-1.5 rounded-full bg-surface-container overflow-hidden"><div className="h-full rounded-full bg-secondary" style={{ width: `${row.t.pct}%` }} /></div>
+              <span className="text-on-surface font-jetbrains whitespace-nowrap">{formatSmartDuration(row.done)} / {formatSmartDuration(row.t.target)}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Session Stats */}
       <div className="grid grid-cols-3 gap-2 w-full sm:gap-3">

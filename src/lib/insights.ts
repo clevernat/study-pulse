@@ -54,6 +54,16 @@ export function targetProgress(sessions: Session[], today: string, dailyTarget?:
   return out;
 }
 
+export interface SubjectTarget extends TargetProgress { subject: Subject }
+
+/** Progress for every subject that has its own daily or weekly target. */
+export function subjectTargets(sessions: Session[], subjects: Subject[], today: string): SubjectTarget[] {
+  return subjects
+    .filter((s) => (s.dailyTargetMinutes ?? 0) > 0 || (s.weeklyTargetMinutes ?? 0) > 0)
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((subject) => ({ subject, ...targetProgress(sessions.filter((x) => x.subjectId === subject.id), today, subject.dailyTargetMinutes, subject.weeklyTargetMinutes) }));
+}
+
 // ── Topics ─────────────────────────────────────────────────────────────────
 
 /** Minutes per topic id for one subject ("" = sessions without a topic). */

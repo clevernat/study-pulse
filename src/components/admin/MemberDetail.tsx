@@ -81,6 +81,11 @@ export default function MemberDetail({ row, today, onClose }: { row: TeamRow; to
               <section className="flex flex-col gap-2">
                 <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Time per subject</h3>
                 <HBars rows={p.subjects.filter((s) => s.minutes).map((s) => ({ label: s.name, color: getColor(s.color).dot, minutes: s.minutes }))} />
+                {p.subjects.some((s) => s.weeklyTarget) && (
+                  <p data-testid="member-subject-targets" className="text-xs text-on-surface-variant">
+                    Subject targets this week: {p.subjects.filter((s) => s.weeklyTarget).map((s) => `${s.name} ${formatSmartDuration(s.weekMinutes)} of ${formatSmartDuration(s.weeklyTarget!)}`).join(" · ")}
+                  </p>
+                )}
               </section>
             )}
 

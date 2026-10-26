@@ -30,6 +30,9 @@ export interface Subject {
   totalMinutes: number;
   sessionCount: number;
   createdAt: string;
+  /** Study target for this subject, minutes (0 or missing = none) */
+  dailyTargetMinutes?: number;
+  weeklyTargetMinutes?: number;
 }
 
 export interface Session {
@@ -397,7 +400,7 @@ export interface Progress {
   /** Average 1–5 focus rating over the last 30 days */
   rating: number | null;
   distractionsPerHour: number | null;
-  subjects: { name: string; color: string; minutes: number; weekMinutes: number }[];
+  subjects: { name: string; color: string; minutes: number; weekMinutes: number; weeklyTarget?: number }[];
   goals: { active: number; done: number };
   nextExam: { title: string; date: string } | null;
   results: { count: number; avgPct: number } | null;
