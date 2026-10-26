@@ -112,9 +112,10 @@ export default function TasksPage() {
     setSaving(true);
     const sub = subjects.find((s) => s.id === subjectId);
     try {
-      if (editingId) {
+      // The write starts now; the form closes at once (a quick Edit click is not undone later).
+      const write = editingId
         // Empty fields are removed from the task (updateItem deletes undefined values).
-        await updateItem<Task>(user.uid, "tasks", editingId, {
+        ? updateItem<Task>(user.uid, "tasks", editingId, {
           title: title.trim(),
           subjectId: sub?.id,
           subjectName: sub?.name,
@@ -126,11 +127,8 @@ export default function TasksPage() {
           examId: examId || undefined,
           repeatAfterDays: repeatDays && parseInt(repeatDays) > 0 ? Math.min(365, parseInt(repeatDays)) : undefined,
           reminderMinutesBefore: dueDate && reminder !== "" ? parseInt(reminder) : undefined,
-        });
-        resetForm();
-        return;
-      }
-      await addTask(user.uid, {
+        })
+        : addTask(user.uid, {
         uid: user.uid,
         title: title.trim(),
         completed: false,
@@ -146,6 +144,7 @@ export default function TasksPage() {
         createdAt: new Date().toISOString(),
       });
       resetForm();
+      await write;
     } finally {
       setSaving(false);
     }

@@ -1,4 +1,5 @@
 "use client";
+import { useLiveSessions } from "@/lib/liveFocus";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useCollection } from "@/lib/firebase/useCollection";
@@ -35,7 +36,8 @@ function Change({ pct }: { pct: number | null }) {
 }
 
 export default function WeeklyReviewPage() {
-  const { items: sessions, loading } = useCollection<Session>("sessions");
+  const { items: savedSessions, loading } = useCollection<Session>("sessions");
+  const sessions = useLiveSessions(savedSessions);
   const { items: subjects } = useCollection<Subject>("subjects");
   const { weekly } = useStudyTargets();
   const today = localDateStr();

@@ -43,6 +43,7 @@ export default function TimerSync() {
   const startTimestamp = useTimerStore((s) => s.startTimestamp);
   const totalSeconds = useTimerStore((s) => s.totalSeconds);
   const selectedSubjectName = useTimerStore((s) => s.selectedSubjectName);
+  const selectedTopicId = useTimerStore((s) => s.selectedTopicId); // a topic change is synced too
   const init = useTimerStore((s) => s.init);
   const hasHydrated = useTimerStore((s) => s._hasHydrated);
   const ownerUid = useTimerStore((s) => s.ownerUid);
@@ -290,7 +291,7 @@ export default function TimerSync() {
     if (applyingRemoteRef.current) return;
     saveToFirestore();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, mode, startTimestamp]);
+  }, [state, mode, startTimestamp, selectedTopicId]);
 
   // Save session on focus → break; reset focus tracking on break → focus.
   useEffect(() => {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useLiveSessions } from "@/lib/liveFocus";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
@@ -286,7 +287,8 @@ function BadgesSection({ sessions }: { sessions: Session[] }) {
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const [sessions, setSessions] = useState<Session[]>([]);
+  const [savedSessions, setSessions] = useState<Session[]>([]);
+  const sessions = useLiveSessions(savedSessions);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const { items: tasks } = useCollection<Task>("tasks");
   const [loading, setLoading] = useState(true);

@@ -15,8 +15,9 @@ export const typeColor: Record<Goal["type"], string> = {
   yearly:    "#f472b6",
 };
 
-export function deadlineForType(type: Goal["type"]): string {
-  const d = new Date();
+/** End date for a goal type, counted from `from` (default today). */
+export function deadlineForType(type: Goal["type"], from?: string): string {
+  const d = from ? new Date(from + "T12:00:00") : new Date();
   if (type === "daily")     d.setDate(d.getDate());
   else if (type === "weekly")    d.setDate(d.getDate() + 7);
   else if (type === "monthly")   d.setDate(d.getDate() + 30);
@@ -55,6 +56,8 @@ export default function GoalModal({
   const [type, setType] = useState<Goal["type"]>(editGoal?.type ?? "weekly");
   const [targetHours, setTargetHours] = useState(String(editGoal?.targetHours ?? "2"));
   const [deadline, setDeadline] = useState(editGoal?.deadline ?? deadlineForType("weekly"));
+  /** First day of the goal: study from this day counts, and the calendar shows it from here to the deadline */
+  const [startDate, setStartDate] = useState(editGoal?.createdAt ?? localDateStr());
   const [subjectId, setSubjectId] = useState(editGoal?.subjectId ?? initialSubjectId ?? "");
   const newSubject = useNewSubject((id) => { setSubjectId(id); });
   const [saving, setSaving] = useState(false);
@@ -64,7 +67,18 @@ export default function GoalModal({
   const userEditedDeadline = useRef(false);
   const handleTypeChange = (newType: Goal["type"]) => {
     setType(newType);
-    if (!userEditedDeadline.current) setDeadline(deadlineForType(newType));
+    if (!userEditedDeadline.current) setDeadline(deadlineForType(newType, startDate));
+  };
+  const handleStartChange = (val: string) => {
+    setStartDate(val);
+    if (val && !userEditedDeadline.current) setDeadline(deadlineForType(type, val));
+  };
+  /** Quick lengths: 1 week, 1/2/3 months from the start date */
+  const setLength = (days: number) => {
+    const d = new Date((startDate || localDateStr()) + "T12:00:00");
+    d.setDate(d.getDate() + days);
+    userEditedDeadline.current = true;
+    setDeadline(localDateStr(d));
   };
   const handleDeadlineChange = (val: string) => {
     userEditedDeadline.current = true;
@@ -84,6 +98,8 @@ export default function GoalModal({
     if (!deadline)              { setError("Please set a deadline."); return; }
     const today = localDateStr();
     if (!isEdit && deadline < today) { setError("Deadline cannot be in the past."); return; }
+    if (!startDate)             { setError("Please set a start date."); return; }
+    if (deadline < startDate)   { setError("The end date must be on or after the start date."); return; }
 
     setSaving(true);
     try {
@@ -96,7 +112,7 @@ export default function GoalModal({
         currentHours: editGoal?.currentHours ?? 0,
         deadline,
         completed: editGoal?.completed ?? false,
-        createdAt: editGoal?.createdAt ?? today,
+        createdAt: startDate,
         ...(sub
           ? { subjectId: sub.id, subjectName: sub.name }
           : { subjectId: undefined, subjectName: undefined }),
@@ -201,11 +217,21 @@ export default function GoalModal({
 
           {/* Deadline */}
           <div>
-            <label className="text-on-surface-variant text-sm font-inter mb-1.5 block">Deadline</label>
+            <label className="text-on-surface-variant text-sm font-inter mb-1.5 block">From</label>
+            <input
+              type="date"
+              data-testid="goal-start"
+              value={startDate}
+              onChange={(e) => handleStartChange(e.target.value)}
+              className="bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm mb-3"
+              style={{ colorScheme: "dark" }}
+            />
+            <label className="text-on-surface-variant text-sm font-inter mb-1.5 block">To (deadline)</label>
             <div className="relative">
               <input
                 ref={dateInputRef}
                 type="date"
+                data-testid="goal-deadline"
                 value={deadline}
                 onChange={(e) => handleDeadlineChange(e.target.value)}
                 className="bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm pr-12"
@@ -220,8 +246,14 @@ export default function GoalModal({
                 <span className="material-symbols-outlined text-[20px]">calendar_month</span>
               </button>
             </div>
-            <p className="text-xs text-on-surface-variant/60 mt-1 font-inter">
-              Auto-set for {type === "daily" ? "today" : type === "weekly" ? "7 days" : type === "monthly" ? "30 days" : type === "quarterly" ? "90 days" : "365 days"} — or pick manually
+            <div className="flex flex-wrap gap-1.5 mt-2" aria-label="Quick lengths">
+              {[["1 week", 7], ["1 month", 30], ["2 months", 61], ["3 months", 91]].map(([label, days]) => (
+                <button key={label} type="button" data-testid={`goal-length-${String(label).replace(" ", "-")}`} onClick={() => setLength(days as number)}
+                  className="px-2.5 py-1 rounded-full border border-outline-variant text-xs text-on-surface-variant hover:border-primary hover:text-primary">{label}</button>
+              ))}
+            </div>
+            <p className="text-xs text-on-surface-variant/60 mt-1.5 font-inter">
+              The calendar shows this goal on every day from the start to the deadline.
             </p>
           </div>
 

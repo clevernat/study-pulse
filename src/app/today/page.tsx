@@ -23,6 +23,7 @@ import StatRow from "@/components/ui/StatRow";
 import FocusBadge from "@/components/ui/FocusBadge";
 import { TargetCard } from "@/components/ui/StudyTarget";
 import GoalsFirst from "@/components/today/GoalsFirst";
+import { LIVE_SESSION_ID, useLiveSessions } from "@/lib/liveFocus";
 
 const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 };
 
@@ -32,7 +33,9 @@ export default function TodayPage() {
 
   const [tasks, setTasks]       = useState<Task[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [sessions, setSessions] = useState<Session[]>([]);
+  const [savedSessions, setSessions] = useState<Session[]>([]);
+  // The running focus counts straight away (it is saved when it ends)
+  const sessions = useLiveSessions(savedSessions);
   const [goals, setGoals]       = useState<Goal[]>([]);
 
   useEffect(() => {
@@ -302,7 +305,9 @@ export default function TodayPage() {
                   </div>
                   <span className="text-xs font-jetbrains text-on-surface-variant">{s.startTime} – {s.endTime}</span>
                   <span className="text-xs font-jetbrains text-on-surface-variant">{formatSmartDuration(s.durationMinutes)}</span>
-                  <FocusBadge session={s} compact />
+                  {s.id === LIVE_SESSION_ID
+                    ? <span data-testid="today-live-session" className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-secondary/15 text-secondary">Now</span>
+                    : <FocusBadge session={s} compact />}
                 </div>
               );
             })}

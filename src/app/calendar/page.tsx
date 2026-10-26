@@ -1,4 +1,5 @@
 "use client";
+import { useLiveSessions } from "@/lib/liveFocus";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCollection } from "@/lib/firebase/useCollection";
@@ -10,7 +11,7 @@ import { getColor } from "@/lib/colorPalette";
 import BlockModal from "@/components/planner/BlockModal";
 import ExamModal from "@/components/planner/ExamModal";
 import { secondaryBtnCls } from "@/components/ui/Field";
-import type { ClassItem, Exam, Session, StudyBlock, Subject, Task } from "@/types";
+import type { ClassItem, Exam, Goal, Session, StudyBlock, Subject, Task } from "@/types";
 
 type View = "day" | "week" | "month";
 const HOUR_PX = 48;
@@ -19,7 +20,8 @@ const KINDS: { kind: EventKind; label: string; icon: string }[] = [
   { kind: "class", label: "Classes", icon: "calendar_view_week" },
   { kind: "exam", label: "Exams", icon: "event_upcoming" },
   { kind: "task", label: "Tasks", icon: "task_alt" },
-  { kind: "session", label: "Done sessions", icon: "history" },
+  { kind: "session", label: "Study sessions", icon: "history" },
+  { kind: "goal", label: "Goals", icon: "flag" },
 ];
 const KIND_ICON = Object.fromEntries(KINDS.map((k) => [k.kind, k.icon])) as Record<EventKind, string>;
 
@@ -167,8 +169,10 @@ export default function CalendarPage() {
   const { items: classes } = useCollection<ClassItem>("classes");
   const { items: exams } = useCollection<Exam>("exams");
   const { items: tasks } = useCollection<Task>("tasks");
+  const { items: goals } = useCollection<Goal>("goals");
   const { items: blocks } = useCollection<StudyBlock>("studyBlocks");
-  const { items: sessions } = useCollection<Session>("sessions");
+  const { items: savedSessions } = useCollection<Session>("sessions");
+  const sessions = useLiveSessions(savedSessions);
   const { settings: timetable } = useTimetable();
   const today = localDateStr();
   const [view, setView] = useState<View>("week");
@@ -182,9 +186,9 @@ export default function CalendarPage() {
 
   const days = view === "day" ? [anchor] : view === "week" ? weekDates(anchor) : monthGrid(anchor);
   const events = useMemo(
-    () => buildEvents({ classes, timetable, exams, tasks, blocks, sessions }, days[0], days[days.length - 1]).filter((e) => !hidden.has(e.kind)),
+    () => buildEvents({ classes, timetable, exams, tasks, blocks, sessions, goals }, days[0], days[days.length - 1]).filter((e) => !hidden.has(e.kind)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [classes, timetable, exams, tasks, blocks, sessions, hidden, days[0], days[days.length - 1]]
+    [classes, timetable, exams, tasks, blocks, sessions, goals, hidden, days[0], days[days.length - 1]]
   );
 
   const step = (dir: number) => {
@@ -208,6 +212,8 @@ export default function CalendarPage() {
     else if (e.kind === "exam") setExamEdit(exams.find((x) => x.id === e.refId) ?? null);
     else if (e.kind === "task") router.push("/tasks");
     else if (e.kind === "class") router.push("/timetable");
+    else if (e.kind === "goal") router.push("/goals");
+    else if (e.refId === "__live") router.push("/timer");
     else router.push("/sessions");
   }
 
@@ -241,6 +247,14 @@ export default function CalendarPage() {
           </button>
         ))}
       </div>
+
+      {events.length === 0 && (
+        <div data-testid="cal-empty" className="glass-card p-4 flex flex-col gap-2 text-sm text-on-surface-variant">
+          <p className="text-on-surface font-semibold">Nothing here {view === "day" ? "on this day" : view === "week" ? "this week" : "this month"} yet.</p>
+          <p>The calendar shows: <b>study sessions</b> (after the timer, or Log session), <b>goals</b> (every day from start to deadline), <b>planned study</b> (Plan study, or click an empty hour), <b>exams</b>, <b>tasks with a due date</b> and <b>classes</b> from your timetable.</p>
+          <p>To see it in Google or Apple Calendar too: Settings → Calendar link.</p>
+        </div>
+      )}
 
       {view === "month" ? (
         <MonthView anchor={anchor} events={events} subjects={subjects} today={today} onOpen={open} onDay={(d) => { setAnchor(d); setView("day"); }} />

@@ -1,4 +1,6 @@
 "use client";
+import StudyButton from "@/components/ui/StudyButton";
+import { useLiveSessions } from "@/lib/liveFocus";
 import { useState } from "react";
 import Link from "next/link";
 import { useStudyTargets } from "@/lib/firebase/useStudyTargets";
@@ -118,7 +120,8 @@ export function TargetCard({ sessions }: { sessions: Session[] }) {
 /** Targets for single subjects: "Biology, 5 hours a week". Saved on the subject itself. */
 export function SubjectTargets() {
   const { items: subjects, uid } = useCollection<Subject>("subjects");
-  const { items: sessions } = useCollection<Session>("sessions");
+  const { items: savedSessions } = useCollection<Session>("sessions");
+  const sessions = useLiveSessions(savedSessions);
   const [editing, setEditing] = useState<string | null>(null); // subject id, or "new"
   const [pick, setPick] = useState("");
   const newSubject = useNewSubject((id) => setPick(id));
@@ -143,10 +146,7 @@ export function SubjectTargets() {
               <span className="font-semibold text-sm text-on-surface flex-1 truncate">{subject.name}</span>
               {editing !== subject.id && (
                 <>
-                  <Link href={`/timer?subjectId=${encodeURIComponent(subject.id)}&subjectName=${encodeURIComponent(subject.name)}`} data-testid="subject-target-start"
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary-container text-on-primary-container text-xs font-bold hover:opacity-90">
-                    <span aria-hidden="true" className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>Start studying
-                  </Link>
+                  <StudyButton subject={subject} testId="subject-target-start" size="sm" />
                   <button onClick={() => setEditing(subject.id)} aria-label={`Change ${subject.name} target`} className="text-xs text-on-surface-variant hover:text-primary underline underline-offset-2">Change</button>
                   <button onClick={() => save(subject.id)(0, 0)} aria-label={`Remove ${subject.name} target`} data-testid="subject-target-remove" className="text-xs text-on-surface-variant hover:text-error underline underline-offset-2">Remove</button>
                 </>

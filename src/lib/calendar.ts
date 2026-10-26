@@ -1,7 +1,7 @@
-import type { ClassItem, Exam, Session, StudyBlock, Task, TimetableSettings } from "@/types";
+import type { ClassItem, Exam, Goal, Session, StudyBlock, Task, TimetableSettings } from "@/types";
 import { addDays, classOccurrences, mondayOf, toMinutes } from "./timetable";
 
-export type EventKind = "class" | "exam" | "task" | "block" | "session";
+export type EventKind = "class" | "exam" | "task" | "block" | "session" | "goal";
 
 export interface CalEvent {
   key: string;
@@ -24,6 +24,8 @@ export interface CalendarData {
   tasks: Task[];
   blocks: StudyBlock[];
   sessions: Session[];
+  /** Optional: goal deadlines show as all-day items */
+  goals?: Goal[];
 }
 
 export function minutesToHHMM(min: number): string {
@@ -57,8 +59,17 @@ export function buildEvents(d: CalendarData, from: string, to: string): CalEvent
     // use start + duration, capped at 23:59.
     const end = s.endTime > s.startTime ? s.endTime
       : minutesToHHMM(Math.min(toMinutes(s.startTime) + (s.durationMinutes || 0), 23 * 60 + 59));
-    out.push({ key: `session-${s.id}`, kind: "session", title: s.subjectName, date: s.date, start: s.startTime, end,
-      subjectId: s.subjectId, refId: s.id, done: true, detail: `${s.durationMinutes} min` });
+    out.push({ key: `session-${s.id}`, kind: "session", title: [s.subjectName, s.topicTitle].filter(Boolean).join(" · "), date: s.date, start: s.startTime, end,
+      subjectId: s.subjectId, refId: s.id, done: s.id !== "__live", detail: s.id === "__live" ? `studying now, ${s.durationMinutes} min` : `${s.durationMinutes} min` });
+  }
+  // A goal shows on every day of its period (start → deadline), as an all-day item
+  for (const g of d.goals ?? []) {
+    const begin = (g.createdAt ?? "").slice(0, 10);
+    const start = begin && begin <= g.deadline ? begin : g.deadline;
+    for (let day = start < from ? from : start; day <= g.deadline && day <= to; day = addDays(day, 1)) {
+      const title = day === g.deadline ? `Due: ${g.title}` : day === start ? `Start: ${g.title}` : g.title;
+      out.push({ key: `goal-${g.id}-${day}`, kind: "goal", title, date: day, subjectId: g.subjectId, refId: g.id, done: g.completed });
+    }
   }
   return out.sort((a, b) => (a.date + (a.start ?? "")).localeCompare(b.date + (b.start ?? "")));
 }

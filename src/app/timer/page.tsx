@@ -1,5 +1,6 @@
 "use client";
 
+import { useLiveSessions } from "@/lib/liveFocus";
 import { useState, useRef, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTimerStore, formatTime } from "@/store/timerStore";
@@ -132,7 +133,8 @@ function TimerPageInner() {
   const searchParams = useSearchParams();
 
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [sessions, setSessions] = useState<Session[]>([]);
+  const [savedSessions, setSessions] = useState<Session[]>([]);
+  const sessions = useLiveSessions(savedSessions);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const newSubject = useNewSubject((id, name) => setSubject(id, name));
@@ -362,7 +364,7 @@ function TimerPageInner() {
       {/* Topic of the subject (optional) */}
       {hasSubject && (
         <div className="w-full flex flex-col gap-1.5">
-          <span className="text-xs font-semibold text-on-surface-variant">Topic</span>
+          <span className="text-xs font-semibold text-on-surface-variant">Topic: what are you learning?</span>
           <TopicSelect subjectId={selectedSubjectId} topics={topics} value={selectedTopicId} testId="timer-topic"
             onChange={(t) => setTopic(t?.id ?? "", t?.title ?? "")} />
         </div>

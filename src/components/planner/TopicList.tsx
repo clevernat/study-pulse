@@ -1,6 +1,6 @@
 "use client";
+import StudyButton from "@/components/ui/StudyButton";
 import { useState } from "react";
-import Link from "next/link";
 import { addItem, updateItem, deleteItem } from "@/lib/firebase/firestore";
 import { inputCls } from "@/components/ui/Field";
 import { topicProgress } from "@/lib/exams";
@@ -92,11 +92,7 @@ export default function TopicList({ uid, subjectId, topics, exams, barColor, min
                 </button>
               )}
               {subjectName && !t.done && (
-                <Link data-testid="topic-study" aria-label={`Study ${t.title}`}
-                  href={`/timer?subjectId=${encodeURIComponent(subjectId)}&subjectName=${encodeURIComponent(subjectName)}&topicId=${encodeURIComponent(t.id)}&topicTitle=${encodeURIComponent(t.title)}`}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 flex-shrink-0">
-                  <span aria-hidden="true" className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>Study
-                </Link>
+                <StudyButton subject={{ id: subjectId, name: subjectName }} topic={t} testId="topic-study" size="sm" label="Study" />
               )}
               {minutesByTopic && (
                 <span data-testid="topic-minutes" className="font-jetbrains text-xs text-on-surface-variant whitespace-nowrap" title="Time studied on this topic">

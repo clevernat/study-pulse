@@ -1,6 +1,6 @@
 "use client";
+import StudyButton from "@/components/ui/StudyButton";
 import { useState } from "react";
-import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useCollection } from "@/lib/firebase/useCollection";
 import { goalHours } from "@/lib/insights";
@@ -16,7 +16,6 @@ export default function SubjectGoal({ subject, subjects, sessions }: { subject: 
   const [open, setOpen] = useState(false);
   const today = localDateStr();
   const active = goals.filter((g) => g.subjectId === subject.id && !g.completed && g.deadline >= today);
-  const timer = `/timer?subjectId=${encodeURIComponent(subject.id)}&subjectName=${encodeURIComponent(subject.name)}`;
 
   return (
     <section data-testid="subject-goal" className="glass-card p-5 flex flex-col gap-4">
@@ -48,9 +47,7 @@ export default function SubjectGoal({ subject, subjects, sessions }: { subject: 
             })}
           </ul>
           <div className="flex items-center gap-4 flex-wrap">
-            <Link href={timer} data-testid="subject-goal-start" className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary-container text-on-primary-container font-bold text-sm hover:opacity-90">
-              <span aria-hidden="true" className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>Start studying
-            </Link>
+            <StudyButton subject={subject} testId="subject-goal-start" />
             <button type="button" onClick={() => setOpen(true)} className="text-sm text-primary font-semibold hover:underline">+ Another goal</button>
           </div>
         </>

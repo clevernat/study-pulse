@@ -1,4 +1,6 @@
 "use client";
+import { useLiveFocus } from "@/lib/liveFocus";
+import StudyButton from "@/components/ui/StudyButton";
 import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
@@ -10,7 +12,6 @@ import GoalModal from "@/components/ui/GoalModal";
 import { NewSubjectForm } from "@/components/ui/NewSubject";
 import type { Goal, Session, Subject, Topic } from "@/types";
 
-const timerLink = (s: { id: string; name: string }) => `/timer?subjectId=${encodeURIComponent(s.id)}&subjectName=${encodeURIComponent(s.name)}`;
 const btn = "inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary-container text-on-primary-container text-sm font-bold hover:opacity-90";
 
 /** First thing on Today: your goals, or the 4 steps to get there (subject → topic → goal → timer). */
@@ -19,6 +20,7 @@ export default function GoalsFirst({ goals, subjects, sessions }: { goals: Goal[
   const { items: topics } = useCollection<Topic>("topics");
   const [newSubject, setNewSubject] = useState(false);
   const [goalFor, setGoalFor] = useState<string | null>(null); // subject id, "" = choose
+  const live = useLiveFocus();
   const today = localDateStr();
   const active = goals.filter((g) => !g.completed && g.deadline >= today).sort((a, b) => a.deadline.localeCompare(b.deadline));
 
@@ -96,11 +98,12 @@ export default function GoalsFirst({ goals, subjects, sessions }: { goals: Goal[
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-on-surface truncate">{g.title}</p>
                   <p className="text-xs text-on-surface-variant">{sub?.name ?? g.subjectName ?? "No subject"} · {left === 0 ? "due today" : `${left} day${left === 1 ? "" : "s"} left`}</p>
+                  {live.active && live.subjectId === g.subjectId && (
+                    <p data-testid="goals-first-now" className="text-xs text-secondary font-semibold">Studying now{live.topicTitle ? `: ${live.topicTitle}` : ""} · {live.minutes} min so far</p>
+                  )}
                 </div>
                 {sub && (
-                  <Link href={timerLink(sub)} data-testid="goals-first-start" className={btn}>
-                    <span aria-hidden="true" className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>Start studying
-                  </Link>
+                  <StudyButton subject={sub} testId="goals-first-start" />
                 )}
               </div>
               <div className="h-2.5 rounded-full bg-[#292b30] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${pct}%`, background: getColor(sub?.color ?? "violet").dot }} /></div>

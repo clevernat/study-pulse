@@ -25,6 +25,7 @@ export default function FloatingTimer() {
     secondsRemaining,
     totalSeconds,
     selectedSubjectName,
+    selectedTopicTitle,
     start,
     pause,
   } = useTimerStore();
@@ -114,7 +115,7 @@ export default function FloatingTimer() {
 
   const subjectLabel =
     selectedSubjectName && selectedSubjectName !== "Select a Subject"
-      ? selectedSubjectName
+      ? [selectedSubjectName, selectedTopicTitle].filter(Boolean).join(" · ")
       : null;
 
   // When dragging, use exact pixel coordinates; otherwise fall back to corner CSS
