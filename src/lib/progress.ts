@@ -18,12 +18,22 @@ export interface ProgressInput {
 }
 
 const DAY_MS = 86_400_000;
+export const YEAR_DAYS = 371;
+
+/** Minutes on `date` from a summary's year (0 for days it does not cover). */
+export function yearMinutes(p: Pick<Progress, "year" | "today">, date: string): number {
+  const back = Math.round((Date.parse(p.today) - Date.parse(date)) / DAY_MS);
+  return back < 0 ? 0 : p.year?.[YEAR_DAYS - 1 - back] ?? 0;
+}
 const minutes = (list: Session[]) => list.reduce((n, s) => n + s.durationMinutes, 0);
 
 export function buildProgress(input: ProgressInput, today: string, now: number): Omit<Progress, "id"> {
   const { sessions, subjects } = input;
   const review = weeklyReview(sessions, subjects, mondayOf(today), today);
-  const days = Array.from({ length: 14 }, (_, i) => minutes(sessions.filter((s) => s.date === addDays(today, i - 13))));
+  const perDay: Record<string, number> = {};
+  for (const s of sessions) perDay[s.date] = (perDay[s.date] ?? 0) + s.durationMinutes;
+  const days = Array.from({ length: 14 }, (_, i) => perDay[addDays(today, i - 13)] ?? 0);
+  const year = Array.from({ length: YEAR_DAYS }, (_, i) => perDay[addDays(today, i - YEAR_DAYS + 1)] ?? 0);
   const monthAgo = addDays(today, -30);
   const upcoming = input.exams.filter((e) => e.date >= today).sort((a, b) => a.date.localeCompare(b.date));
   const pcts = input.results.filter((r) => r.maxScore > 0).map((r) => (r.score / r.maxScore) * 100);
@@ -35,6 +45,7 @@ export function buildProgress(input: ProgressInput, today: string, now: number):
     totalMinutes: minutes(sessions),
     sessionCount: sessions.length,
     days,
+    year,
     thisWeek: review.thisWeek,
     lastWeek: review.lastWeek,
     streak: review.streak,

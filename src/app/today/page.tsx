@@ -22,6 +22,7 @@ import { upcomingExams, daysUntil, countdownLabel, urgency, URGENCY_CLASSES } fr
 import StatRow from "@/components/ui/StatRow";
 import FocusBadge from "@/components/ui/FocusBadge";
 import { TargetCard } from "@/components/ui/StudyTarget";
+import GoalsFirst from "@/components/today/GoalsFirst";
 
 const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 };
 
@@ -101,6 +102,9 @@ export default function TodayPage() {
 
   return (
     <div className="max-w-2xl flex flex-col gap-8">
+
+      {/* Your goals come first (or the steps to set one) */}
+      <GoalsFirst goals={goals} subjects={subjects} sessions={sessions} />
 
       {/* Greeting */}
       <div>

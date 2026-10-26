@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { login, evidence, seedDoc } from "./helpers";
-import { addSubject, dayFromToday } from "./helpers-data";
+import { addSubject, dayFromToday, setGoalOnTimer } from "./helpers-data";
 
 /** Opens a subject's page and returns its id. */
 async function openSubject(page: Page, name: string): Promise<string> {
@@ -28,6 +28,7 @@ test("timer: topic, distraction counter and 1–5 focus rating reach sessions, t
   await page.getByText("Select a Subject").first().click();
   await page.getByText("Calculus").last().click();
   await page.getByTestId("timer-topic").selectOption({ label: "Limits" });
+  await setGoalOnTimer(page);
   await page.getByTestId("timer-start").click();
   await page.getByTestId("timer-distracted").click();
   await page.getByTestId("timer-distracted").click();

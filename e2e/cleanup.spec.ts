@@ -34,7 +34,7 @@ test("every page can be reached from the menu and the section tabs", async ({ pa
   const sections: [string, string, string[]][] = [
     ["today", "/today", []],
     ["plan", "/calendar", ["/calendar", "/tasks", "/exams", "/timetable", "/habits"]],
-    ["study", "/flashcards", ["/flashcards", "/timer", "/subjects"]],
+    ["study", "/subjects", ["/subjects", "/timer", "/flashcards"]],
     ["progress", "/dashboard", ["/dashboard", "/reports", "/sessions", "/goals"]],
   ];
   for (const [key, home, tabs] of sections) {

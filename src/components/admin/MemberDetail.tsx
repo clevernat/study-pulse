@@ -4,7 +4,8 @@ import { getColor } from "@/lib/colorPalette";
 import { formatSmartDuration } from "@/lib/dateUtils";
 import { ratingColor } from "@/components/ui/FocusBadge";
 import { Avatar, DayBars, HBars, Ring } from "./charts";
-import type { Signal } from "@/lib/progress";
+import { yearMinutes, type Signal } from "@/lib/progress";
+import ContributionGraph from "@/components/ui/ContributionGraph";
 import type { TeamRow } from "./useTeam";
 
 const KIND = {
@@ -70,6 +71,8 @@ export default function MemberDetail({ row, today, onClose }: { row: TeamRow; to
               <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Last 14 days</h3>
               <DayBars series={[{ name: m.name, color: row.color, values: row.days }]} today={today} height={120} />
             </section>
+
+            {p.year && <ContributionGraph testId="member-year" minutesOn={(d) => yearMinutes(p, d)} today={today} />}
 
             <section className="grid grid-cols-3 gap-2">
               <Ring pct={p.topics.total ? p.topics.done / p.topics.total : 0} color="#40efb7" value={p.topics.total ? `${Math.round((p.topics.done / p.topics.total) * 100)}%` : "–"} label={`Topics covered (${p.topics.done}/${p.topics.total})`} />

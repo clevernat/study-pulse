@@ -395,6 +395,8 @@ export interface Progress {
   sessionCount: number;
   /** Minutes per day for the last 14 days, oldest first, ending `today` */
   days: number[];
+  /** Minutes per day for the last 371 days (53 weeks), oldest first, ending `today`; for the year graph */
+  year?: number[];
   thisWeek: number;
   lastWeek: number;
   streak: number;

@@ -17,6 +17,7 @@ import { blockMinutes } from "@/lib/calendar";
 import type { StudyBlock, Topic } from "@/types";
 import TopicSelect from "@/components/ui/TopicSelect";
 import { useNewSubject } from "@/components/ui/NewSubject";
+import GoalModal from "@/components/ui/GoalModal";
 import { targetProgress } from "@/lib/insights";
 
 const BREAK_SUGGESTIONS = [
@@ -147,6 +148,8 @@ function TimerPageInner() {
     const name = searchParams.get("subjectName");
     if (id && name) {
       setSubject(id, name);
+      const topicId = searchParams.get("topicId");
+      setTopic(topicId ?? "", topicId ? searchParams.get("topicTitle") ?? "" : "");
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -240,9 +243,10 @@ function TimerPageInner() {
   const hasSubject = !!selectedSubjectId;
 
   const today = localDateStr();
-  const hasActiveGoal = !selectedSubjectId || goals.some(
-    (g) => g.subjectId === selectedSubjectId && g.deadline >= today
-  );
+  // A goal for the chosen subject is needed before a new focus can start
+  const hasActiveGoal = goals.some((g) => g.subjectId === selectedSubjectId && !g.completed && g.deadline >= today);
+  const canStart = hasSubject && hasActiveGoal;
+  const [goalModal, setGoalModal] = useState(false);
 
   // Determine display list: real subjects if loaded, else empty (no mock fallback)
   const displaySubjects = subjects;
@@ -365,16 +369,21 @@ function TimerPageInner() {
       )}
 
       {/* No active goal banner */}
-      {hasSubject && !hasActiveGoal && (
-        <div className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-tertiary/10 border border-tertiary/30">
-          <span className="material-symbols-outlined text-tertiary text-[18px] flex-shrink-0">flag</span>
-          <p className="text-xs text-tertiary flex-1">
-            No active goal for <span className="font-semibold">{currentSubject?.name}</span> — set one to track your progress.
+      {hasSubject && !hasActiveGoal && state === "idle" && (
+        <div data-testid="timer-needs-goal" className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-tertiary/10 border border-tertiary/30">
+          <span className="material-symbols-outlined text-tertiary text-[20px] flex-shrink-0">flag</span>
+          <p className="text-sm text-on-surface flex-1">
+            Set a goal for <span className="font-semibold">{currentSubject?.name}</span> first. The timer starts after that.
           </p>
-          <a href="/goals" className="text-xs font-bold text-tertiary underline underline-offset-2 flex-shrink-0">
-            Create goal
-          </a>
+          <button type="button" data-testid="timer-set-goal" onClick={() => setGoalModal(true)}
+            className="px-3 py-2 rounded-lg bg-tertiary text-black text-xs font-bold flex-shrink-0 hover:opacity-90">
+            Set goal
+          </button>
         </div>
+      )}
+      {goalModal && user && currentSubject && (
+        <GoalModal uid={user.uid} subjects={subjects} initialSubjectId={currentSubject.id}
+          onClose={() => setGoalModal(false)} onSave={() => setGoalModal(false)} onUpdate={() => setGoalModal(false)} />
       )}
 
       {/* Session Type Selector */}
@@ -471,9 +480,9 @@ function TimerPageInner() {
           <button
             data-testid="timer-start"
             onClick={() => { if (state === "running") pause(); else { requestNotificationPermission(); start(); } }}
-            disabled={!hasSubject && state !== "running"}
+            disabled={!canStart && state === "idle"}
             className="w-16 h-16 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95"
-            style={hasSubject || state === "running" ? {
+            style={canStart || state !== "idle" ? {
               background: theme.btnBg,
               border: `2px solid ${theme.btnBorder}`,
               boxShadow: theme.btnShadow,
@@ -492,8 +501,8 @@ function TimerPageInner() {
               {state === "running" ? "pause" : "play_arrow"}
             </span>
           </button>
-          {!hasSubject && state !== "running" && (
-            <span className="text-[11px] text-on-surface-variant font-inter text-center">Select a subject to start</span>
+          {state === "idle" && !canStart && (
+            <span data-testid="timer-start-hint" className="text-[11px] text-on-surface-variant font-inter text-center">{hasSubject ? "Set a goal to start" : "Pick a subject to start"}</span>
           )}
         </div>
         <button onClick={() => skip()} className="w-11 h-11 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest transition-all active:scale-95" aria-label="Skip">

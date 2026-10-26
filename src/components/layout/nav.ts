@@ -16,11 +16,11 @@ export const SECTIONS: NavSection[] = [
     ],
   },
   {
-    key: "study", label: "Study", icon: "style", href: "/flashcards",
+    key: "study", label: "Study", icon: "school", href: "/subjects",
     pages: [
-      { href: "/flashcards", label: "Flashcards" },
-      { href: "/timer", label: "Timer" },
       { href: "/subjects", label: "Subjects" },
+      { href: "/timer", label: "Timer" },
+      { href: "/flashcards", label: "Flashcards" },
     ],
   },
   {

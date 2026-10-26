@@ -17,3 +17,11 @@ export async function dayFromToday(page: Page, n: number): Promise<string> {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   }, n);
 }
+
+/** On the Timer page: set a goal for the picked subject (the timer needs one before it starts). */
+export async function setGoalOnTimer(page: Page, title = "Study goal") {
+  await page.getByTestId("timer-set-goal").click();
+  await page.getByPlaceholder(/^e\.g\. Master /).fill(title);
+  await page.getByRole("button", { name: /Set Goal & Study/ }).click();
+  await expect(page.getByTestId("timer-needs-goal")).toBeHidden();
+}

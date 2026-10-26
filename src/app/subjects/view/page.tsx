@@ -3,6 +3,7 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCollection } from "@/lib/firebase/useCollection";
+import SubjectGoal from "@/components/planner/SubjectGoal";
 import { getColor } from "@/lib/colorPalette";
 import { localDateStr } from "@/lib/dateUtils";
 import { examProgress, upcomingExams } from "@/lib/exams";
@@ -55,7 +56,9 @@ function SubjectView() {
         </div>
       </div>
 
-      <TopicList uid={uid} subjectId={id} topics={topics} exams={exams} barColor={c.bar} minutesByTopic={minutesByTopic(sessions, id)} />
+      <TopicList uid={uid} subjectId={id} topics={topics} exams={exams} barColor={c.bar} minutesByTopic={minutesByTopic(sessions, id)} subjectName={subject.name} />
+
+      <SubjectGoal subject={subject} subjects={subjects} sessions={sessions} />
 
       <ResultsPanel uid={uid} subjectId={id} sessions={sessions} barColor={c.bar} />
 

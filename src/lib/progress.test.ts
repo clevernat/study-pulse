@@ -1,4 +1,4 @@
-import { alignedDays, buildProgress, signals } from "./progress";
+import { alignedDays, buildProgress, signals, yearMinutes } from "./progress";
 import type { Exam, Goal, Session, Subject, TestResult, Topic } from "@/types";
 
 const TODAY = "2026-10-21"; // Wednesday
@@ -65,5 +65,15 @@ describe("alignedDays", () => {
     const days = Array.from({ length: 14 }, (_, i) => i + 1); // 1..14, 14 = 2026-10-18
     expect(alignedDays({ days, today: "2026-10-18" }, TODAY).slice(-5)).toEqual([13, 14, 0, 0, 0]);
     expect(alignedDays({ days, today: TODAY }, TODAY)).toEqual(days);
+  });
+});
+
+describe("year of days for the admin's year graph", () => {
+  it("keeps every day of the last 53 weeks, readable by date", () => {
+    const p = buildProgress(input, TODAY, NOW);
+    expect(p.year).toHaveLength(371);
+    expect(yearMinutes(p, "2026-09-01")).toBe(100);
+    expect(yearMinutes(p, "2026-10-21")).toBe(30);
+    expect(yearMinutes(p, "2026-10-22")).toBe(0);
   });
 });
