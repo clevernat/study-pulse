@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useNewSubject } from "@/components/ui/NewSubject";
 import Link from "next/link";
 import { useCollection } from "@/lib/firebase/useCollection";
 import { addItem } from "@/lib/firebase/firestore";
@@ -32,6 +33,7 @@ export default function ImportPage() {
   const [error, setError] = useState("");
   const [target, setTarget] = useState<"new" | string>("new");
   const [subjectId, setSubjectId] = useState("");
+  const newSubject = useNewSubject((id) => { setSubjectId(id); });
   const [progress, setProgress] = useState(0);
   const [summary, setSummary] = useState("");
 
@@ -113,12 +115,16 @@ export default function ImportPage() {
             </select>
           </Field>
           {target === "new" && (
-            <Field label="Subject for the new deck(s)">
-              <select data-testid="import-subject" className={inputCls} value={subjectId || subjects[0]?.id || ""} onChange={(e) => setSubjectId(e.target.value)}>
-                {subjects.length === 0 && <option value="">No subjects yet</option>}
-                {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
-            </Field>
+            <>
+              <Field label="Subject for the new deck(s)">
+                <select data-testid="import-subject" className={inputCls} value={subjectId || subjects[0]?.id || ""} onChange={(e) => newSubject.pick(e.target.value) || setSubjectId(e.target.value)}>
+                  {subjects.length === 0 && <option value="">No subjects yet</option>}
+                  {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  {newSubject.option}
+                </select>
+              </Field>
+              {newSubject.form}
+            </>
           )}
           {status === "saving" ? (
             <div className="flex flex-col gap-1" data-testid="import-progress">

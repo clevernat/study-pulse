@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useNewSubject } from "@/components/ui/NewSubject";
 import { updateItem } from "@/lib/firebase/firestore";
 import { useCollection } from "@/lib/firebase/useCollection";
 import { toMinutes } from "@/lib/timetable";
@@ -13,6 +14,7 @@ import type { Session, Subject, Topic } from "@/types";
 export default function EditSessionModal({ uid, session, subjects, onClose }: { uid: string; session: Session; subjects: Subject[]; onClose: () => void }) {
   const { items: topics } = useCollection<Topic>("topics");
   const [subjectId, setSubjectId] = useState(session.subjectId);
+  const newSubject = useNewSubject((id) => { setSubjectId(id); setTopicId(""); });
   const [topicId, setTopicId] = useState(session.topicId ?? "");
   const [date, setDate] = useState(session.date);
   const [start, setStart] = useState(session.startTime);
@@ -66,11 +68,13 @@ export default function EditSessionModal({ uid, session, subjects, onClose }: { 
 
         <label className="flex flex-col gap-1.5">
           <span className="text-xs text-on-surface-variant font-bold">Subject</span>
-          <select className={inputCls} value={subjectId} onChange={(e) => { setSubjectId(e.target.value); setTopicId(""); }} data-testid="edit-session-subject">
+          <select className={inputCls} value={subjectId} onChange={(e) => { if (newSubject.pick(e.target.value)) return; setSubjectId(e.target.value); setTopicId(""); }} data-testid="edit-session-subject">
             {!subjects.some((s) => s.id === subjectId) && <option value={subjectId}>{session.subjectName}</option>}
             {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            {newSubject.option}
           </select>
         </label>
+        {newSubject.form}
         <div className="flex flex-col gap-1.5">
           <span className="text-xs text-on-surface-variant font-bold">Topic</span>
           <TopicSelect subjectId={subjectId} topics={topics} value={topicId} onChange={(t) => setTopicId(t?.id ?? "")} testId="edit-session-topic" />

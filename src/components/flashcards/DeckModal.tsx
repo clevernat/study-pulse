@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useNewSubject } from "@/components/ui/NewSubject";
 import { useRouter } from "next/navigation";
 import Modal from "@/components/ui/Modal";
 import { Field, inputCls, primaryBtnCls, secondaryBtnCls } from "@/components/ui/Field";
@@ -11,6 +12,7 @@ export default function DeckModal({ uid, subjects, deck, onClose, defaultSubject
   const router = useRouter();
   const [name, setName] = useState(deck?.name ?? "");
   const [pickedSubjectId, setSubjectId] = useState(deck?.subjectId ?? defaultSubjectId ?? "");
+  const newSubject = useNewSubject((id) => { setSubjectId(id); });
   // Subjects may load after the form opens: fall back to the first one (the select shows it).
   const subjectId = pickedSubjectId || subjects[0]?.id || "";
   const [newPerDay, setNewPerDay] = useState(deck?.newPerDay ?? DEFAULT_DECK.newPerDay);
@@ -44,11 +46,13 @@ export default function DeckModal({ uid, subjects, deck, onClose, defaultSubject
       <form onSubmit={save} className="flex flex-col gap-4">
         <Field label="Name"><input data-testid="deck-name" className={inputCls} value={name} maxLength={80} onChange={(e) => setName(e.target.value)} placeholder="e.g. Biology – cells" /></Field>
         <Field label="Subject">
-          <select data-testid="deck-subject" className={inputCls} value={subjectId} onChange={(e) => setSubjectId(e.target.value)}>
+          <select data-testid="deck-subject" className={inputCls} value={subjectId} onChange={(e) => newSubject.pick(e.target.value) || setSubjectId(e.target.value)}>
             {subjects.length === 0 && <option value="">No subjects yet</option>}
             {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            {newSubject.option}
           </select>
         </Field>
+        {newSubject.form}
         <div className="grid grid-cols-2 gap-3">
           <Field label="New cards / day"><input data-testid="deck-new-limit" type="number" min={0} max={9999} className={inputCls} value={newPerDay} onChange={(e) => setNewPerDay(Number(e.target.value))} /></Field>
           <Field label="Reviews / day"><input data-testid="deck-review-limit" type="number" min={0} max={9999} className={inputCls} value={reviewsPerDay} onChange={(e) => setReviewsPerDay(Number(e.target.value))} /></Field>

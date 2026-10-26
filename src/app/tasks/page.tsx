@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useNewSubject } from "@/components/ui/NewSubject";
 import { useAuth } from "@/context/AuthContext";
 import { subscribeTasks, subscribeSubjects, addTask, updateTask, updateItem, deleteTask } from "@/lib/firebase/firestore";
 import { getColor } from "@/lib/colorPalette";
@@ -38,6 +39,7 @@ export default function TasksPage() {
   // Form state
   const [title, setTitle]       = useState("");
   const [subjectId, setSubjectId] = useState("");
+  const newSubject = useNewSubject((id) => { setSubjectId(id); });
   const [dueDate, setDueDate]   = useState("");
   const [priority, setPriority] = useState<Task["priority"]>(undefined);
   const [estMins, setEstMins]   = useState("");
@@ -238,13 +240,15 @@ export default function TasksPage() {
               <label className="text-xs text-on-surface-variant font-bold">Subject</label>
               <select
                 value={subjectId}
-                onChange={(e) => setSubjectId(e.target.value)}
+                onChange={(e) => newSubject.pick(e.target.value) || setSubjectId(e.target.value)}
                 className="bg-surface-container-lowest border border-outline-variant rounded-xl px-3 py-2.5 text-on-surface text-sm focus:outline-none focus:border-primary transition-colors"
               >
                 <option value="">None</option>
                 {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                {newSubject.option}
               </select>
             </div>
+            {newSubject.form}
 
             {/* Due date */}
             <div className="flex flex-col gap-1.5">

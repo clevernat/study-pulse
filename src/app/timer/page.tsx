@@ -16,6 +16,7 @@ import { useCollection } from "@/lib/firebase/useCollection";
 import { blockMinutes } from "@/lib/calendar";
 import type { StudyBlock, Topic } from "@/types";
 import TopicSelect from "@/components/ui/TopicSelect";
+import { useNewSubject } from "@/components/ui/NewSubject";
 
 const BREAK_SUGGESTIONS = [
   { icon: "directions_walk", title: "Take a short walk", desc: "Even 5 minutes outside resets your focus." },
@@ -132,6 +133,7 @@ function TimerPageInner() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const newSubject = useNewSubject((id, name) => setSubject(id, name));
   const [pipOpen, setPipOpen] = useState(false);
   const [draftFocus, setDraftFocus] = useState(String(pomodoroLength));
   const [draftShort, setDraftShort] = useState(String(shortBreak));
@@ -329,18 +331,24 @@ function TimerPageInner() {
         </div>
         {isDropdownOpen && (
           <div className="absolute top-[calc(100%+4px)] left-0 right-0 z-50 glass-card overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)] max-h-48 overflow-y-auto">
-            {displaySubjects.length === 0 ? (
-              <div className="px-5 py-4 text-on-surface-variant text-sm text-center">No subjects yet — add one in Subjects</div>
-            ) : displaySubjects.map((subject) => (
+            {displaySubjects.length === 0 && (
+              <div className="px-5 pt-4 text-on-surface-variant text-sm text-center">No subjects yet</div>
+            )}
+            {displaySubjects.map((subject) => (
               <div key={subject.id} className="flex items-center gap-3 px-5 py-3 cursor-pointer hover:bg-surface-container transition-colors" onClick={() => handleSubjectSelect(subject)}>
                 <span className="material-symbols-outlined text-[20px]" style={{ color: getColor(subject.color).text }}>{subject.icon}</span>
                 <span className="text-on-surface text-[15px] font-medium">{subject.name}</span>
                 <span className="ml-auto text-on-surface-variant text-[11px]">{subject.category}</span>
               </div>
             ))}
+            <button type="button" data-testid="timer-new-subject" onClick={() => { setIsDropdownOpen(false); newSubject.open(); }}
+              className="w-full flex items-center gap-3 px-5 py-3 text-primary text-[15px] font-medium hover:bg-surface-container border-t border-outline-variant">
+              <span aria-hidden="true" className="material-symbols-outlined text-[20px]">add</span>New subject
+            </button>
           </div>
         )}
       </div>
+      {newSubject.form && <div className="w-full">{newSubject.form}</div>}
 
       {/* Topic of the subject (optional) */}
       {hasSubject && (

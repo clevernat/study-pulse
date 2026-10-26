@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useNewSubject } from "@/components/ui/NewSubject";
 import { addGoal, updateGoal } from "@/lib/firebase/firestore";
 import type { Goal, Subject } from "@/types";
 import { localDateStr } from "@/lib/dateUtils";
@@ -51,6 +52,7 @@ export default function GoalModal({
   const [targetHours, setTargetHours] = useState(String(editGoal?.targetHours ?? "2"));
   const [deadline, setDeadline] = useState(editGoal?.deadline ?? deadlineForType("weekly"));
   const [subjectId, setSubjectId] = useState(editGoal?.subjectId ?? initialSubjectId ?? "");
+  const newSubject = useNewSubject((id) => { setSubjectId(id); });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const dateInputRef = useRef<HTMLInputElement>(null);
@@ -233,13 +235,20 @@ export default function GoalModal({
                 <span className="ml-auto text-xs text-on-surface-variant">{lockedSubject.category}</span>
               </div>
             ) : subjects.length === 0 ? (
-              <p className="text-xs text-error bg-error/10 border border-error/20 rounded-xl px-4 py-3 font-inter">
-                No subjects yet — add a subject first.
-              </p>
+              <>
+                {!newSubject.form && (
+                  <button type="button" onClick={newSubject.open} data-testid="goal-new-subject"
+                    className="w-full text-left text-sm text-primary bg-primary/5 border border-dashed border-primary/40 rounded-xl px-4 py-3 font-inter hover:bg-primary/10">
+                    No subjects yet. + New subject
+                  </button>
+                )}
+                {newSubject.form}
+              </>
             ) : (
+              <>
               <select
                 value={subjectId}
-                onChange={(e) => setSubjectId(e.target.value)}
+                onChange={(e) => newSubject.pick(e.target.value) || setSubjectId(e.target.value)}
                 className="bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-3 text-on-surface w-full focus:outline-none focus:border-primary transition-colors font-inter text-sm"
                 style={{ colorScheme: "dark" }}
               >
@@ -247,7 +256,10 @@ export default function GoalModal({
                 {subjects.map((s) => (
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
+                {newSubject.option}
               </select>
+              {newSubject.form}
+              </>
             )}
           </div>
 
