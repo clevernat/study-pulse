@@ -19,11 +19,16 @@ export function TargetForm({ daily, weekly, onSave, onCancel, saveLabel = "Save 
   const [d, setD] = useState(toHours(daily));
   const [w, setW] = useState(toHours(weekly));
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   return (
     <form
       data-testid="target-form"
       className="flex flex-col gap-3"
-      onSubmit={async (e) => { e.preventDefault(); setSaving(true); await onSave(toMinutes(d), toMinutes(w)); setSaving(false); }}
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (!toMinutes(d) && !toMinutes(w)) return setError("Enter hours per day, per week, or both.");
+        setError(""); setSaving(true); await onSave(toMinutes(d), toMinutes(w)); setSaving(false);
+      }}
     >
       <div className="grid grid-cols-2 gap-3">
         <label className="flex flex-col gap-1.5">
@@ -35,7 +40,8 @@ export function TargetForm({ daily, weekly, onSave, onCancel, saveLabel = "Save 
           <input data-testid="target-weekly" className={inputCls} type="number" min="0" max="168" step="0.5" value={w} onChange={(e) => setW(e.target.value)} placeholder="e.g. 12" />
         </label>
       </div>
-      <p className="text-xs text-on-surface-variant">Leave a box empty for no target. A week runs Monday to Sunday.</p>
+      <p className="text-xs text-on-surface-variant">Fill one box or both. A week runs Monday to Sunday.</p>
+      {error && <p role="alert" className="text-sm text-error">{error}</p>}
       <div className="flex gap-2">
         <button data-testid="target-save" type="submit" disabled={saving} className={primaryBtnCls}>{saving ? "Saving…" : saveLabel}</button>
         {onCancel && <button type="button" onClick={onCancel} className={secondaryBtnCls}>Cancel</button>}
@@ -82,36 +88,23 @@ function TargetRows({ p, compact }: { p: TargetProgress; compact?: boolean }) {
   );
 }
 
-/** Today's card: progress against your own daily/weekly study target. */
+/** Today's card: each subject's target, and the total over all subjects. */
 export function TargetCard({ sessions }: { sessions: Session[] }) {
-  const { daily, weekly, loaded, save } = useStudyTargets();
-  const [editing, setEditing] = useState(false);
+  const { daily, weekly, loaded } = useStudyTargets();
+  const { items: subjects } = useCollection<Subject>("subjects");
   if (!loaded) return null;
   const p = targetProgress(sessions, localDateStr(), daily, weekly);
-  const hasTarget = !!(p.daily || p.weekly);
+  // The total only adds something when two or more subjects have a target
+  const hasTarget = !!(p.daily || p.weekly) && subjectTargets([], subjects, localDateStr()).length >= 2;
 
   return (
     <section data-testid="target-card" className="glass-card p-5 flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="font-grotesk font-bold text-base text-on-surface flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-[20px]">flag</span>Study target
-        </h2>
-        {hasTarget && !editing && (
-          <span className="flex gap-3">
-            <button data-testid="target-edit" onClick={() => setEditing(true)} className="text-xs text-on-surface-variant hover:text-primary underline underline-offset-2">Change</button>
-            <button data-testid="target-remove" onClick={() => save(0, 0)} className="text-xs text-on-surface-variant hover:text-error underline underline-offset-2">Remove</button>
-          </span>
-        )}
-      </div>
-
-      <h3 className="text-xs font-bold uppercase tracking-wider text-on-surface-variant -mb-1">All subjects</h3>
-      {editing || !hasTarget ? (
-        <>
-          {!hasTarget && !editing && <p className="text-sm text-on-surface-variant">Your total study time, and whether you are on track. Leave it empty if you only want subject targets.</p>}
-          <TargetForm daily={daily} weekly={weekly} onSave={async (d, w) => { await save(d, w); setEditing(false); }} onCancel={editing ? () => setEditing(false) : undefined} />
-        </>
-      ) : (
-        <div className="flex flex-col gap-4">
+      <h2 className="font-grotesk font-bold text-base text-on-surface flex items-center gap-2">
+        <span className="material-symbols-outlined text-primary text-[20px]">flag</span>Study target
+      </h2>
+      {hasTarget && (
+        <div data-testid="target-total" className="flex flex-col gap-4">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-on-surface-variant -mb-1">All subjects together</h3>
           <TargetRows p={p} />
           <Link href="/review" className="text-xs text-primary underline underline-offset-2 self-start">See your weekly review →</Link>
         </div>
@@ -138,9 +131,9 @@ export function SubjectTargets() {
   const chosen = pick || free[0]?.id || "";
 
   return (
-    <div data-testid="subject-targets" className="flex flex-col gap-3 border-t border-outline-variant pt-4">
+    <div data-testid="subject-targets" className="flex flex-col gap-3">
       <h3 className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">By subject</h3>
-      {rows.length === 0 && editing !== "new" && <p className="text-sm text-on-surface-variant">Give a subject its own target, for example 5 hours of Biology a week.</p>}
+      {rows.length === 0 && editing !== "new" && <p className="text-sm text-on-surface-variant">Pick a subject and set how much you want to study it, for example 5 hours of Biology a week.</p>}
       <ul className="flex flex-col gap-4">
         {rows.map(({ subject, ...p }) => (
           <li key={subject.id} data-testid="subject-target" className="flex flex-col gap-2">
@@ -183,16 +176,12 @@ export function SubjectTargets() {
   );
 }
 
-/** Settings card wrapper around the form. */
+/** Settings card: the same subject targets. */
 export function TargetSettingsCard() {
-  const { daily, weekly, loaded, save } = useStudyTargets();
-  const [saved, setSaved] = useState(false);
   return (
     <section className="glass-card p-6 flex flex-col gap-3" data-testid="target-settings">
-      <h2 className="font-space font-semibold text-on-surface">Study target</h2>
-      <p className="text-sm text-on-surface-variant">For all subjects together, plus targets for single subjects. Shown on Today, the Timer and Progress.</p>
-      {loaded && <TargetForm key={`${daily}-${weekly}`} daily={daily} weekly={weekly} onSave={async (d, w) => { await save(d, w); setSaved(true); }} />}
-      {saved && <p role="status" className="text-sm text-secondary">Saved.</p>}
+      <h2 className="font-space font-semibold text-on-surface">Study targets</h2>
+      <p className="text-sm text-on-surface-variant">Each target is for one subject. Today, the Timer and Progress also show the total.</p>
       <SubjectTargets />
     </section>
   );

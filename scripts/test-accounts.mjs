@@ -54,7 +54,7 @@ const day = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return `$
 async function sampleData(uid, seed) {
   const subjects = [["bio", "Biology", "emerald"], ["chem", "Chemistry", "amber"], ["math", "Maths", "violet"]];
   for (const [id, name, color] of subjects) {
-    await put(`users/${uid}/subjects/${id}`, { uid, name, icon: "school", color, category: "STEM", totalMinutes: 0, sessionCount: 0, createdAt: day(-20) });
+    await put(`users/${uid}/subjects/${id}`, { uid, name, icon: "school", color, category: "STEM", totalMinutes: 0, sessionCount: 0, createdAt: day(-20), weeklyTargetMinutes: 120 });
   }
   for (let n = -13; n <= 0; n++) {
     if ((n + seed) % 4 === 0) continue; // a few days off
@@ -65,7 +65,6 @@ async function sampleData(uid, seed) {
   }
   await put(`users/${uid}/goals/sample`, { uid, title: "Biology revision", type: "weekly", targetHours: 5, currentHours: 0, subjectId: "bio", subjectName: "Biology", deadline: day(6), completed: false, createdAt: day(-1) });
   await put(`users/${uid}/exams/sample`, { subjectId: "bio", title: "Biology mock exam", date: day(10) });
-  await put(`users/${uid}/preferences/current`, { dailyTargetMinutes: 60, weeklyTargetMinutes: 360 });
 }
 
 const out = [`# StudyPulse test logins (${LIVE ? "live site" : "local emulators"})`, "", "Sign in with the username or the email. Not committed to git.", ""];

@@ -37,13 +37,12 @@ test("rename a quick task, change a holiday, remove the total target, change you
   await expect.poll(() => get(`users/${uid}/preferences/timetable`)).toContain("Mid-term break");
   expect(await get(`users/${uid}/preferences/timetable`)).toContain(d2);
 
-  // Total study target: set, then Remove
+  // A target always needs a subject: with no subjects there is nothing to save
   await page.goto("/today/");
-  await page.getByTestId("target-card").getByTestId("target-daily").first().fill("2");
-  await page.getByTestId("target-card").getByTestId("target-save").first().click();
-  await expect.poll(() => get(`users/${uid}/preferences/current`)).toContain('"dailyTargetMinutes":{"integerValue":"120"}');
-  await page.getByTestId("target-remove").click();
-  await expect.poll(() => get(`users/${uid}/preferences/current`)).toContain('"dailyTargetMinutes":{"integerValue":"0"}');
+  await expect(page.getByTestId("target-card").getByTestId("target-form")).toHaveCount(0);
+  await page.getByTestId("subject-target-add").click();
+  await expect(page.getByTestId("subject-target-subject")).toHaveValue("");
+  await expect(page.getByTestId("subject-target-new").getByTestId("target-form")).toHaveCount(0);
 
   // Your name
   await page.goto("/settings/");

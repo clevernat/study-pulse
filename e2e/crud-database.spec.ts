@@ -249,18 +249,19 @@ test("database: goals, exams, habits, classes, study blocks, decks, cards and th
   await page.getByRole("button", { name: "Delete deck" }).click();
   await expectDb(uid, "decks", (d) => d.length === 0, "deck deleted");
 
-  // Study target: set, change, clear
+  // Study target (always for a subject): set, change, remove
   await page.goto("/today/");
   const card = page.getByTestId("target-card");
+  await card.getByTestId("subject-target-add").click();
+  await card.getByTestId("subject-target-subject").selectOption({ label: "Physics" });
   await card.getByTestId("target-daily").fill("2");
   await card.getByTestId("target-save").click();
-  await expectDb(uid, "preferences", (d) => d.find((x) => x.id === "current")?.dailyTargetMinutes === 120, "target set");
-  await card.getByTestId("target-edit").click();
+  await expectDb(uid, "subjects", (d) => d[0]?.dailyTargetMinutes === 120, "target set");
+  await card.getByRole("button", { name: "Change Physics target" }).click();
   await card.getByTestId("target-daily").fill("");
   await card.getByTestId("target-weekly").fill("10");
   await card.getByTestId("target-save").click();
-  await expectDb(uid, "preferences", (d) => {
-    const p = d.find((x) => x.id === "current");
-    return p?.dailyTargetMinutes === 0 && p?.weeklyTargetMinutes === 600;
-  }, "target changed");
+  await expectDb(uid, "subjects", (d) => d[0]?.dailyTargetMinutes === undefined && d[0]?.weeklyTargetMinutes === 600, "target changed");
+  await card.getByTestId("subject-target-remove").click();
+  await expectDb(uid, "subjects", (d) => d[0]?.weeklyTargetMinutes === undefined, "target removed");
 });

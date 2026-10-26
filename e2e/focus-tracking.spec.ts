@@ -63,7 +63,7 @@ test("timer: topic, distraction counter and 1–5 focus rating reach sessions, t
   await expect(page.getByTestId("focus-trend")).not.toContainText("No ratings yet");
 });
 
-test("personal study target on Today, the Timer and Settings", async ({ page }) => {
+test("study target for a subject on Today (with the total), the Timer and Settings", async ({ page }) => {
   const user = await login(page, "target");
   await addSubject(page, "Physics");
   const subjectId = await openSubject(page, "Physics");
@@ -72,21 +72,36 @@ test("personal study target on Today, the Timer and Settings", async ({ page }) 
 
   await page.goto("/today/");
   const card = page.getByTestId("target-card");
-  await expect(card.getByTestId("target-form")).toBeVisible();
+  await card.getByTestId("subject-target-add").click();
+  await expect(card.getByTestId("subject-target-subject").locator("option:checked")).toHaveText("Physics");
+  // Empty boxes are refused
+  await card.getByTestId("target-save").click();
+  await expect(card.getByRole("alert")).toContainText("Enter hours per day, per week, or both");
   await card.getByTestId("target-daily").fill("1");
   await card.getByTestId("target-weekly").fill("7");
   await card.getByTestId("target-save").click();
+  const physics = card.getByTestId("subject-target").filter({ hasText: "Physics" });
+  await expect(physics).toContainText("30 min of 1 hr");
+  await expect(physics).toContainText("30 min to go");
+  await expect(physics).toContainText("of 7 hrs");
+  await expect(card.getByTestId("target-total")).toHaveCount(0); // one subject: no separate total
+
+  // A second subject target: now the total shows (7 + 3 hrs a week)
+  await card.getByTestId("subject-target-add").click();
+  await card.getByTestId("subject-target-subject").selectOption({ label: "+ New subject…" });
+  await page.getByTestId("new-subject-name").fill("Chemistry");
+  await page.getByTestId("new-subject-save").click();
+  await card.getByTestId("subject-target-new").getByTestId("target-weekly").fill("3");
+  await card.getByTestId("subject-target-new").getByTestId("target-save").click();
+  await expect(card.getByTestId("target-weekly-progress")).toContainText("30 min of 10 hrs");
   await expect(card.getByTestId("target-daily-progress")).toContainText("30 min of 1 hr");
-  await expect(card.getByTestId("target-daily-progress")).toContainText("30 min to go");
-  await expect(card.getByTestId("target-weekly-progress")).toContainText("of 7 hrs");
-  await expect(card.getByTestId("target-on-track")).toBeVisible();
   await evidence(page, "33-target-today");
 
   await page.goto("/timer/");
   await expect(page.getByTestId("timer-target")).toHaveText("of 1 hr target");
 
   await page.goto("/settings/");
-  await expect(page.getByTestId("target-settings").getByTestId("target-daily")).toHaveValue("1");
+  await expect(page.getByTestId("target-settings").getByTestId("subject-target").filter({ hasText: "Physics" })).toHaveCount(1);
 });
 
 test("results per subject compared with study time", async ({ page }) => {

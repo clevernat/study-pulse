@@ -265,9 +265,6 @@ export interface UserPrefs {
   remindersEnabled?: boolean;
   /** "HH:MM" daily summary, or "" for none */
   dailySummaryTime?: string;
-  /** Study targets in minutes (0 or missing = no target) */
-  dailyTargetMinutes?: number;
-  weeklyTargetMinutes?: number;
 }
 
 /** True when the document has usable timer lengths (it may only hold other settings). */
