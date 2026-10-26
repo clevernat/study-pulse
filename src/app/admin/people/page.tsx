@@ -6,7 +6,7 @@ import { Avatar } from "@/components/admin/charts";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { inputCls, primaryBtnCls } from "@/components/ui/Field";
 import { useAuth } from "@/context/AuthContext";
-import { OWNER_EMAIL, canEmailInvites, cancelInvite, emailInvite, invite, removeMember, setRole } from "@/lib/firebase/members";
+import { OWNER_EMAIL, canEmailInvites, cancelInvite, emailInvite, invite, removeMember, setInviteRole, setRole } from "@/lib/firebase/members";
 import type { Member, Role } from "@/types";
 
 const ROLES: { value: Role; label: string; icon: string; text: string }[] = [
@@ -125,6 +125,7 @@ function PeoplePage() {
                   <p className="text-sm text-on-surface truncate">{i.email}</p>
                   <p className="text-xs text-on-surface-variant">{i.role === "admin" ? "Admin" : "Member"} · invited {new Date(i.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
                 </div>
+                <RoleSwitch name={i.email} value={i.role} onChange={(r) => setInviteRole(i.email, r)} />
                 {canEmailInvites && (
                   <button onClick={() => sendMail(i.email)} disabled={mail[i.email] === "sending"} data-testid="invite-resend" className="inline-flex items-center gap-1 text-xs text-primary hover:underline disabled:opacity-50">
                     <span aria-hidden="true" className="material-symbols-outlined text-[15px]">{mail[i.email] === "sent" ? "mark_email_read" : mail[i.email] === "failed" ? "error" : "send"}</span>

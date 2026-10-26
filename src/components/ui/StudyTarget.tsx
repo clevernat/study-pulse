@@ -97,7 +97,10 @@ export function TargetCard({ sessions }: { sessions: Session[] }) {
           <span className="material-symbols-outlined text-primary text-[20px]">flag</span>Study target
         </h2>
         {hasTarget && !editing && (
-          <button data-testid="target-edit" onClick={() => setEditing(true)} className="text-xs text-on-surface-variant hover:text-primary underline underline-offset-2">Change</button>
+          <span className="flex gap-3">
+            <button data-testid="target-edit" onClick={() => setEditing(true)} className="text-xs text-on-surface-variant hover:text-primary underline underline-offset-2">Change</button>
+            <button data-testid="target-remove" onClick={() => save(0, 0)} className="text-xs text-on-surface-variant hover:text-error underline underline-offset-2">Remove</button>
+          </span>
         )}
       </div>
 

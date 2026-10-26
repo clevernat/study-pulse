@@ -78,6 +78,11 @@ export async function invite(email: string, role: Role, invitedBy: string): Prom
   await queue(setDoc(doc(db, "invites", e), { email: e, role, invitedBy, createdAt: Date.now() }));
 }
 
+export const setInviteRole = (email: string, role: Role) => queue(updateDoc(doc(db, "invites", lower(email)), { role }));
+
+/** A member changes the name others see. */
+export const setMemberName = (uid: string, name: string) => queue(updateDoc(doc(db, "members", uid), { name: name.trim() }));
+
 export const cancelInvite = (email: string) => queue(deleteDoc(doc(db, "invites", lower(email))));
 
 export const setRole = (uid: string, role: Role) => queue(updateDoc(doc(db, "members", uid), { role }));

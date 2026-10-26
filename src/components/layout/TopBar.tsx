@@ -21,8 +21,8 @@ export default function TopBar() {
   // The page itself is named by the tabs below; the bar names the section.
   const title = sectionFor(pathname)?.label ?? "StudyPulse";
 
-  const { user, logOut, isAdmin } = useAuth();
-  const displayName = user?.displayName ?? user?.email?.split("@")[0] ?? "User";
+  const { user, logOut, isAdmin, member } = useAuth();
+  const displayName = member?.name || user?.displayName || user?.email?.split("@")[0] || "User";
   const initials = displayName.slice(0, 2).toUpperCase();
 
   const [showLogModal, setShowLogModal] = useState(false);

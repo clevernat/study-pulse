@@ -22,6 +22,7 @@ function TermSettings({ settings, save }: { settings: TimetableSettings; save: (
   const [hName, setHName] = useState("");
   const [hStart, setHStart] = useState("");
   const [hEnd, setHEnd] = useState("");
+  const [hEdit, setHEdit] = useState<number | null>(null); // holiday being changed
   const set = (patch: Partial<TimetableSettings>) => { setDraft((d) => ({ ...d, ...patch })); setDirty(true); setSaved(false); };
 
   return (
@@ -51,7 +52,10 @@ function TermSettings({ settings, save }: { settings: TimetableSettings; save: (
           <div key={i} className="flex items-center gap-2 text-sm text-on-surface">
             <span className="material-symbols-outlined text-[16px] text-tertiary">beach_access</span>
             <span className="flex-1">{h.name} · {h.start} → {h.end}</span>
-            <button aria-label={`Remove ${h.name}`} onClick={() => set({ holidays: draft.holidays.filter((_, j) => j !== i) })} className="text-on-surface-variant/50 hover:text-error">
+            <button aria-label={`Change ${h.name}`} data-testid="holiday-edit" onClick={() => { setHEdit(i); setHName(h.name); setHStart(h.start); setHEnd(h.end); }} className="text-on-surface-variant/50 hover:text-primary">
+              <span className="material-symbols-outlined text-[18px]">edit</span>
+            </button>
+            <button aria-label={`Remove ${h.name}`} onClick={() => { set({ holidays: draft.holidays.filter((_, j) => j !== i) }); setHEdit(null); }} className="text-on-surface-variant/50 hover:text-error">
               <span className="material-symbols-outlined text-[18px]">close</span>
             </button>
           </div>
@@ -61,9 +65,14 @@ function TermSettings({ settings, save }: { settings: TimetableSettings; save: (
           <input data-testid="holiday-start" aria-label="Holiday start" type="date" className={`${inputCls} !w-auto`} style={{ colorScheme: "dark" }} value={hStart} onChange={(e) => setHStart(e.target.value)} />
           <input data-testid="holiday-end" aria-label="Holiday end" type="date" className={`${inputCls} !w-auto`} style={{ colorScheme: "dark" }} value={hEnd} onChange={(e) => setHEnd(e.target.value)} />
           <button data-testid="holiday-add" type="button" className={secondaryBtnCls} disabled={!hName.trim() || !hStart}
-            onClick={() => { set({ holidays: [...draft.holidays, { name: hName.trim(), start: hStart, end: hEnd && hEnd >= hStart ? hEnd : hStart }] }); setHName(""); setHStart(""); setHEnd(""); }}>
-            Add
+            onClick={() => {
+              const h = { name: hName.trim(), start: hStart, end: hEnd && hEnd >= hStart ? hEnd : hStart };
+              set({ holidays: hEdit === null ? [...draft.holidays, h] : draft.holidays.map((x, j) => (j === hEdit ? h : x)) });
+              setHName(""); setHStart(""); setHEnd(""); setHEdit(null);
+            }}>
+            {hEdit === null ? "Add" : "Update"}
           </button>
+          {hEdit !== null && <button type="button" className={secondaryBtnCls} onClick={() => { setHEdit(null); setHName(""); setHStart(""); setHEnd(""); }}>Cancel</button>}
         </div>
       </div>
       <button data-testid="term-save" className={`${primaryBtnCls} self-end`} onClick={async () => { await save(draft); setDirty(false); setSaved(true); }}>
