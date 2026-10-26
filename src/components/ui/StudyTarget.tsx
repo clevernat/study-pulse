@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useStudyTargets } from "@/lib/firebase/useStudyTargets";
 import { useCollection } from "@/lib/firebase/useCollection";
 import { updateItem } from "@/lib/firebase/firestore";
-import { subjectTargets, targetProgress, type TargetProgress } from "@/lib/insights";
+import { subjectTargets, targetProgress, targetSince, type TargetProgress } from "@/lib/insights";
 import { getColor } from "@/lib/colorPalette";
 import { useNewSubject } from "@/components/ui/NewSubject";
 import { formatSmartDuration, localDateStr } from "@/lib/dateUtils";
@@ -77,8 +77,8 @@ function TargetRows({ p, compact }: { p: TargetProgress; compact?: boolean }) {
         <div className="flex flex-col gap-1.5" data-testid={compact ? undefined : "target-weekly-progress"}>
           <div className="flex items-baseline justify-between gap-2 text-sm">
             <span className="text-on-surface">This week: <b className="font-jetbrains">{formatSmartDuration(p.weekMinutes)}</b> of {formatSmartDuration(p.weekly.target)}</span>
-            <span data-testid={compact ? undefined : "target-on-track"} className={p.weekly.onTrack ? "text-secondary text-xs font-bold" : "text-tertiary text-xs font-bold"}>
-              {p.weekly.left === 0 ? "Week done" : p.weekly.onTrack ? "On track" : `${formatSmartDuration(p.weekly.expectedByToday - p.weekMinutes)} behind`}
+            <span data-testid={compact ? undefined : "target-on-track"} className={p.weekly.onTrack ? "text-secondary text-xs font-bold" : p.weekly.newThisWeek ? "text-on-surface-variant text-xs" : "text-tertiary text-xs font-bold"}>
+              {p.weekly.left === 0 ? "Week done" : p.weekly.onTrack ? "On track" : p.weekly.newThisWeek ? "New this week" : `${formatSmartDuration(p.weekly.expectedByToday - p.weekMinutes)} behind`}
             </span>
           </div>
           <Bar pct={p.weekly.pct} done={p.weekly.left === 0} />
@@ -93,7 +93,8 @@ export function TargetCard({ sessions }: { sessions: Session[] }) {
   const { daily, weekly, loaded } = useStudyTargets();
   const { items: subjects } = useCollection<Subject>("subjects");
   if (!loaded) return null;
-  const p = targetProgress(sessions, localDateStr(), daily, weekly);
+  const since = subjectTargets([], subjects, localDateStr()).map((t) => targetSince(t.subject)).sort();
+  const p = targetProgress(sessions, localDateStr(), daily, weekly, since[since.length - 1]);
   // The total only adds something when two or more subjects have a target
   const hasTarget = !!(p.daily || p.weekly) && subjectTargets([], subjects, localDateStr()).length >= 2;
 
@@ -124,7 +125,7 @@ export function SubjectTargets() {
   const rows = subjectTargets(sessions, subjects, localDateStr());
   const free = subjects.filter((s) => !rows.some((r) => r.subject.id === s.id));
   const save = (id: string) => async (d: number, w: number) => {
-    await updateItem<Subject>(uid, "subjects", id, { dailyTargetMinutes: d || undefined, weeklyTargetMinutes: w || undefined });
+    await updateItem<Subject>(uid, "subjects", id, { dailyTargetMinutes: d || undefined, weeklyTargetMinutes: w || undefined, targetSince: d || w ? localDateStr() : undefined });
     setEditing(null);
     setPick("");
   };
@@ -142,6 +143,10 @@ export function SubjectTargets() {
               <span className="font-semibold text-sm text-on-surface flex-1 truncate">{subject.name}</span>
               {editing !== subject.id && (
                 <>
+                  <Link href={`/timer?subjectId=${encodeURIComponent(subject.id)}&subjectName=${encodeURIComponent(subject.name)}`} data-testid="subject-target-start"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary-container text-on-primary-container text-xs font-bold hover:opacity-90">
+                    <span aria-hidden="true" className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>Start studying
+                  </Link>
                   <button onClick={() => setEditing(subject.id)} aria-label={`Change ${subject.name} target`} className="text-xs text-on-surface-variant hover:text-primary underline underline-offset-2">Change</button>
                   <button onClick={() => save(subject.id)(0, 0)} aria-label={`Remove ${subject.name} target`} data-testid="subject-target-remove" className="text-xs text-on-surface-variant hover:text-error underline underline-offset-2">Remove</button>
                 </>
@@ -153,6 +158,7 @@ export function SubjectTargets() {
           </li>
         ))}
       </ul>
+      {rows.length > 0 && <p className="text-xs text-on-surface-variant">Time counts when you study that subject with the Timer, or add it with <b>Log session</b>.</p>}
       {editing === "new" ? (
         <div data-testid="subject-target-new" className="flex flex-col gap-3 rounded-xl border border-outline-variant p-3">
           <label className="flex flex-col gap-1.5">

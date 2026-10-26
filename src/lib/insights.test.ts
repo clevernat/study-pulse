@@ -1,6 +1,6 @@
 import {
   targetProgress, minutesByTopic, averageRating, focusTrend, distractionsPerHour,
-  weeklyReview, resultsWithEffort, effortCorrelation, effortVerdict, subjectTargets,
+  weeklyReview, resultsWithEffort, effortCorrelation, effortVerdict, subjectTargets, targetProgress as tp,
 } from "./insights";
 import type { Session, Subject, TestResult } from "@/types";
 
@@ -123,5 +123,14 @@ describe("subjectTargets", () => {
     expect(t[0].daily).toEqual({ target: 60, pct: 75, left: 15 });
     expect(t[1].weekMinutes).toBe(120);
     expect(t[1].weekly?.pct).toBe(40);
+  });
+});
+
+describe("a target set during the week", () => {
+  it("is not called behind in its first week, and is judged normally after", () => {
+    // TODAY is Wednesday 2026-10-21; the week started Monday 2026-10-19.
+    expect(tp([], TODAY, undefined, 600, "2026-10-21").weekly).toMatchObject({ onTrack: false, newThisWeek: true });
+    expect(tp([], TODAY, undefined, 600, "2026-10-19").weekly?.newThisWeek).toBe(false);
+    expect(tp([], TODAY, undefined, 600).weekly?.newThisWeek).toBe(false);
   });
 });

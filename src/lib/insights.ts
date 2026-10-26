@@ -28,11 +28,13 @@ export interface TargetProgress {
     /** Where you should be by the end of today if you spread the target evenly over Mon–Sun */
     expectedByToday: number;
     onTrack: boolean;
+    /** The target was set after this Monday, so the pace for this week is not fair to judge */
+    newThisWeek: boolean;
   };
 }
 
 /** Today's and this week's minutes against the targets (minutes; 0 or missing = no target). */
-export function targetProgress(sessions: Session[], today: string, dailyTarget?: number, weeklyTarget?: number): TargetProgress {
+export function targetProgress(sessions: Session[], today: string, dailyTarget?: number, weeklyTarget?: number, since?: string): TargetProgress {
   const weekStart = mondayOf(today);
   const todayMinutes = sum(sessions.filter((s) => s.date === today));
   const weekMinutes = sum(sessions.filter((s) => inRange(s, weekStart, addDays(weekStart, 6))));
@@ -49,6 +51,7 @@ export function targetProgress(sessions: Session[], today: string, dailyTarget?:
       left: Math.max(0, weeklyTarget - weekMinutes),
       expectedByToday,
       onTrack: weekMinutes >= expectedByToday,
+      newThisWeek: !!since && since > weekStart,
     };
   }
   return out;
@@ -56,12 +59,15 @@ export function targetProgress(sessions: Session[], today: string, dailyTarget?:
 
 export interface SubjectTarget extends TargetProgress { subject: Subject }
 
+/** When a subject's target was set (older subjects: when the subject was made). */
+export const targetSince = (s: Subject) => s.targetSince ?? s.createdAt;
+
 /** Progress for every subject that has its own daily or weekly target. */
 export function subjectTargets(sessions: Session[], subjects: Subject[], today: string): SubjectTarget[] {
   return subjects
     .filter((s) => (s.dailyTargetMinutes ?? 0) > 0 || (s.weeklyTargetMinutes ?? 0) > 0)
     .sort((a, b) => a.name.localeCompare(b.name))
-    .map((subject) => ({ subject, ...targetProgress(sessions.filter((x) => x.subjectId === subject.id), today, subject.dailyTargetMinutes, subject.weeklyTargetMinutes) }));
+    .map((subject) => ({ subject, ...targetProgress(sessions.filter((x) => x.subjectId === subject.id), today, subject.dailyTargetMinutes, subject.weeklyTargetMinutes, targetSince(subject)) }));
 }
 
 // ── Topics ─────────────────────────────────────────────────────────────────

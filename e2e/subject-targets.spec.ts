@@ -31,9 +31,9 @@ test("subject target: add with a new subject, see it on Today, Timer and Progres
   await expect(row).toContainText("1.5 hrs");
   await evidence(page, "46-subject-target");
 
-  await page.goto("/timer/");
-  await page.getByText("Select a Subject").first().click();
-  await page.getByText("Biology").last().click();
+  // "Start studying" opens the Timer with that subject picked
+  await row.getByTestId("subject-target-start").click();
+  await expect(page).toHaveURL(/\/timer\/?\?subjectId=/);
   await expect(page.getByTestId("timer-subject-target")).toContainText("1.5 hrs / 5 hrs");
 
   await page.goto("/dashboard/");

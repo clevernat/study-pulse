@@ -33,6 +33,8 @@ export interface Subject {
   /** Study target for this subject, minutes (0 or missing = none) */
   dailyTargetMinutes?: number;
   weeklyTargetMinutes?: number;
+  /** "YYYY-MM-DD" the target was set (falls back to createdAt) */
+  targetSince?: string;
 }
 
 export interface Session {
