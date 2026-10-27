@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useNewSubject } from "@/components/ui/NewSubject";
 import { useTimerStore } from "@/store/timerStore";
-import { getUserSubjects, addSession } from "@/lib/firebase/firestore";
+import { addSession } from "@/lib/firebase/firestore";
 import type { Subject, Session, Topic } from "@/types";
 import { localDateStr } from "@/lib/dateUtils";
 import { useCollection } from "@/lib/firebase/useCollection";
@@ -19,8 +20,9 @@ export default function LogSessionModal({ onClose, onSaved }: Props) {
   const { user } = useAuth();
   const { selectedSubjectId } = useTimerStore();
 
-  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const { items: subjects } = useCollection<Subject>("subjects"); // live, so a new subject shows at once
   const [subjectId, setSubjectId] = useState(selectedSubjectId);
+  const newSubject = useNewSubject((id) => setSubjectId(id));
   const [hours, setHours] = useState("0");
   const [minutes, setMinutes] = useState("25");
   const [focusRating, setFocusRating] = useState(0);
@@ -30,11 +32,6 @@ export default function LogSessionModal({ onClose, onSaved }: Props) {
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    if (!user) return;
-    getUserSubjects(user.uid).then(setSubjects);
-  }, [user]);
 
   // Falls back to the first subject when none (or a deleted one) is picked.
   const selectedSubject = subjects.find((s) => s.id === subjectId) ?? subjects[0];
@@ -94,24 +91,18 @@ export default function LogSessionModal({ onClose, onSaved }: Props) {
           </button>
         </div>
 
-        {subjects.length === 0 && (
-          <div className="mb-4 flex items-center gap-3 bg-error/10 border border-error/20 rounded-xl px-4 py-3">
-            <span className="material-symbols-outlined text-error text-[20px]">warning</span>
-            <p className="text-error text-sm font-inter font-medium">
-              You need to add a subject first before logging a session.{" "}
-              <a href="/subjects" className="underline hover:opacity-80">Go to Subjects →</a>
-            </p>
-          </div>
-        )}
-
+        
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           {/* Subject */}
           <div>
             <label className="text-on-surface-variant text-sm font-inter mb-1.5 block">Subject *</label>
             {subjects.length === 0 ? (
-              <p className="text-on-surface-variant text-sm font-inter bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-3">
-                No subjects yet — add one in Subjects first
-              </p>
+              !newSubject.form && (
+                <button type="button" onClick={newSubject.open} data-testid="log-new-subject"
+                  className="w-full text-left text-sm text-primary bg-primary/5 border border-dashed border-primary/40 rounded-xl px-4 py-3 font-inter hover:bg-primary/10">
+                  No subjects yet. + New subject
+                </button>
+              )
             ) : (
               <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1">
                 {subjects.map((s) => (
@@ -135,8 +126,13 @@ export default function LogSessionModal({ onClose, onSaved }: Props) {
                     <span className="text-on-surface text-[13px] font-inter font-medium truncate">{s.name}</span>
                   </button>
                 ))}
+                <button type="button" onClick={newSubject.open} data-testid="log-new-subject"
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-dashed border-primary/40 text-primary text-[13px] font-inter font-medium hover:bg-primary/10">
+                  <span aria-hidden="true" className="material-symbols-outlined text-[16px]">add</span>New subject
+                </button>
               </div>
             )}
+            {newSubject.form}
           </div>
 
           {selectedSubject && (

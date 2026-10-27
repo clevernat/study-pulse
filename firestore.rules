@@ -1,12 +1,82 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Each user can only read and write their own data.
+    // StudyPulse is invite only. The owner is the first admin; admins invite
+    // people as "admin" (can open /admin) or "user". Keep in sync with
+    // OWNER_EMAIL in src/lib/firebase/members.ts.
+    function owner() { return 'otengabrokwah950@gmail.com'; }
+    function signedIn() { return request.auth != null; }
+    function email() { return request.auth.token.email; }
+    function verified() { return request.auth.token.email_verified == true; }
+    function member() { return signedIn() && exists(/databases/$(database)/documents/members/$(request.auth.uid)); }
+    function admin() {
+      return member() && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Each member can only read and write their own data.
     // One rule covers every collection under users/{uid}: subjects, sessions,
     // tasks, goals, topics, exams, classes, studyBlocks, habits, decks, notes,
     // cards, reviewLogs, reminders, devices, preferences, timerState, calendarFeed.
     match /users/{uid}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read, write: if signedIn() && request.auth.uid == uid && member();
+    }
+
+    // One per person who has joined. Created by the person on first sign-in,
+    // with the role from their invite (or "admin" for the owner).
+    match /members/{uid} {
+      allow get: if signedIn() && (request.auth.uid == uid || admin());
+      allow list: if admin();
+      allow create: if signedIn() && request.auth.uid == uid && verified()
+                    && request.resource.data.keys().hasOnly(['email', 'username', 'name', 'role', 'joinedAt'])
+                    && request.resource.data.email == email()
+                    && request.resource.data.role in ['admin', 'user']
+                    && (!('username' in request.resource.data)
+                        || getAfter(/databases/$(database)/documents/usernames/$(request.resource.data.username)).data.uid == uid)
+                    && ((email() == owner() && request.resource.data.role == 'admin')
+                        || (exists(/databases/$(database)/documents/invites/$(email()))
+                            && get(/databases/$(database)/documents/invites/$(email())).data.role == request.resource.data.role));
+      // Admins change roles; nobody can demote or remove the owner.
+      allow update: if admin() && resource.data.email != owner()
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role'])
+                    && request.resource.data.role in ['admin', 'user'];
+      // A member may set their own name and (once) a username.
+      allow update: if signedIn() && request.auth.uid == uid
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'username'])
+                    && (!('username' in request.resource.data) || request.resource.data.username == resource.data.get('username', request.resource.data.username))
+                    && (!('username' in request.resource.data)
+                        || getAfter(/databases/$(database)/documents/usernames/$(request.resource.data.username)).data.uid == uid);
+      allow delete: if admin() && resource.data.email != owner();
+    }
+
+    // Invites, keyed by lower-case email. Only admins manage them; the invited
+    // person may read and use up their own invite when they join.
+    match /invites/{inviteEmail} {
+      allow read, write: if admin();
+      allow get, delete: if signedIn() && verified() && email() == inviteEmail;
+    }
+
+    // username -> email, so people can sign in with a username. Read one at a
+    // time by exact name (needed before sign-in); never listed.
+    // ponytail: the email of a known username is readable; move the lookup to
+    // the Cloudflare Worker if usernames must not reveal emails.
+    match /usernames/{name} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if signedIn()
+                    && name.matches('^[a-z0-9_.]{3,20}$')
+                    && request.resource.data.keys().hasOnly(['uid', 'email'])
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.email == email()
+                    && getAfter(/databases/$(database)/documents/members/$(request.auth.uid)).data.get('username', '') == name;
+      allow delete: if admin();
+    }
+
+    // Progress summary each member's app keeps up to date (hours, streak,
+    // subjects, focus, scores). No notes or card text: this is what admins see.
+    match /progress/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || admin());
+      allow write: if signedIn() && request.auth.uid == uid && member();
+      allow delete: if admin();
     }
 
     // Secret calendar-feed links. The server (Admin SDK) reads these to find

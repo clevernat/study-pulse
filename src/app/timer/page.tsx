@@ -1,5 +1,6 @@
 "use client";
 
+import { useLiveSessions } from "@/lib/liveFocus";
 import { useState, useRef, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTimerStore, formatTime } from "@/store/timerStore";
@@ -16,6 +17,9 @@ import { useCollection } from "@/lib/firebase/useCollection";
 import { blockMinutes } from "@/lib/calendar";
 import type { StudyBlock, Topic } from "@/types";
 import TopicSelect from "@/components/ui/TopicSelect";
+import { useNewSubject } from "@/components/ui/NewSubject";
+import GoalModal from "@/components/ui/GoalModal";
+import { targetProgress } from "@/lib/insights";
 
 const BREAK_SUGGESTIONS = [
   { icon: "directions_walk", title: "Take a short walk", desc: "Even 5 minutes outside resets your focus." },
@@ -129,9 +133,11 @@ function TimerPageInner() {
   const searchParams = useSearchParams();
 
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [sessions, setSessions] = useState<Session[]>([]);
+  const [savedSessions, setSessions] = useState<Session[]>([]);
+  const sessions = useLiveSessions(savedSessions);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const newSubject = useNewSubject((id, name) => setSubject(id, name));
   const [pipOpen, setPipOpen] = useState(false);
   const [draftFocus, setDraftFocus] = useState(String(pomodoroLength));
   const [draftShort, setDraftShort] = useState(String(shortBreak));
@@ -144,6 +150,8 @@ function TimerPageInner() {
     const name = searchParams.get("subjectName");
     if (id && name) {
       setSubject(id, name);
+      const topicId = searchParams.get("topicId");
+      setTopic(topicId ?? "", topicId ? searchParams.get("topicTitle") ?? "" : "");
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -230,12 +238,17 @@ function TimerPageInner() {
 
   const completedPomodoros = pomodoroIndex % totalPomodoros;
   const currentSubject = subjects.find((s) => s.id === selectedSubjectId);
+  // This subject's own target, if it has one
+  const subjectTarget = currentSubject && ((currentSubject.dailyTargetMinutes ?? 0) > 0 || (currentSubject.weeklyTargetMinutes ?? 0) > 0)
+    ? targetProgress(sessions.filter((s) => s.subjectId === currentSubject.id), localDateStr(), currentSubject.dailyTargetMinutes, currentSubject.weeklyTargetMinutes)
+    : null;
   const hasSubject = !!selectedSubjectId;
 
   const today = localDateStr();
-  const hasActiveGoal = !selectedSubjectId || goals.some(
-    (g) => g.subjectId === selectedSubjectId && g.deadline >= today
-  );
+  // A goal for the chosen subject is needed before a new focus can start
+  const hasActiveGoal = goals.some((g) => g.subjectId === selectedSubjectId && !g.completed && g.deadline >= today);
+  const canStart = hasSubject && hasActiveGoal;
+  const [goalModal, setGoalModal] = useState(false);
 
   // Determine display list: real subjects if loaded, else empty (no mock fallback)
   const displaySubjects = subjects;
@@ -329,39 +342,50 @@ function TimerPageInner() {
         </div>
         {isDropdownOpen && (
           <div className="absolute top-[calc(100%+4px)] left-0 right-0 z-50 glass-card overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)] max-h-48 overflow-y-auto">
-            {displaySubjects.length === 0 ? (
-              <div className="px-5 py-4 text-on-surface-variant text-sm text-center">No subjects yet — add one in Subjects</div>
-            ) : displaySubjects.map((subject) => (
+            {displaySubjects.length === 0 && (
+              <div className="px-5 pt-4 text-on-surface-variant text-sm text-center">No subjects yet</div>
+            )}
+            {displaySubjects.map((subject) => (
               <div key={subject.id} className="flex items-center gap-3 px-5 py-3 cursor-pointer hover:bg-surface-container transition-colors" onClick={() => handleSubjectSelect(subject)}>
                 <span className="material-symbols-outlined text-[20px]" style={{ color: getColor(subject.color).text }}>{subject.icon}</span>
                 <span className="text-on-surface text-[15px] font-medium">{subject.name}</span>
                 <span className="ml-auto text-on-surface-variant text-[11px]">{subject.category}</span>
               </div>
             ))}
+            <button type="button" data-testid="timer-new-subject" onClick={() => { setIsDropdownOpen(false); newSubject.open(); }}
+              className="w-full flex items-center gap-3 px-5 py-3 text-primary text-[15px] font-medium hover:bg-surface-container border-t border-outline-variant">
+              <span aria-hidden="true" className="material-symbols-outlined text-[20px]">add</span>New subject
+            </button>
           </div>
         )}
       </div>
+      {newSubject.form && <div className="w-full">{newSubject.form}</div>}
 
       {/* Topic of the subject (optional) */}
       {hasSubject && (
         <div className="w-full flex flex-col gap-1.5">
-          <span className="text-xs font-semibold text-on-surface-variant">Topic</span>
+          <span className="text-xs font-semibold text-on-surface-variant">Topic: what are you learning?</span>
           <TopicSelect subjectId={selectedSubjectId} topics={topics} value={selectedTopicId} testId="timer-topic"
             onChange={(t) => setTopic(t?.id ?? "", t?.title ?? "")} />
         </div>
       )}
 
       {/* No active goal banner */}
-      {hasSubject && !hasActiveGoal && (
-        <div className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-tertiary/10 border border-tertiary/30">
-          <span className="material-symbols-outlined text-tertiary text-[18px] flex-shrink-0">flag</span>
-          <p className="text-xs text-tertiary flex-1">
-            No active goal for <span className="font-semibold">{currentSubject?.name}</span> — set one to track your progress.
+      {hasSubject && !hasActiveGoal && state === "idle" && (
+        <div data-testid="timer-needs-goal" className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-tertiary/10 border border-tertiary/30">
+          <span className="material-symbols-outlined text-tertiary text-[20px] flex-shrink-0">flag</span>
+          <p className="text-sm text-on-surface flex-1">
+            Set a goal for <span className="font-semibold">{currentSubject?.name}</span> first. The timer starts after that.
           </p>
-          <a href="/goals" className="text-xs font-bold text-tertiary underline underline-offset-2 flex-shrink-0">
-            Create goal
-          </a>
+          <button type="button" data-testid="timer-set-goal" onClick={() => setGoalModal(true)}
+            className="px-3 py-2 rounded-lg bg-tertiary text-black text-xs font-bold flex-shrink-0 hover:opacity-90">
+            Set goal
+          </button>
         </div>
+      )}
+      {goalModal && user && currentSubject && (
+        <GoalModal uid={user.uid} subjects={subjects} initialSubjectId={currentSubject.id}
+          onClose={() => setGoalModal(false)} onSave={() => setGoalModal(false)} onUpdate={() => setGoalModal(false)} />
       )}
 
       {/* Session Type Selector */}
@@ -458,9 +482,9 @@ function TimerPageInner() {
           <button
             data-testid="timer-start"
             onClick={() => { if (state === "running") pause(); else { requestNotificationPermission(); start(); } }}
-            disabled={!hasSubject && state !== "running"}
+            disabled={!canStart && state === "idle"}
             className="w-16 h-16 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95"
-            style={hasSubject || state === "running" ? {
+            style={canStart || state !== "idle" ? {
               background: theme.btnBg,
               border: `2px solid ${theme.btnBorder}`,
               boxShadow: theme.btnShadow,
@@ -479,8 +503,8 @@ function TimerPageInner() {
               {state === "running" ? "pause" : "play_arrow"}
             </span>
           </button>
-          {!hasSubject && state !== "running" && (
-            <span className="text-[11px] text-on-surface-variant font-inter text-center">Select a subject to start</span>
+          {state === "idle" && !canStart && (
+            <span data-testid="timer-start-hint" className="text-[11px] text-on-surface-variant font-inter text-center">{hasSubject ? "Set a goal to start" : "Pick a subject to start"}</span>
           )}
         </div>
         <button onClick={() => skip()} className="w-11 h-11 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest transition-all active:scale-95" aria-label="Skip">
@@ -565,6 +589,23 @@ function TimerPageInner() {
           </div>
         </div>
       </div>
+
+      {/* The selected subject's target */}
+      {currentSubject && subjectTarget && (
+        <div data-testid="timer-subject-target" className="w-full bg-surface-container-low border border-outline-variant rounded-xl p-3 flex flex-col gap-2">
+          <span className="text-[11px] text-on-surface-variant font-semibold flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full" style={{ background: getColor(currentSubject.color).dot }} />{currentSubject.name} target
+          </span>
+          {[subjectTarget.daily && { label: "Today", done: subjectTarget.todayMinutes, t: subjectTarget.daily },
+            subjectTarget.weekly && { label: "This week", done: subjectTarget.weekMinutes, t: subjectTarget.weekly }].filter(Boolean).map((row) => row && (
+            <div key={row.label} className="flex items-center gap-3 text-xs">
+              <span className="w-20 text-on-surface-variant">{row.label}</span>
+              <div className="flex-1 h-1.5 rounded-full bg-surface-container overflow-hidden"><div className="h-full rounded-full bg-secondary" style={{ width: `${row.t.pct}%` }} /></div>
+              <span className="text-on-surface font-jetbrains whitespace-nowrap">{formatSmartDuration(row.done)} / {formatSmartDuration(row.t.target)}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Session Stats */}
       <div className="grid grid-cols-3 gap-2 w-full sm:gap-3">

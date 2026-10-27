@@ -9,6 +9,7 @@ import InstallCard from "@/components/settings/InstallCard";
 import RemindersCard from "@/components/settings/RemindersCard";
 import CalendarFeedCard from "@/components/settings/CalendarFeedCard";
 import PhonePasswordCard from "@/components/settings/PhonePasswordCard";
+import UsernameCard from "@/components/settings/UsernameCard";
 import { TargetSettingsCard } from "@/components/ui/StudyTarget";
 import type { Session } from "@/types";
 import { localDateStr } from "@/lib/dateUtils";
@@ -310,6 +311,7 @@ export default function SettingsPage() {
       <TargetSettingsCard />
 
       <InstallCard />
+      <UsernameCard />
       <PhonePasswordCard />
       <RemindersCard />
       <CalendarFeedCard />

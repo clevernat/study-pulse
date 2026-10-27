@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useNewSubject } from "@/components/ui/NewSubject";
 import { useAuth } from "@/context/AuthContext";
 import { subscribeTasks, subscribeSubjects, addTask, updateTask, updateItem, deleteTask } from "@/lib/firebase/firestore";
 import { getColor } from "@/lib/colorPalette";
@@ -9,7 +10,7 @@ import ConfirmModal from "@/components/ui/ConfirmModal";
 import type { Task, Subject, Exam, TaskKind } from "@/types";
 import { useCollection } from "@/lib/firebase/useCollection";
 import { TASK_KINDS, kindOf, nextRepeat, dueKey } from "@/lib/tasks";
-import { REMINDER_OPTIONS } from "@/components/ui/Field";
+import { REMINDER_OPTIONS, DeleteButton } from "@/components/ui/Field";
 
 type FilterKind = "all" | "today" | "overdue" | "done";
 type SortKind  = "due" | "priority" | "created";
@@ -38,6 +39,7 @@ export default function TasksPage() {
   // Form state
   const [title, setTitle]       = useState("");
   const [subjectId, setSubjectId] = useState("");
+  const newSubject = useNewSubject((id) => { setSubjectId(id); });
   const [dueDate, setDueDate]   = useState("");
   const [priority, setPriority] = useState<Task["priority"]>(undefined);
   const [estMins, setEstMins]   = useState("");
@@ -110,9 +112,10 @@ export default function TasksPage() {
     setSaving(true);
     const sub = subjects.find((s) => s.id === subjectId);
     try {
-      if (editingId) {
+      // The write starts now; the form closes at once (a quick Edit click is not undone later).
+      const write = editingId
         // Empty fields are removed from the task (updateItem deletes undefined values).
-        await updateItem<Task>(user.uid, "tasks", editingId, {
+        ? updateItem<Task>(user.uid, "tasks", editingId, {
           title: title.trim(),
           subjectId: sub?.id,
           subjectName: sub?.name,
@@ -124,11 +127,8 @@ export default function TasksPage() {
           examId: examId || undefined,
           repeatAfterDays: repeatDays && parseInt(repeatDays) > 0 ? Math.min(365, parseInt(repeatDays)) : undefined,
           reminderMinutesBefore: dueDate && reminder !== "" ? parseInt(reminder) : undefined,
-        });
-        resetForm();
-        return;
-      }
-      await addTask(user.uid, {
+        })
+        : addTask(user.uid, {
         uid: user.uid,
         title: title.trim(),
         completed: false,
@@ -144,6 +144,7 @@ export default function TasksPage() {
         createdAt: new Date().toISOString(),
       });
       resetForm();
+      await write;
     } finally {
       setSaving(false);
     }
@@ -238,13 +239,15 @@ export default function TasksPage() {
               <label className="text-xs text-on-surface-variant font-bold">Subject</label>
               <select
                 value={subjectId}
-                onChange={(e) => setSubjectId(e.target.value)}
+                onChange={(e) => newSubject.pick(e.target.value) || setSubjectId(e.target.value)}
                 className="bg-surface-container-lowest border border-outline-variant rounded-xl px-3 py-2.5 text-on-surface text-sm focus:outline-none focus:border-primary transition-colors"
               >
                 <option value="">None</option>
                 {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                {newSubject.option}
               </select>
             </div>
+            {newSubject.form}
 
             {/* Due date */}
             <div className="flex flex-col gap-1.5">
@@ -342,6 +345,7 @@ export default function TasksPage() {
               {editingId ? "Save changes" : "Add Task"}
             </button>
           </div>
+          {editingId && <DeleteButton label="Delete this task" onClick={() => { setConfirmId(editingId); resetForm(); }} testId="task-delete-in-form" />}
         </form>
       )}
 

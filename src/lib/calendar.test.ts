@@ -81,3 +81,19 @@ describe("helpers", () => {
     expect(minutesToHHMM(2000)).toBe("23:59");
   });
 });
+
+describe("goals on the calendar", () => {
+  const base: CalendarData = { classes: [], timetable: { rotationWeeks: 1, holidays: [] }, exams: [], tasks: [], blocks: [], sessions: [] };
+  const goal = { id: "g", uid: "u", title: "Learn encapsulation", type: "weekly" as const, targetHours: 2, currentHours: 0, deadline: "2026-11-01", completed: false, createdAt: "2026-10-25", subjectId: "net" };
+  it("shows a goal on every day from its start to its deadline", () => {
+    const ev = buildEvents({ ...base, goals: [goal] }, "2026-10-19", "2026-11-08");
+    expect(ev.map((e) => e.date)).toEqual(["2026-10-25", "2026-10-26", "2026-10-27", "2026-10-28", "2026-10-29", "2026-10-30", "2026-10-31", "2026-11-01"]);
+    expect(ev[0].title).toBe("Start: Learn encapsulation");
+    expect(ev[7].title).toBe("Due: Learn encapsulation");
+    expect(ev.every((e) => e.kind === "goal" && !e.start)).toBe(true);
+  });
+  it("a 3-month goal fills only the days in view", () => {
+    const long = { ...goal, createdAt: "2026-10-01", deadline: "2026-12-31" };
+    expect(buildEvents({ ...base, goals: [long] }, "2026-11-02", "2026-11-08")).toHaveLength(7);
+  });
+});

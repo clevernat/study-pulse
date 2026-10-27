@@ -1,5 +1,6 @@
 "use client";
 
+import { useLiveSessions } from "@/lib/liveFocus";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
@@ -11,28 +12,12 @@ import { localDateStr, formatSmartDuration, daysAgoStr } from "@/lib/dateUtils";
 import ExamCountdownCard from "@/components/planner/ExamCountdownCard";
 import { useCollection } from "@/lib/firebase/useCollection";
 import { toCsv, downloadText } from "@/lib/csv";
-import type { HeatmapCell, Session, Subject, Task } from "@/types";
+import type { Session, Subject, Task } from "@/types";
 import StatRow from "@/components/ui/StatRow";
 import FocusBadge from "@/components/ui/FocusBadge";
+import ContributionGraph from "@/components/ui/ContributionGraph";
+import GoalsAhead from "@/components/dashboard/GoalsAhead";
 
-function buildHeatmap(sessions: Session[]): HeatmapCell[] {
-  const minutesByDate: Record<string, number> = {};
-  for (const s of sessions) {
-    minutesByDate[s.date] = (minutesByDate[s.date] ?? 0) + s.durationMinutes;
-  }
-  const cells: HeatmapCell[] = [];
-  const today = new Date();
-  for (let i = 89; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
-    const date = localDateStr(d);   // local date, not UTC
-    const minutes = minutesByDate[date] ?? 0;
-    const intensity: 0 | 1 | 2 | 3 | 4 =
-      minutes === 0 ? 0 : minutes < 60 ? 1 : minutes < 120 ? 2 : minutes < 180 ? 3 : 4;
-    cells.push({ date, minutes, intensity });
-  }
-  return cells;
-}
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -41,16 +26,6 @@ function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   return m === 0 ? `${h} hr` : `${h}h ${m}m`;
-}
-
-function heatIntensityClass(intensity: HeatmapCell["intensity"]): string {
-  switch (intensity) {
-    case 0: return "bg-surface-container";
-    case 1: return "bg-secondary/20";
-    case 2: return "bg-secondary/40";
-    case 3: return "bg-secondary/70";
-    case 4: return "bg-secondary";
-  }
 }
 
 // ── Bar Chart ─────────────────────────────────────────────────────────────────
@@ -145,64 +120,6 @@ function WeeklyBarChart({ sessions }: { sessions: Session[] }) {
 }
 
 // ── Heatmap ───────────────────────────────────────────────────────────────────
-
-function Heatmap({ sessions }: { sessions: Session[] }) {
-  const cells = buildHeatmap(sessions);
-  const [hover, setHover] = useState<{ idx: number; x: number; y: number } | null>(null);
-
-  const totalDays = cells.filter((c) => c.minutes > 0).length;
-  const totalMinutes = cells.reduce((s, c) => s + c.minutes, 0);
-
-  return (
-    <div className="glass-card p-6 flex flex-col gap-4 overflow-hidden relative">
-      <div>
-        <h2 className="font-grotesk font-bold text-lg text-on-surface">Last 90 days</h2>
-        <p className="text-xs text-on-surface-variant mt-0.5">
-          {totalDays} active day{totalDays === 1 ? "" : "s"} · {formatSmartDuration(totalMinutes)} total
-        </p>
-      </div>
-      <div className="overflow-x-auto">
-        <div className="grid gap-1 min-w-[260px]" style={{ gridTemplateColumns: "repeat(13, 1fr)" }}>
-          {cells.map((cell, i) => (
-            <div
-              key={cell.date}
-              onMouseEnter={(e) => {
-                const r = (e.target as HTMLElement).getBoundingClientRect();
-                const parent = (e.currentTarget.closest(".glass-card") as HTMLElement)?.getBoundingClientRect();
-                if (parent) setHover({ idx: i, x: r.left - parent.left + r.width / 2, y: r.top - parent.top });
-              }}
-              onMouseLeave={() => setHover(null)}
-              className={`w-full aspect-square rounded-sm ${heatIntensityClass(cell.intensity)} hover:ring-2 hover:ring-primary/50 cursor-pointer transition-all`}
-            />
-          ))}
-        </div>
-      </div>
-      {/* Legend */}
-      <div className="flex items-center gap-2 text-xs text-on-surface-variant">
-        <span>Less</span>
-        {([0, 1, 2, 3, 4] as HeatmapCell["intensity"][]).map((i) => (
-          <div key={i} className={`w-3 h-3 rounded-sm ${heatIntensityClass(i)}`} />
-        ))}
-        <span>More</span>
-      </div>
-
-      {/* Tooltip */}
-      {hover !== null && (
-        <div
-          className="absolute z-20 bg-surface-container-lowest border border-primary/40 rounded-lg px-3 py-1.5 shadow-[0_4px_16px_rgba(0,0,0,0.5)] whitespace-nowrap pointer-events-none -translate-x-1/2 -translate-y-full"
-          style={{ left: hover.x, top: hover.y - 8 }}
-        >
-          <div className="text-[10px] text-on-surface-variant">
-            {new Date(cells[hover.idx].date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
-          </div>
-          <div className="text-xs font-jetbrains text-on-surface font-semibold">
-            {cells[hover.idx].minutes === 0 ? "No study" : `${cells[hover.idx].minutes} min`}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ── Active Subjects ───────────────────────────────────────────────────────────
 
@@ -370,7 +287,8 @@ function BadgesSection({ sessions }: { sessions: Session[] }) {
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const [sessions, setSessions] = useState<Session[]>([]);
+  const [savedSessions, setSessions] = useState<Session[]>([]);
+  const sessions = useLiveSessions(savedSessions);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const { items: tasks } = useCollection<Task>("tasks");
   const [loading, setLoading] = useState(true);
@@ -412,6 +330,12 @@ export default function DashboardPage() {
     return totalHours / uniqueDays;
   })();
 
+  const minutesByDate = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const x of sessions) m[x.date] = (m[x.date] ?? 0) + x.durationMinutes;
+    return m;
+  }, [sessions]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -428,18 +352,16 @@ export default function DashboardPage() {
         { label: "Daily average this week", value: formatSmartDuration(Math.round(dailyAvg * 60)) },
       ]} />
 
+      {/* Strengths and goals ahead */}
+      <GoalsAhead sessions={sessions} subjects={subjects} />
+
       {/* Exam countdown */}
       <ExamCountdownCard subjects={subjects} tasks={tasks} />
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <WeeklyBarChart sessions={sessions} />
-        </div>
-        <div>
-          <Heatmap sessions={sessions} />
-        </div>
-      </div>
+      {/* GitHub-style year of study */}
+      <ContributionGraph minutesOn={(d) => minutesByDate[d] ?? 0} today={localDateStr()} />
+
+      <WeeklyBarChart sessions={sessions} />
 
       {/* Bottom Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">

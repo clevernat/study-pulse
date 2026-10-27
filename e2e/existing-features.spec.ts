@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { login, evidence } from "./helpers";
-import { addSubject } from "./helpers-data";
+import { addSubject, setGoalOnTimer } from "./helpers-data";
 
 // The features StudyPulse had before the upgrade still work.
 test("old features: log session, sessions list, dashboard, goals, reports, sounds, tasks popover, export", async ({ page }) => {
@@ -68,6 +68,7 @@ test("old features: Pomodoro timer, floating timer on other pages, reflection af
   await page.goto("/timer/");
   await page.getByText("Select a Subject").first().click();
   await page.getByText("Physics").last().click();
+  await setGoalOnTimer(page);
   await page.getByTestId("timer-start").click();
   await page.getByTestId(isMobile ? "bottom-nav-today" : "nav-today").click();
   await expect(page.getByTestId("floating-timer")).toBeVisible();
@@ -85,6 +86,7 @@ test("timer: stopping a focus early with Reset keeps the time studied (not under
   await page.goto("/timer/");
   await page.getByText("Select a Subject").first().click();
   await page.getByText("Chemistry").last().click();
+  await setGoalOnTimer(page);
 
   // A misclick (a few seconds) is not saved.
   await page.getByTestId("timer-start").click();

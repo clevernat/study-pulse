@@ -1,5 +1,6 @@
 "use client";
 
+import { useLiveSessions } from "@/lib/liveFocus";
 import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -14,6 +15,7 @@ import GoalModal, { typeColor } from "@/components/ui/GoalModal";
 import { formatHours } from "@/lib/dateUtils";
 import { localDateStr } from "@/lib/dateUtils";
 import { Goal, Subject, Session } from "@/types";
+import { goalHours } from "@/lib/insights";
 
 function daysUntil(dateStr: string): number {
   const today = new Date();
@@ -100,7 +102,8 @@ export default function GoalsPage() {
 
   const [goals, setGoals] = useState<Goal[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [sessions, setSessions] = useState<Session[]>([]);
+  const [savedSessions, setSessions] = useState<Session[]>([]);
+  const sessions = useLiveSessions(savedSessions);
 
   const [showModal, setShowModal] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | undefined>(undefined);
@@ -124,17 +127,7 @@ export default function GoalsPage() {
   // ── Live progress ──────────────────────────────────────────────────────────
   const hoursPerGoal = useMemo(() => {
     const map: Record<string, number> = {};
-    for (const goal of goals) {
-      if (!goal.subjectId) { map[goal.id] = 0; continue; }
-      const mins = sessions
-        .filter((s) =>
-          s.subjectId === goal.subjectId &&
-          s.date >= goal.createdAt &&
-          s.date <= goal.deadline
-        )
-        .reduce((sum, s) => sum + s.durationMinutes, 0);
-      map[goal.id] = mins / 60; // exact; formatHours() rounds for display
-    }
+    for (const goal of goals) map[goal.id] = goalHours(goal, sessions); // exact; formatHours() rounds for display
     return map;
   }, [goals, sessions]);
 
@@ -555,6 +548,7 @@ export default function GoalsPage() {
           onClose={closeModal}
           onSave={handleSave}
           onUpdate={handleUpdate}
+          onDelete={editingGoal ? () => { setConfirmDeleteId(editingGoal.id); closeModal(); } : undefined}
         />
       )}
 

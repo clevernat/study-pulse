@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useNewSubject } from "@/components/ui/NewSubject";
 import Modal from "@/components/ui/Modal";
 import { Field, inputCls, primaryBtnCls, secondaryBtnCls, REMINDER_OPTIONS } from "@/components/ui/Field";
 import { addItem, updateItem, deleteItem } from "@/lib/firebase/firestore";
@@ -10,6 +11,7 @@ interface Props { uid: string; subjects: Subject[]; rotationWeeks: number; item?
 
 export default function ClassModal({ uid, subjects, rotationWeeks, item, onClose }: Props) {
   const [pickedSubjectId, setSubjectId] = useState(item?.subjectId ?? "");
+  const newSubject = useNewSubject((id) => { setSubjectId(id); });
   // Subjects may load after the form opens: fall back to the first one (the select shows it).
   const subjectId = pickedSubjectId || subjects[0]?.id || "";
   const [title, setTitle] = useState(item?.title ?? "");
@@ -47,11 +49,13 @@ export default function ClassModal({ uid, subjects, rotationWeeks, item, onClose
     <Modal title={item ? "Edit class" : "New class"} onClose={onClose} testId="class-modal">
       <form onSubmit={save} className="flex flex-col gap-4">
         <Field label="Subject">
-          <select data-testid="class-subject" className={inputCls} value={subjectId} onChange={(e) => setSubjectId(e.target.value)}>
+          <select data-testid="class-subject" className={inputCls} value={subjectId} onChange={(e) => newSubject.pick(e.target.value) || setSubjectId(e.target.value)}>
             {subjects.length === 0 && <option value="">No subjects yet</option>}
             {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            {newSubject.option}
           </select>
         </Field>
+        {newSubject.form}
         <div className="grid grid-cols-2 gap-3">
           <Field label="Type (optional)"><input className={inputCls} value={title} maxLength={40} onChange={(e) => setTitle(e.target.value)} placeholder="Lecture, Lab…" /></Field>
           <Field label="Room"><input data-testid="class-room" className={inputCls} value={room} maxLength={40} onChange={(e) => setRoom(e.target.value)} placeholder="e.g. 204" /></Field>
@@ -91,7 +95,7 @@ export default function ClassModal({ uid, subjects, rotationWeeks, item, onClose
 
         {error && <p className="text-error text-sm bg-error/10 border border-error/20 rounded-lg px-3 py-2">{error}</p>}
         <div className="flex gap-3">
-          {item && <button type="button" onClick={remove} className={`${secondaryBtnCls} text-error`} aria-label="Delete class"><span className="material-symbols-outlined text-[18px]">delete</span></button>}
+          {item && <button type="button" onClick={remove} className={`${secondaryBtnCls} text-error`} aria-label="Delete class"><span aria-hidden="true" className="material-symbols-outlined text-[18px]">delete</span>Delete</button>}
           <button type="button" onClick={onClose} className={`${secondaryBtnCls} flex-1`}>Cancel</button>
           <button type="submit" data-testid="class-save" className={`${primaryBtnCls} flex-1`}>{item ? "Save" : "Add class"}</button>
         </div>

@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useNewSubject } from "@/components/ui/NewSubject";
 import { useRouter } from "next/navigation";
 import Modal from "@/components/ui/Modal";
 import { Field, inputCls, primaryBtnCls, secondaryBtnCls, REMINDER_OPTIONS } from "@/components/ui/Field";
@@ -34,6 +35,7 @@ export default function BlockModal({ uid, subjects, tasks, block, initial, onClo
   const router = useRouter();
   const [title, setTitle] = useState(block?.title ?? "");
   const [subjectId, setSubjectId] = useState(block?.subjectId ?? subjects[0]?.id ?? "");
+  const newSubject = useNewSubject((id) => { setSubjectId(id); });
   const [taskId, setTaskId] = useState(block?.taskId ?? "");
   const [deckId, setDeckId] = useState(block?.deckId ?? "");
   const { items: decks } = useCollection<Deck>("decks");
@@ -89,11 +91,13 @@ export default function BlockModal({ uid, subjects, tasks, block, initial, onClo
     <Modal title={block ? "Study block" : "Plan study time"} onClose={onClose} testId="block-modal">
       <form onSubmit={save} className="flex flex-col gap-4">
         <Field label="Subject">
-          <select data-testid="block-subject" className={inputCls} value={subjectId} onChange={(e) => setSubjectId(e.target.value)}>
+          <select data-testid="block-subject" className={inputCls} value={subjectId} onChange={(e) => newSubject.pick(e.target.value) || setSubjectId(e.target.value)}>
             <option value="">No subject</option>
             {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            {newSubject.option}
           </select>
         </Field>
+        {newSubject.form}
         <Field label="Title (optional)">
           <input data-testid="block-title" className={inputCls} value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Read chapter 4" />
         </Field>
@@ -135,7 +139,7 @@ export default function BlockModal({ uid, subjects, tasks, block, initial, onClo
         )}
         {error && <p className="text-error text-sm bg-error/10 border border-error/20 rounded-lg px-3 py-2">{error}</p>}
         <div className="flex gap-2 flex-wrap">
-          {block && <button type="button" onClick={remove} className={`${secondaryBtnCls} text-error`} aria-label="Delete block"><span className="material-symbols-outlined text-[18px]">delete</span></button>}
+          {block && <button type="button" onClick={remove} className={`${secondaryBtnCls} text-error`} aria-label="Delete block"><span aria-hidden="true" className="material-symbols-outlined text-[18px]">delete</span>Delete</button>}
           <button type="submit" data-testid="block-save" className={`${secondaryBtnCls} flex-1`}>Save</button>
           <button type="button" data-testid="block-start-timer" onClick={startNow} className={`${primaryBtnCls} flex-1`}>
             <span className="material-symbols-outlined text-[18px]">play_arrow</span>Start timer

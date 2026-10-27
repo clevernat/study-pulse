@@ -30,6 +30,11 @@ export interface Subject {
   totalMinutes: number;
   sessionCount: number;
   createdAt: string;
+  /** Study target for this subject, minutes (0 or missing = none) */
+  dailyTargetMinutes?: number;
+  weeklyTargetMinutes?: number;
+  /** "YYYY-MM-DD" the target was set (falls back to createdAt) */
+  targetSince?: string;
 }
 
 export interface Session {
@@ -143,6 +148,8 @@ export interface TimerSyncDoc {
   selectedSubjectName: string;
   selectedTopicId?: string;
   selectedTopicTitle?: string;
+  /** When the current focus began; names its saved session */
+  focusStartedAt?: number | null;
   updatedAt: number;
   /** Which browser tab/device last wrote — used to skip echoed-back writes */
   deviceId: string;
@@ -354,4 +361,56 @@ export interface ReviewDay {
   /** First answer of the day on cards in review: remembered / total */
   retPass: number;
   retTotal: number;
+}
+
+/** Roles: admins can open /admin and manage people; users only study. */
+export type Role = "admin" | "user";
+
+/** A person who has joined (members/{uid}). */
+export interface Member {
+  id: string;
+  email: string;
+  username?: string;
+  name: string;
+  role: Role;
+  joinedAt: number;
+}
+
+/** An invite waiting to be used (invites/{lower-case email}). */
+export interface Invite {
+  id: string;
+  email: string;
+  role: Role;
+  invitedBy: string;
+  createdAt: number;
+}
+
+/** Progress summary each member's app writes (progress/{uid}); what admins see. No notes or card text. */
+export interface Progress {
+  id: string;
+  name: string;
+  email: string;
+  updatedAt: number;
+  /** "YYYY-MM-DD" of the last day in `days` */
+  today: string;
+  totalMinutes: number;
+  sessionCount: number;
+  /** Minutes per day for the last 14 days, oldest first, ending `today` */
+  days: number[];
+  /** Minutes per day for the last 371 days (53 weeks), oldest first, ending `today`; for the year graph */
+  year?: number[];
+  thisWeek: number;
+  lastWeek: number;
+  streak: number;
+  longestStreak: number;
+  /** Average 1–5 focus rating over the last 30 days */
+  rating: number | null;
+  distractionsPerHour: number | null;
+  subjects: { name: string; color: string; minutes: number; weekMinutes: number; weeklyTarget?: number }[];
+  goals: { active: number; done: number };
+  nextExam: { title: string; date: string } | null;
+  results: { count: number; avgPct: number } | null;
+  topics: { done: number; total: number };
+  bestTime: { part: string; weekday: string } | null;
+  target: { daily: number; weekly: number };
 }

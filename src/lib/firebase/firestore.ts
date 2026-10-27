@@ -15,6 +15,7 @@ import {
   arrayUnion,
   increment,
   onSnapshot,
+  runTransaction,
 } from "firebase/firestore";
 import type { Subject, Session, Goal, Task, TimerSyncDoc } from "@/types";
 
@@ -245,11 +246,11 @@ export async function saveTimerState(
 
 export function subscribeTimerState(
   uid: string,
-  cb: (state: TimerSyncDoc | null) => void
+  cb: (state: TimerSyncDoc | null, fromServer: boolean) => void
 ): () => void {
   return onSnapshot(
     doc(db, "users", uid, "timerState", "current"),
-    (snap) => cb(snap.exists() ? (snap.data() as TimerSyncDoc) : null)
+    (snap) => cb(snap.exists() ? (snap.data() as TimerSyncDoc) : null, !snap.metadata.fromCache)
   );
 }
 
@@ -265,9 +266,6 @@ export interface UserPrefs {
   remindersEnabled?: boolean;
   /** "HH:MM" daily summary, or "" for none */
   dailySummaryTime?: string;
-  /** Study targets in minutes (0 or missing = no target) */
-  dailyTargetMinutes?: number;
-  weeklyTargetMinutes?: number;
 }
 
 /** True when the document has usable timer lengths (it may only hold other settings). */
@@ -333,8 +331,11 @@ export async function saveDocument<T extends object>(uid: string, col: string, i
 
 /** Records a finished focus session on its planned study block. */
 export async function linkSessionToBlock(uid: string, blockId: string, sessionId: string, minutes: number): Promise<void> {
-  await updateDoc(doc(db, "users", uid, "studyBlocks", blockId), {
-    sessionIds: arrayUnion(sessionId),
-    minutesDone: increment(minutes),
+  // Once per session, even if two devices save the same focus.
+  const ref = doc(db, "users", uid, "studyBlocks", blockId);
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists() || ((snap.data().sessionIds as string[] | undefined) ?? []).includes(sessionId)) return;
+    tx.update(ref, { sessionIds: arrayUnion(sessionId), minutesDone: increment(minutes) });
   });
 }

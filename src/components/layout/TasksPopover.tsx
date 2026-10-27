@@ -23,6 +23,8 @@ const FILTERS: { id: FilterKind; label: string }[] = [
 
 export default function TasksPopover({ onClose }: { onClose: () => void }) {
   const { user } = useAuth();
+  const [renaming, setRenaming] = useState<string | null>(null);
+  const [renameText, setRenameText] = useState("");
   const router = useRouter();
   const setSubject = useTimerStore((s) => s.setSubject);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -183,9 +185,22 @@ export default function TasksPopover({ onClose }: { onClose: () => void }) {
                 )}
               </button>
               <div className="flex-1 min-w-0">
-                <div className={`text-xs font-inter truncate ${task.completed ? "line-through text-on-surface-variant" : "text-on-surface"}`}>
-                  {task.title}
-                </div>
+                {renaming === task.id ? (
+                  <input
+                    autoFocus
+                    aria-label={`New name for ${task.title}`}
+                    data-testid="quick-task-rename-input"
+                    value={renameText}
+                    onChange={(e) => setRenameText(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") { setRenameText(task.title); setRenaming(null); } }}
+                    onBlur={() => { const t = renameText.trim(); if (user && t && t !== task.title) updateTask(user.uid, task.id, { title: t }); setRenaming(null); }}
+                    className="w-full bg-surface-container-lowest border border-primary rounded px-1.5 py-0.5 text-xs text-on-surface focus:outline-none"
+                  />
+                ) : (
+                  <div className={`text-xs font-inter truncate ${task.completed ? "line-through text-on-surface-variant" : "text-on-surface"}`}>
+                    {task.title}
+                  </div>
+                )}
                 {task.subjectName && (
                   <div className="flex items-center gap-1 mt-0.5">
                     {dot && <span className="w-1.5 h-1.5 rounded-full" style={{ background: dot }} />}
@@ -197,7 +212,7 @@ export default function TasksPopover({ onClose }: { onClose: () => void }) {
                 <button
                   type="button"
                   onClick={() => startTimerForTask(task)}
-                  className="text-on-surface-variant hover:text-primary transition-colors opacity-0 group-hover:opacity-100"
+                  className="text-on-surface-variant hover:text-primary transition-colors md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100"
                   aria-label="Start timer for this task"
                   title={task.subjectName ? `Study ${task.subjectName}` : "Open timer"}
                 >
@@ -206,8 +221,17 @@ export default function TasksPopover({ onClose }: { onClose: () => void }) {
               )}
               <button
                 type="button"
+                onClick={() => { setRenameText(task.title); setRenaming(task.id); }}
+                className="text-on-surface-variant hover:text-primary transition-colors md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100"
+                aria-label={`Rename ${task.title}`}
+                data-testid="quick-task-rename"
+              >
+                <span className="material-symbols-outlined text-[16px]">edit</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => user && deleteTask(user.uid, task.id)}
-                className="text-on-surface-variant hover:text-error transition-colors opacity-0 group-hover:opacity-100"
+                className="text-on-surface-variant hover:text-error transition-colors md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100"
                 aria-label="Delete task"
               >
                 <span className="material-symbols-outlined text-[16px]">delete_outline</span>

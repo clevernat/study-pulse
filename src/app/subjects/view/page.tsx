@@ -1,8 +1,10 @@
 "use client";
+import { useLiveSessions } from "@/lib/liveFocus";
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCollection } from "@/lib/firebase/useCollection";
+import SubjectGoal from "@/components/planner/SubjectGoal";
 import { getColor } from "@/lib/colorPalette";
 import { localDateStr } from "@/lib/dateUtils";
 import { examProgress, upcomingExams } from "@/lib/exams";
@@ -23,7 +25,8 @@ function SubjectView() {
   const { items: tasks } = useCollection<Task>("tasks");
   const [editing, setEditing] = useState<Exam | "new" | null>(null);
   const { items: decks } = useCollection<Deck>("decks");
-  const { items: sessions } = useCollection<Session>("sessions");
+  const { items: savedSessions } = useCollection<Session>("sessions");
+  const sessions = useLiveSessions(savedSessions);
   const [newDeck, setNewDeck] = useState(false);
   const subject = subjects.find((s) => s.id === id);
   const today = localDateStr();
@@ -55,7 +58,9 @@ function SubjectView() {
         </div>
       </div>
 
-      <TopicList uid={uid} subjectId={id} topics={topics} exams={exams} barColor={c.bar} minutesByTopic={minutesByTopic(sessions, id)} />
+      <TopicList uid={uid} subjectId={id} topics={topics} exams={exams} barColor={c.bar} minutesByTopic={minutesByTopic(sessions, id)} subjectName={subject.name} />
+
+      <SubjectGoal subject={subject} subjects={subjects} sessions={sessions} />
 
       <ResultsPanel uid={uid} subjectId={id} sessions={sessions} barColor={c.bar} />
 

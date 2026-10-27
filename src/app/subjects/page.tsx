@@ -8,6 +8,7 @@ import { topicProgress } from "@/lib/exams";
 import { useAuth } from "@/context/AuthContext";
 import { subscribeSubjects, subscribeSessions, subscribeGoals, addSubject, updateSubject, deleteSubject } from "@/lib/firebase/firestore";
 import { useTimerStore } from "@/store/timerStore";
+import { DeleteButton } from "@/components/ui/Field";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import GoalModal from "@/components/ui/GoalModal";
 import { COLOR_PALETTE, getColor } from "@/lib/colorPalette";
@@ -62,9 +63,11 @@ interface SubjectModalProps {
   uid: string;
   /** Pass an existing subject to open in edit mode */
   editing?: Subject;
+  /** Edit mode: ask to delete this subject */
+  onDelete?: () => void;
 }
 
-function SubjectModal({ onClose, onSave, uid, editing }: SubjectModalProps) {
+function SubjectModal({ onClose, onSave, uid, editing, onDelete }: SubjectModalProps) {
   const isEdit = !!editing;
 
   // Initialise from existing subject when editing, otherwise blank defaults
@@ -275,6 +278,7 @@ function SubjectModal({ onClose, onSave, uid, editing }: SubjectModalProps) {
               {isEdit ? "Save Changes" : "Add Subject"}
             </button>
           </div>
+          {isEdit && onDelete && <DeleteButton label="Delete this subject" onClick={onDelete} testId="subject-delete" />}
         </form>
       </div>
     </div>
@@ -413,6 +417,7 @@ export default function SubjectsPage() {
                       onClick={() => setEditingSubject(subject)}
                       className="text-on-surface-variant hover:text-primary transition-colors p-1 rounded-lg hover:bg-primary/10"
                       title="Edit subject"
+                      aria-label={`Edit ${subject.name}`}
                     >
                       <span className="material-symbols-outlined text-xl">edit</span>
                     </button>
@@ -421,6 +426,7 @@ export default function SubjectsPage() {
                       disabled={deletingId === subject.id}
                       className="text-on-surface-variant hover:text-error transition-colors p-1 rounded-lg hover:bg-error/10"
                       title="Delete subject"
+                      aria-label={`Delete ${subject.name}`}
                     >
                       <span className="material-symbols-outlined text-xl">
                         {deletingId === subject.id ? "hourglass_empty" : "delete_outline"}
@@ -522,6 +528,7 @@ export default function SubjectsPage() {
           editing={editingSubject}
           onClose={() => setEditingSubject(null)}
           onSave={handleSave}
+          onDelete={() => { setConfirmDeleteId(editingSubject.id); setEditingSubject(null); }}
         />
       )}
 

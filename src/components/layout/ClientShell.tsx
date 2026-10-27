@@ -1,6 +1,8 @@
 "use client";
 import { useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import AccessGate from "./AccessGate";
+import { useProgressSync } from "@/lib/firebase/useProgressSync";
 import { usePathname, useRouter } from "next/navigation";
 import { useTimerStore } from "@/store/timerStore";
 import { subscribeTimerState, subscribeUserPreferences, hasTimerPrefs } from "@/lib/firebase/firestore";
@@ -18,7 +20,7 @@ import { useReminderSync } from "@/lib/firebase/useReminderSync";
 import { localDateStr } from "@/lib/dateUtils";
 
 export default function ClientShell({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, authUser, loading } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const isPublicPage = pathname === "/login" || pathname === "/login/" || pathname === "/" || pathname === "";
@@ -32,6 +34,9 @@ export default function ClientShell({ children }: { children: React.ReactNode })
 
   // Reminders: keep the plan in Firestore and show due ones while the app is open
   useReminderSync();
+
+  // Keep progress/{uid} (what admins see) up to date
+  useProgressSync();
 
   // Installable app + offline pages
   useEffect(() => { registerServiceWorker(); }, []);
@@ -91,8 +96,12 @@ export default function ClientShell({ children }: { children: React.ReactNode })
 
     // 1. When another device clears all data, timerState/current is deleted.
     //    Subscription fires with null → stop the timer on this device too.
-    const unsubTimer = subscribeTimerState(user.uid, (remote) => {
-      if (remote !== null) return; // non-null handled by timer page
+    // Only a real deletion counts: the server says the timer is gone after we
+    // saw it. A local copy that has no timer yet must never stop a running timer.
+    let seen = false;
+    const unsubTimer = subscribeTimerState(user.uid, (remote, fromServer) => {
+      if (remote !== null) { seen = true; return; } // non-null handled by TimerSync
+      if (!seen || !fromServer) return;
       const ts = useTimerStore.getState();
       if (ts.state !== "idle") {
         ts.setPreset(ts.pomodoroLength);
@@ -151,16 +160,19 @@ export default function ClientShell({ children }: { children: React.ReactNode })
   }, [isPublicPage]);
 
   useEffect(() => {
-    if (!loading && !user && !isPublicPage) {
+    if (!loading && !authUser && !isPublicPage) {
       router.push("/login");
     }
-  }, [user, loading, isPublicPage, router]);
+  }, [authUser, loading, isPublicPage, router]);
 
   useEffect(() => {
     if (!loading && user && (pathname === "/" || pathname === "")) {
       router.push("/today");
     }
   }, [user, loading, pathname, router]);
+
+  // Signed in but not allowed in yet (email not confirmed, or not invited)
+  if (!loading && authUser && !user) return <AccessGate />;
 
   if (isPublicPage) return <>{children}</>;
 

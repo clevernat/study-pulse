@@ -1,4 +1,5 @@
 "use client";
+import StudyButton from "@/components/ui/StudyButton";
 import { useState } from "react";
 import { addItem, updateItem, deleteItem } from "@/lib/firebase/firestore";
 import { inputCls } from "@/components/ui/Field";
@@ -10,10 +11,12 @@ interface Props {
   uid: string; subjectId: string; topics: Topic[]; exams: Exam[]; barColor: string;
   /** Minutes studied per topic id ("" = no topic); shown when given */
   minutesByTopic?: Record<string, number>;
+  /** Given: each open topic gets a Study button that opens the Timer on it */
+  subjectName?: string;
 }
 
 /** Topics of one subject: add, check off, link to an exam, delete. */
-export default function TopicList({ uid, subjectId, topics, exams, barColor, minutesByTopic }: Props) {
+export default function TopicList({ uid, subjectId, topics, exams, barColor, minutesByTopic, subjectName }: Props) {
   const [title, setTitle] = useState("");
   /** Topic being renamed and its new title */
   const [renaming, setRenaming] = useState<{ id: string; title: string } | null>(null);
@@ -87,6 +90,9 @@ export default function TopicList({ uid, subjectId, topics, exams, barColor, min
                 >
                   {t.title}
                 </button>
+              )}
+              {subjectName && !t.done && (
+                <StudyButton subject={{ id: subjectId, name: subjectName }} topic={t} testId="topic-study" size="sm" label="Study" />
               )}
               {minutesByTopic && (
                 <span data-testid="topic-minutes" className="font-jetbrains text-xs text-on-surface-variant whitespace-nowrap" title="Time studied on this topic">

@@ -321,7 +321,7 @@ export default function SessionsPage() {
         ))}
       </div>
 
-      {editing && user && <EditSessionModal uid={user.uid} session={editing} subjects={subjects} onClose={() => setEditing(null)} />}
+      {editing && user && <EditSessionModal uid={user.uid} session={editing} subjects={subjects} onClose={() => setEditing(null)} onDelete={() => { setConfirmSession(editing); setEditing(null); }} />}
 
       <ConfirmModal
         open={!!confirmSession}

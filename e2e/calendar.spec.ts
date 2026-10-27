@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { login, evidence } from "./helpers";
-import { addSubject, dayFromToday } from "./helpers-data";
+import { addSubject, dayFromToday, setGoalOnTimer } from "./helpers-data";
 
 test("calendar views show exams, tasks, classes and planned blocks", async ({ page }) => {
   await login(page, "calendar");
@@ -77,6 +77,7 @@ test("start the timer from a planned block; the session is linked to the block",
 
   await expect(page).toHaveURL(/\/timer\/?$/);
   await expect(page.getByTestId("timer-active-block")).toContainText("Verb drills");
+  await setGoalOnTimer(page);
   await page.getByTestId("timer-start").click();
   await page.clock.fastForward("25:30"); // focus period ends → session saved
   await expect(page.getByTestId("timer-active-block")).toContainText("25 of 25 min done", { timeout: 15_000 });

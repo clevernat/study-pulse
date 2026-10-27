@@ -13,6 +13,40 @@ function clearTick() {
   }
 }
 
+/** A focus that ended (time up, stopped, skipped). TimerSync saves it to the account, then removes it. */
+export interface FinishedFocus {
+  /** Fixed per focus, so saving twice writes the same document */
+  id: string;
+  ownerUid: string;
+  subjectId: string;
+  subjectName: string;
+  topicId: string;
+  topicTitle: string;
+  sessionType: string;
+  activeBlockId: string;
+  distractions: number;
+  plannedSecs: number;
+  studiedSecs: number;
+  endedAt: number;
+}
+
+/** The focus in `s` as a FinishedFocus, if it was really studied (a misclick under a minute is not). */
+function finished(s: { mode: string; state: string; totalSeconds: number; secondsRemaining: number; startTimestamp: number | null; remainingWhenStarted: number; focusStartedAt: number | null; ownerUid: string; selectedSubjectId: string; selectedSubjectName: string; selectedTopicId: string; selectedTopicTitle: string; sessionType: string; activeBlockId: string; distractions: number }, timeUp: boolean): FinishedFocus[] {
+  if (s.mode !== "focus" || (s.state !== "running" && s.state !== "paused") || !s.selectedSubjectId) return [];
+  // The clock only runs while "running", so pauses never count.
+  const left = timeUp ? 0 : s.state === "running" && s.startTimestamp !== null
+    ? Math.max(0, s.remainingWhenStarted - (Date.now() - s.startTimestamp) / 1000)
+    : s.secondsRemaining;
+  const studiedSecs = Math.round(Math.max(0, Math.min(s.totalSeconds, s.totalSeconds - left)));
+  if (studiedSecs < 59) return [];
+  const startedAt = s.focusStartedAt ?? s.startTimestamp ?? Date.now();
+  return [{
+    id: `focus-${startedAt}`, ownerUid: s.ownerUid, subjectId: s.selectedSubjectId, subjectName: s.selectedSubjectName,
+    topicId: s.selectedTopicId, topicTitle: s.selectedTopicTitle, sessionType: s.sessionType, activeBlockId: s.activeBlockId,
+    distractions: s.distractions, plannedSecs: s.totalSeconds, studiedSecs, endedAt: Date.now(),
+  }];
+}
+
 function modeSecs(mode: string, focus: number, shortB: number, longB: number): number {
   if (mode === "short-break") return shortB * 60;
   if (mode === "long-break") return longB * 60;
@@ -56,6 +90,11 @@ interface TimerStore {
   longBreak: number;
   startTimestamp: number | null;
   remainingWhenStarted: number;
+  /** When the current focus began (ms); stays the same through pauses. Names the saved session, so it is saved once. */
+  focusStartedAt: number | null;
+  /** Focuses that ended and are not saved yet (kept across reloads) */
+  finishedFocuses: FinishedFocus[];
+  clearFinished: (id: string) => void;
 
   init: () => void;
   setSubject: (id: string, name: string) => void;
@@ -100,6 +139,9 @@ export const useTimerStore = create<TimerStore>()(
       longBreak: 15,
       startTimestamp: null,
       remainingWhenStarted: 25 * 60,
+      focusStartedAt: null,
+      finishedFocuses: [],
+      clearFinished: (id) => set((s) => ({ finishedFocuses: s.finishedFocuses.filter((f) => f.id !== id) })),
 
       init: () => {
         const s = get();
@@ -126,21 +168,22 @@ export const useTimerStore = create<TimerStore>()(
             const breakSecs = modeSecs(nextMode, s.pomodoroLength, s.shortBreak, s.longBreak);
             const timeIntoBreak = -actualRemaining; // seconds elapsed after focus ended
             const now = Date.now();
+            set({ finishedFocuses: [...s.finishedFocuses, ...finished(s, true)] }); // ended while the app was closed
             if (timeIntoBreak >= breakSecs) {
               // Break also expired while away — still transition through break so the
               // React effect on the timer page detects focus→break and saves the session.
               // Set 1 s remaining so it ticks to 0 and auto-advances to focus immediately.
-              set({ mode: nextMode, pomodoroIndex: nextIdx, secondsRemaining: 1, totalSeconds: breakSecs, startTimestamp: now, remainingWhenStarted: 1 });
+              set({ mode: nextMode, pomodoroIndex: nextIdx, secondsRemaining: 1, totalSeconds: breakSecs, startTimestamp: now, remainingWhenStarted: 1, focusStartedAt: null });
             } else {
               const breakRemaining = breakSecs - timeIntoBreak;
-              set({ mode: nextMode, pomodoroIndex: nextIdx, secondsRemaining: Math.ceil(breakRemaining), totalSeconds: breakSecs, startTimestamp: now, remainingWhenStarted: Math.ceil(breakRemaining) });
+              set({ mode: nextMode, pomodoroIndex: nextIdx, secondsRemaining: Math.ceil(breakRemaining), totalSeconds: breakSecs, startTimestamp: now, remainingWhenStarted: Math.ceil(breakRemaining), focusStartedAt: null });
             }
           } else {
             const secs = s.pomodoroLength * 60;
             const now = Date.now();
             // Reset index when coming back from a long-break (matching tick() behaviour)
             const resetIdx = s.pomodoroIndex % s.totalPomodoros === 0 ? 0 : s.pomodoroIndex;
-            set({ mode: "focus", pomodoroIndex: resetIdx, secondsRemaining: secs, totalSeconds: secs, startTimestamp: now, remainingWhenStarted: secs });
+            set({ mode: "focus", pomodoroIndex: resetIdx, secondsRemaining: secs, totalSeconds: secs, startTimestamp: now, remainingWhenStarted: secs, focusStartedAt: now });
           }
         } else {
           set({ secondsRemaining: Math.ceil(actualRemaining) });
@@ -156,19 +199,22 @@ export const useTimerStore = create<TimerStore>()(
 
       setDurations: (focus, shortB, longB) => {
         clearTick();
+        set((s) => ({ finishedFocuses: [...s.finishedFocuses, ...finished(s, false)] })); // stopped early: keep the time studied
         const secs = focus * 60;
-        set({ pomodoroLength: focus, shortBreak: shortB, longBreak: longB, secondsRemaining: secs, totalSeconds: secs, state: "idle", mode: "focus", pomodoroIndex: 0, startTimestamp: null, remainingWhenStarted: secs });
+        set({ pomodoroLength: focus, shortBreak: shortB, longBreak: longB, secondsRemaining: secs, totalSeconds: secs, state: "idle", mode: "focus", pomodoroIndex: 0, startTimestamp: null, remainingWhenStarted: secs, focusStartedAt: null });
       },
 
       setTotalPomodoros: (n) => {
         clearTick();
+        set((s) => ({ finishedFocuses: [...s.finishedFocuses, ...finished(s, false)] })); // stopped early: keep the time studied
         const secs = get().pomodoroLength * 60;
-        set({ totalPomodoros: n, pomodoroIndex: 0, state: "idle", mode: "focus", secondsRemaining: secs, totalSeconds: secs, startTimestamp: null, remainingWhenStarted: secs });
+        set({ totalPomodoros: n, pomodoroIndex: 0, state: "idle", mode: "focus", secondsRemaining: secs, totalSeconds: secs, startTimestamp: null, remainingWhenStarted: secs, focusStartedAt: null });
       },
 
       setPreset: (minutes) => {
         clearTick();
-        set({ pomodoroLength: minutes, secondsRemaining: minutes * 60, totalSeconds: minutes * 60, state: "idle", mode: "focus", pomodoroIndex: 0, startTimestamp: null, remainingWhenStarted: minutes * 60 });
+        set((s) => ({ finishedFocuses: [...s.finishedFocuses, ...finished(s, false)] })); // stopped early: keep the time studied
+        set({ pomodoroLength: minutes, secondsRemaining: minutes * 60, totalSeconds: minutes * 60, state: "idle", mode: "focus", pomodoroIndex: 0, startTimestamp: null, remainingWhenStarted: minutes * 60, focusStartedAt: null });
       },
 
       // User presses play once — interval runs until paused/reset
@@ -178,7 +224,7 @@ export const useTimerStore = create<TimerStore>()(
         if (!s.selectedSubjectId) return;
         clearTick();
         const now = Date.now();
-        set({ state: "running", startTimestamp: now, remainingWhenStarted: s.secondsRemaining });
+        set({ state: "running", startTimestamp: now, remainingWhenStarted: s.secondsRemaining, ...(s.mode === "focus" && !s.focusStartedAt ? { focusStartedAt: now } : {}) });
         _interval = setInterval(() => get().tick(), 500);
       },
 
@@ -194,9 +240,10 @@ export const useTimerStore = create<TimerStore>()(
 
       reset: () => {
         clearTick();
+        set((s) => ({ finishedFocuses: [...s.finishedFocuses, ...finished(s, false)] })); // stopped early: keep the time studied
         const { mode, pomodoroLength, shortBreak, longBreak } = get();
         const secs = modeSecs(mode, pomodoroLength, shortBreak, longBreak);
-        set({ state: "idle", secondsRemaining: secs, totalSeconds: secs, startTimestamp: null, remainingWhenStarted: secs });
+        set({ state: "idle", secondsRemaining: secs, totalSeconds: secs, startTimestamp: null, remainingWhenStarted: secs, focusStartedAt: null });
       },
 
       skip: () => {
@@ -204,6 +251,7 @@ export const useTimerStore = create<TimerStore>()(
         const now = Date.now();
 
         if (s.mode === "focus") {
+          set({ finishedFocuses: [...s.finishedFocuses, ...finished(s, false)] });
           // Skip focus → go to break
           const nextIdx = s.pomodoroIndex + 1;
           const nextMode: "focus" | "short-break" | "long-break" =
@@ -211,19 +259,19 @@ export const useTimerStore = create<TimerStore>()(
           const secs = modeSecs(nextMode, s.pomodoroLength, s.shortBreak, s.longBreak);
           if (s.state === "running") {
             // Interval keeps running — just update state
-            set({ mode: nextMode, pomodoroIndex: nextIdx, secondsRemaining: secs, totalSeconds: secs, startTimestamp: now, remainingWhenStarted: secs });
+            set({ mode: nextMode, pomodoroIndex: nextIdx, secondsRemaining: secs, totalSeconds: secs, startTimestamp: now, remainingWhenStarted: secs, focusStartedAt: null });
           } else {
             clearTick();
-            set({ state: "running", mode: nextMode, pomodoroIndex: nextIdx, secondsRemaining: secs, totalSeconds: secs, startTimestamp: now, remainingWhenStarted: secs });
+            set({ state: "running", mode: nextMode, pomodoroIndex: nextIdx, secondsRemaining: secs, totalSeconds: secs, startTimestamp: now, remainingWhenStarted: secs, focusStartedAt: null });
             _interval = setInterval(() => get().tick(), 500);
           }
         } else {
           // Skip break → go to focus
           const secs = s.pomodoroLength * 60;
           if (s.state === "running") {
-            set({ mode: "focus", secondsRemaining: secs, totalSeconds: secs, startTimestamp: now, remainingWhenStarted: secs });
+            set({ mode: "focus", secondsRemaining: secs, totalSeconds: secs, startTimestamp: now, remainingWhenStarted: secs, focusStartedAt: now });
           } else {
-            set({ state: "idle", mode: "focus", secondsRemaining: secs, totalSeconds: secs, startTimestamp: null, remainingWhenStarted: secs });
+            set({ state: "idle", mode: "focus", secondsRemaining: secs, totalSeconds: secs, startTimestamp: null, remainingWhenStarted: secs, focusStartedAt: null });
           }
         }
       },
@@ -243,6 +291,7 @@ export const useTimerStore = create<TimerStore>()(
 
           if (s.mode === "focus") {
             // ── Focus complete → auto-start break ────────────────────────────
+            set({ finishedFocuses: [...s.finishedFocuses, ...finished(s, true)] });
             const nextIdx = s.pomodoroIndex + 1;
             const nextMode: "focus" | "short-break" | "long-break" =
               nextIdx % s.totalPomodoros === 0 ? "long-break" : "short-break";
@@ -254,6 +303,7 @@ export const useTimerStore = create<TimerStore>()(
               totalSeconds: secs,
               startTimestamp: now,
               remainingWhenStarted: secs,
+              focusStartedAt: null,
               // state stays "running" — interval keeps going
             });
           } else {
@@ -267,6 +317,7 @@ export const useTimerStore = create<TimerStore>()(
               totalSeconds: secs,
               startTimestamp: now,
               remainingWhenStarted: secs,
+              focusStartedAt: now,
               // state stays "running"
             });
           }
@@ -305,6 +356,8 @@ export const useTimerStore = create<TimerStore>()(
         activeBlockId: s.activeBlockId,
         pomodoroLength: s.pomodoroLength, shortBreak: s.shortBreak, longBreak: s.longBreak,
         startTimestamp: s.startTimestamp, remainingWhenStarted: s.remainingWhenStarted,
+        focusStartedAt: s.focusStartedAt,
+        finishedFocuses: s.finishedFocuses,
       }),
     }
   )
