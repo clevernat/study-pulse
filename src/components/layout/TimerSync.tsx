@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTimerStore } from "@/store/timerStore";
 import {
   subscribeSubjects,
-  addSession,
+  saveDocument,
   saveTimerState,
   subscribeTimerState,
   linkSessionToBlock,
@@ -41,7 +41,6 @@ export default function TimerSync() {
   const state = useTimerStore((s) => s.state);
   const mode = useTimerStore((s) => s.mode);
   const startTimestamp = useTimerStore((s) => s.startTimestamp);
-  const totalSeconds = useTimerStore((s) => s.totalSeconds);
   const selectedSubjectName = useTimerStore((s) => s.selectedSubjectName);
   const selectedTopicId = useTimerStore((s) => s.selectedTopicId); // a topic change is synced too
   const init = useTimerStore((s) => s.init);
@@ -56,17 +55,13 @@ export default function TimerSync() {
 
   const prevStateRef = useRef<string>(state);
   const prevModeRef = useRef<string>(mode);
-  const focusStartMsRef = useRef<number | null>(null);
-  const focusPausedMsRef = useRef<number>(0);
-  const focusPauseStartMsRef = useRef<number | null>(null);
-  const startTimeRef = useRef<string | null>(null);
-  const sessionTotalSecondsRef = useRef<number>(totalSeconds);
   const applyingRemoteRef = useRef<boolean>(false);
+  /** True once the cloud timer has been read; until then this tab must not overwrite it */
+  const remoteLoadedRef = useRef<boolean>(false);
   const hasInitializedRef = useRef<boolean>(false);
 
-  // Tracks which device owns the current focus session.
-  // Only the owner calls saveSession() when focus ends, preventing duplicate
-  // sessions from multiple devices running the same timer simultaneously.
+  // The device that started the focus. Saving does NOT depend on it (any device
+  // saves, under one fixed id); it only decides which device links a planned block.
   const sessionOwnerDeviceIdRef = useRef<string>(DEVICE_ID);
 
   // When the logged-in user changes, reset the timer if the stored state
@@ -77,7 +72,6 @@ export default function TimerSync() {
     if (ownerUid && ownerUid !== user.uid) {
       // Different account — wipe state so the new user starts fresh
       // (the old account's focus is not saved for the new one).
-      focusStartMsRef.current = null;
       setPreset(pomodoroLength);
       setSubject("", "Select a Subject");
     }
@@ -98,125 +92,73 @@ export default function TimerSync() {
     const s = useTimerStore.getState();
     prevStateRef.current = s.state;
     prevModeRef.current = s.mode;
-    if (s.state === "running" && s.mode === "focus" && s.startTimestamp !== null) {
-      focusStartMsRef.current = s.startTimestamp;
-      focusPausedMsRef.current = 0;
-      sessionTotalSecondsRef.current = s.totalSeconds;
-    }
     // Assume we own the session from our own persisted state until Firestore
     // tells us otherwise via subscribeTimerState below.
     sessionOwnerDeviceIdRef.current = DEVICE_ID;
     hasInitializedRef.current = true;
   }, [hasHydrated]);
 
-  // Pause-aware focus tracking.
+  // A new focus starts with 0 distractions, and this device owns it.
   useEffect(() => {
     if (!applyingRemoteRef.current && mode === "focus") {
       if (state === "idle" && (prevStateRef.current === "running" || prevStateRef.current === "paused")) {
-        // Stopped early (Reset, or new focus lengths): keep the time already studied.
-        if (focusStartMsRef.current !== null) saveSession(60);
         useTimerStore.getState().resetDistractions();
-        focusStartMsRef.current = null;
-        focusPausedMsRef.current = 0;
-        focusPauseStartMsRef.current = null;
-      } else if (state === "running" && prevStateRef.current === "paused") {
-        if (focusPauseStartMsRef.current !== null) {
-          focusPausedMsRef.current += Date.now() - focusPauseStartMsRef.current;
-          focusPauseStartMsRef.current = null;
-        }
-      } else if (state === "running" && prevStateRef.current !== "running") {
-        useTimerStore.getState().resetDistractions(); // a new focus starts at 0
-        startTimeRef.current = new Date().toTimeString().slice(0, 5);
-        sessionTotalSecondsRef.current = totalSeconds;
-        focusStartMsRef.current = Date.now();
-        focusPausedMsRef.current = 0;
-        focusPauseStartMsRef.current = null;
-        // This device started focus locally — it owns the session.
+      } else if (state === "running" && prevStateRef.current === "idle") {
+        useTimerStore.getState().resetDistractions();
         sessionOwnerDeviceIdRef.current = DEVICE_ID;
-      } else if (state === "paused" && prevStateRef.current === "running") {
-        focusPauseStartMsRef.current = Date.now();
       }
     }
     prevStateRef.current = state;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, mode]);
 
-  /** Saves the current focus as a session. `minSecs`: skip it when less was studied (early stops). */
-  const saveSession = useCallback(async (minSecs = 0) => {
-    if (!user) return;
-    // Only the device that started the focus session saves it.
-    // This prevents duplicate sessions when multiple devices run the same timer.
-    if (sessionOwnerDeviceIdRef.current !== DEVICE_ID) return;
-
-    // Use selectedSubjectId directly from the store rather than looking up
-    // subjects[], which may not have loaded yet on a secondary device.
-    const storeState = useTimerStore.getState();
-    const subjectId = storeState.selectedSubjectId;
-    const subjectName = storeState.selectedSubjectName;
-    const currentSubject = subjects.find((s) => s.id === subjectId);
-
-    const now = new Date();
-    const plannedSecs = sessionTotalSecondsRef.current;
-    // A pause still going on (stopped while paused) is not study time either.
-    const pausedMs = focusPausedMsRef.current +
-      (focusPauseStartMsRef.current !== null ? Date.now() - focusPauseStartMsRef.current : 0);
-    const totalElapsedMs = focusStartMsRef.current
-      ? Date.now() - focusStartMsRef.current
-      : plannedSecs * 1000;
-    const studiedSecs = Math.min(
-      Math.max(0, (totalElapsedMs - pausedMs) / 1000),
-      plannedSecs
-    );
-    if (studiedSecs < minSecs) return;
-    const durationMinutes = Math.max(1, Math.round(studiedSecs / 60));
-    const focusScore =
-      plannedSecs > 0
-        ? Math.min(100, Math.round((studiedSecs / plannedSecs) * 100))
-        : 100;
-
-    // Derive start time from effective wall-clock moment the user actually
-    // started studying: original start timestamp + all time spent paused.
-    // This prevents a stale "17:40" start appearing when a session was paused
-    // overnight and completed the next morning.
-    const effectiveStartMs =
-      focusStartMsRef.current !== null ? focusStartMsRef.current + pausedMs : null;
-    const startTime = effectiveStartMs
-      ? new Date(effectiveStartMs).toTimeString().slice(0, 5)
-      : now.toTimeString().slice(0, 5);
-
-    const session: Omit<Session, "id"> = {
-      uid: user.uid,
-      subjectId: subjectId || "unknown",
-      subjectName: currentSubject?.name ?? subjectName,
-      subjectColor: currentSubject?.color ?? "violet",
-      durationMinutes,
-      focusScore,
-      pomodoroCount: 1,
-      sessionType: storeState.sessionType ?? "Deep Work",
-      date: localDateStr(now),
-      startTime,
-      endTime: now.toTimeString().slice(0, 5),
-      notes: "",
-      blockId: storeState.activeBlockId || undefined,
-      ...(storeState.selectedTopicId ? { topicId: storeState.selectedTopicId, topicTitle: storeState.selectedTopicTitle } : {}),
-      ...(storeState.distractions ? { distractions: storeState.distractions } : {}),
-    };
-    storeState.resetDistractions();
-    try {
-      const sessionId = await addSession(user.uid, session);
-      if (session.blockId) {
-        linkSessionToBlock(user.uid, session.blockId, sessionId, durationMinutes).catch((err) =>
-          console.error("Failed to link session to block:", err));
-      }
-      if (currentSubject?.id) {
-        usePromptStore.getState().setPending(currentSubject.id);
-      }
-      // Trigger reflection journal (only on the device that owns the session)
-      useReflectionStore.getState().open(sessionId, session.subjectName);
-    } catch (err) {
-      console.error("Failed to save session:", err);
+  // Save every focus the timer recorded as ended (time up, stopped, skipped,
+  // or found ended when the app reopened). The id is fixed per focus, so a
+  // second device or tab saving the same focus writes the same document.
+  const finishedFocuses = useTimerStore((s) => s.finishedFocuses);
+  const savingRef = useRef(new Set<string>());
+  useEffect(() => {
+    if (!user || !finishedFocuses?.length) return;
+    const clear = useTimerStore.getState().clearFinished;
+    for (const f of finishedFocuses) {
+      if (savingRef.current.has(f.id)) continue;
+      if (f.ownerUid && f.ownerUid !== user.uid) { clear(f.id); continue; } // another account's focus
+      savingRef.current.add(f.id);
+      const end = new Date(f.endedAt);
+      const hhmm = (d: Date) => d.toTimeString().slice(0, 5);
+      const sub = subjects.find((x) => x.id === f.subjectId);
+      const durationMinutes = Math.max(1, Math.round(f.studiedSecs / 60));
+      const session: Omit<Session, "id"> & { createdAt: number } = {
+        uid: user.uid,
+        subjectId: f.subjectId,
+        subjectName: sub?.name ?? f.subjectName,
+        subjectColor: sub?.color ?? "violet",
+        durationMinutes,
+        focusScore: f.plannedSecs > 0 ? Math.min(100, Math.round((f.studiedSecs / f.plannedSecs) * 100)) : 100,
+        pomodoroCount: 1,
+        sessionType: f.sessionType || "Deep Work",
+        date: localDateStr(end),
+        startTime: hhmm(new Date(f.endedAt - f.studiedSecs * 1000)),
+        endTime: hhmm(end),
+        notes: "",
+        ...(f.activeBlockId ? { blockId: f.activeBlockId } : {}),
+        ...(f.topicId ? { topicId: f.topicId, topicTitle: f.topicTitle } : {}),
+        ...(f.distractions ? { distractions: f.distractions } : {}),
+        createdAt: f.endedAt,
+      };
+      saveDocument(user.uid, "sessions", f.id, session)
+        .then(() => {
+          clear(f.id);
+          if (f.activeBlockId) linkSessionToBlock(user.uid, f.activeBlockId, f.id, durationMinutes).catch((err) => console.error("Failed to link session to block:", err));
+          if (Date.now() - f.endedAt < 10 * 60_000) { // just now: ask how it went
+            if (sub?.id) usePromptStore.getState().setPending(sub.id);
+            useReflectionStore.getState().open(f.id, session.subjectName);
+          }
+        })
+        .catch((err) => console.error("Failed to save session:", err))
+        .finally(() => savingRef.current.delete(f.id));
     }
-  }, [user, subjects]);
+  }, [user, finishedFocuses, subjects]);
 
   const saveToFirestore = useCallback(async () => {
     if (!user) return;
@@ -237,6 +179,7 @@ export default function TimerSync() {
       selectedSubjectName: s.selectedSubjectName,
       selectedTopicId: s.selectedTopicId,
       selectedTopicTitle: s.selectedTopicTitle,
+      focusStartedAt: s.focusStartedAt ?? null,
       updatedAt: Date.now(),
       deviceId: DEVICE_ID,
       sessionOwnerDeviceId: sessionOwnerDeviceIdRef.current,
@@ -246,15 +189,13 @@ export default function TimerSync() {
   // Cross-device sync: apply non-null remote timer state from other devices.
   useEffect(() => {
     if (!user) return;
+    remoteLoadedRef.current = false;
     const unsub = subscribeTimerState(user.uid, (remote) => {
-      if (!remote) {
-        applyingRemoteRef.current = true;
-        focusStartMsRef.current = null;
-        focusPausedMsRef.current = 0;
-        focusPauseStartMsRef.current = null;
-        startTimeRef.current = null;
-        return;
-      }
+      const first = !remoteLoadedRef.current;
+      remoteLoadedRef.current = true;
+      if (!remote) return; // nothing saved yet, or data cleared on another device (ClientShell stops the timer)
+      // Opening the app: if this tab has nothing running, take the cloud timer as it is
+      if (first && remote.deviceId === DEVICE_ID) return;
       if (remote.deviceId === DEVICE_ID) return;
 
       // Restore session ownership from Firestore so we know whether this
@@ -279,15 +220,16 @@ export default function TimerSync() {
         selectedSubjectName: remote.selectedSubjectName,
         selectedTopicId: remote.selectedTopicId ?? "",
         selectedTopicTitle: remote.selectedTopicTitle ?? "",
+        ...(remote.focusStartedAt !== undefined ? { focusStartedAt: remote.focusStartedAt } : {}),
       });
       init();
     });
     return () => unsub();
   }, [user, init]);
 
-  // Auto-save to Firestore on any user-meaningful state change.
+  // Send changes made in this tab (never on opening, never echoes of other devices).
   useEffect(() => {
-    if (!hasInitializedRef.current) return;
+    if (!hasInitializedRef.current || !remoteLoadedRef.current) return;
     if (applyingRemoteRef.current) return;
     saveToFirestore();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -304,7 +246,6 @@ export default function TimerSync() {
 
     if (prevMode === "focus" && (mode === "short-break" || mode === "long-break")) {
       if (!applyingRemoteRef.current) {
-        saveSession();
         playCompletionChime();
         if (sessionNotifOn) {
           sendNotification(
@@ -324,11 +265,6 @@ export default function TimerSync() {
       if (!applyingRemoteRef.current) {
         // This device auto-cycled break→focus locally — it owns the next session too.
         sessionOwnerDeviceIdRef.current = DEVICE_ID;
-        startTimeRef.current = new Date().toTimeString().slice(0, 5);
-        sessionTotalSecondsRef.current = totalSeconds;
-        focusStartMsRef.current = Date.now();
-        focusPausedMsRef.current = 0;
-        focusPauseStartMsRef.current = null;
         playBreakEndChime();
         sendNotification("StudyPulse: break over", "Time to focus again.");
       }
@@ -337,7 +273,7 @@ export default function TimerSync() {
     prevModeRef.current = mode;
     applyingRemoteRef.current = false;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, mode, saveSession, selectedSubjectName]);
+  }, [state, mode, selectedSubjectName]);
 
   return null;
 }

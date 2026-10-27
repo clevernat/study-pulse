@@ -148,6 +148,8 @@ export interface TimerSyncDoc {
   selectedSubjectName: string;
   selectedTopicId?: string;
   selectedTopicTitle?: string;
+  /** When the current focus began; names its saved session */
+  focusStartedAt?: number | null;
   updatedAt: number;
   /** Which browser tab/device last wrote — used to skip echoed-back writes */
   deviceId: string;

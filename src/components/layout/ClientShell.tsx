@@ -96,8 +96,12 @@ export default function ClientShell({ children }: { children: React.ReactNode })
 
     // 1. When another device clears all data, timerState/current is deleted.
     //    Subscription fires with null → stop the timer on this device too.
-    const unsubTimer = subscribeTimerState(user.uid, (remote) => {
-      if (remote !== null) return; // non-null handled by timer page
+    // Only a real deletion counts: the server says the timer is gone after we
+    // saw it. A local copy that has no timer yet must never stop a running timer.
+    let seen = false;
+    const unsubTimer = subscribeTimerState(user.uid, (remote, fromServer) => {
+      if (remote !== null) { seen = true; return; } // non-null handled by TimerSync
+      if (!seen || !fromServer) return;
       const ts = useTimerStore.getState();
       if (ts.state !== "idle") {
         ts.setPreset(ts.pomodoroLength);
